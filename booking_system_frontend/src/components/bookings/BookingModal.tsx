@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Flight, SeatClass } from '../../types';
 import { Modal, Button } from '../common';
-import { Plane, Calendar, Clock, DollarSign, Crown, Rocket, Check } from 'lucide-react';
+import { Plane, DollarSign, Crown, Rocket, Check } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
 import { bookFlight, isErrorResponse } from '../../services/api';
 import { useUser } from '../../hooks/useUser';

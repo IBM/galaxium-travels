@@ -1,15 +1,16 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base
 
-SQLALCHEMY_DATABASE_URL = 'sqlite:///./booking.db'
+# Use environment variable for database URL
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./booking.db')
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# SQLite requires check_same_thread=False, but PostgreSQL doesn't support it
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith('sqlite') else {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Dependency for FastAPI
 
 def init_db():
     Base.metadata.create_all(bind=engine)
@@ -19,4 +20,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close() 
+        db.close()
