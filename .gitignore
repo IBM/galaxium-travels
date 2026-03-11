@@ -139,6 +139,21 @@ desktop.ini
 
 .env
 
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 ### Additional files
 HR_database/.venv/
 booking_system_rest/.venv/

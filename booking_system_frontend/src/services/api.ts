@@ -9,8 +9,9 @@ import type {
 } from '../types';
 
 // Create axios instance with base configuration
+// Use relative URL since frontend and backend are served from same domain via ALB
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },

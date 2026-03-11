@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: galaxium_db
+      POSTGRES_USER: galaxium_user
+      POSTGRES_PASSWORD: galaxium_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U galaxium_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./booking_system_backend
+      dockerfile: Dockerfile.prod
+    environment:
+      DATABASE_URL: postgresql://galaxium_user:galaxium_pass@postgres:5432/galaxium_db
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["gunicorn", "server:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8080"]
+
+  frontend:
+    build:
+      context: ./booking_system_frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8080
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+# Made with Bob

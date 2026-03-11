@@ -1,0 +1,37 @@
+# Multi-stage build for smaller image
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Final stage
+FROM python:3.11-slim
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser
+
+WORKDIR /app
+
+# Copy dependencies from builder
+COPY --from=builder /root/.local /home/appuser/.local
+
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Switch to non-root user
+USER appuser
+
+# Add local bin to PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8080/health')"
+
+EXPOSE 8080
+
+# Use gunicorn for production
+CMD ["gunicorn", "server:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8080"]
