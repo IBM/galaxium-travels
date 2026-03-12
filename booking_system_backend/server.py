@@ -119,7 +119,8 @@ app = FastAPI(
     title="Galaxium Booking System",
     description="API for booking interplanetary flights. Swagger UI available at /docs",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="/api"
 )
 
 app.add_middleware(
