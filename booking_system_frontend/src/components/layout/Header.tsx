@@ -1,16 +1,20 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Rocket, User, LogOut } from 'lucide-react';
 import { useUser } from '../../hooks/useUser';
 import { Button } from '../common';
+import { UserIdentification } from '../user/UserIdentification';
 import { motion } from 'framer-motion';
 
 export const Header = () => {
   const location = useLocation();
   const { user, logout } = useUser();
+  const [showUserModal, setShowUserModal] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-30 glass-card border-b border-white/10">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -82,9 +86,20 @@ export const Header = () => {
                 </Button>
               </div>
             ) : (
-              <Link to="/flights">
-                <Button size="sm">Book a Flight</Button>
-              </Link>
+              <>
+                {location.pathname === '/' ? (
+                  <Link to="/flights">
+                    <Button size="sm">Book a Flight</Button>
+                  </Link>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowUserModal(true)}
+                  >
+                    Login
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -126,6 +141,16 @@ export const Header = () => {
         </nav>
       </div>
     </header>
+    
+    {/* User Identification Modal - Outside header for proper z-index */}
+    <UserIdentification
+      isOpen={showUserModal}
+      onClose={() => setShowUserModal(false)}
+      onSuccess={() => {
+        setShowUserModal(false);
+      }}
+    />
+    </>
   );
 };
 

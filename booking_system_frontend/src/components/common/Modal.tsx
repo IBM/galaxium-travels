@@ -49,20 +49,23 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           />
           
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`glass-card w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+              className={`bg-space-dark/95 backdrop-blur-xl border-2 border-cosmic-purple/30 rounded-2xl shadow-2xl shadow-cosmic-purple/20 w-full ${sizeClasses[size]} my-8 p-6`}
+              role="dialog"
+              aria-modal="true"
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
-                  <h2 className="text-2xl font-bold text-star-white">{title}</h2>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-cosmic-purple/20">
+                  <h2 className="text-2xl font-bold bg-cosmic-gradient bg-clip-text text-transparent">{title}</h2>
                   <button
                     onClick={onClose}
-                    className="text-star-white/70 hover:text-star-white transition-colors"
+                    className="text-star-white/70 hover:text-cosmic-purple transition-colors p-1 hover:bg-white/5 rounded-lg"
+                    aria-label="Close modal"
                   >
                     <X size={24} />
                   </button>

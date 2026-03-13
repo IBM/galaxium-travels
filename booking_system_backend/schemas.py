@@ -70,7 +70,7 @@ class BookingOut(BaseModel):
 
 class UserRegistration(BaseModel):
     name: str
-    email: EmailStr
+    email: str
 
 
 class UserOut(BaseModel):
