@@ -7,7 +7,8 @@ from typing import Union
 from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
-from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration, SeatClassInfo
+from models import SEAT_CLASS_MULTIPLIERS
 
 
 # ==================== MCP SERVER (for AI agents) ====================
@@ -28,14 +29,15 @@ def list_flights() -> list[FlightOut]:
 
 
 @mcp.tool()
-def book_flight(user_id: int, name: str, flight_id: int) -> BookingOut:
-    """Book a seat on a specific flight for a user.
+def book_flight(user_id: int, name: str, flight_id: int, seat_class: str = 'economy') -> BookingOut:
+    """Book a seat on a specific flight for a user with seat class selection.
     Requires user_id, name, and flight_id.
+    Optional seat_class parameter ('economy', 'business', 'galaxium'). Defaults to 'economy'.
     Decrements available seats if successful.
     Returns booking details or raises an error if booking is not possible."""
     db = SessionLocal()
     try:
-        result = booking.book_flight(db, user_id, name, flight_id)
+        result = booking.book_flight(db, user_id, name, flight_id, seat_class)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -123,7 +125,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",  # Original frontend
+        "http://localhost:5174",  # Seat classes frontend
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "*"  # Allow all for development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -142,13 +150,61 @@ def get_flights(db: Session = Depends(get_db)):
     return flight.list_flights(db)
 
 
+@app.get("/seat-classes", response_model=list[SeatClassInfo], tags=["Seat Classes"])
+def get_seat_classes():
+    """Get information about available seat classes with their features and pricing multipliers."""
+    return [
+        SeatClassInfo(
+            class_name="economy",
+            display_name="Economy Class",
+            price_multiplier=1.0,
+            description="Standard seating for space travel",
+            features=[
+                "Standard seat",
+                "In-flight meal",
+                "Entertainment system",
+                "20kg luggage allowance"
+            ]
+        ),
+        SeatClassInfo(
+            class_name="business",
+            display_name="Business Class",
+            price_multiplier=1.5,
+            description="Enhanced comfort and amenities",
+            features=[
+                "Spacious seat with extra legroom",
+                "Premium meals and beverages",
+                "Priority boarding",
+                "Extra luggage (40kg)",
+                "Access to business lounge"
+            ]
+        ),
+        SeatClassInfo(
+            class_name="galaxium",
+            display_name="Galaxium Class",
+            price_multiplier=2.5,
+            description="Premium luxury experience",
+            features=[
+                "Luxury pod with full recline",
+                "Gourmet dining experience",
+                "VIP lounge access",
+                "Personal concierge service",
+                "Unlimited luggage",
+                "Exclusive amenities kit"
+            ]
+        )
+    ]
+
+
 @app.post("/book", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
 def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
-    """Book a seat on a specific flight for a user.
+    """Book a seat on a specific flight for a user with optional seat class selection.
 
-    Requires user_id, name, and flight_id. Decrements available seats if successful.
+    Requires user_id, name, and flight_id.
+    Optional seat_class parameter ('economy', 'business', 'galaxium'). Defaults to 'economy' for backward compatibility.
+    Decrements available seats if successful.
     """
-    return booking.book_flight(db, request.user_id, request.name, request.flight_id)
+    return booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
 
 
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])
@@ -187,4 +243,4 @@ app.mount("/mcp", mcp_app)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8081)
