@@ -74,7 +74,7 @@ variable "ecs_frontend_memory" {
 variable "ecs_desired_count" {
   description = "Desired number of ECS tasks"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "enable_nat_gateway" {

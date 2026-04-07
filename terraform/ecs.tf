@@ -29,10 +29,16 @@ resource "aws_ecs_task_definition" "backend" {
       protocol      = "tcp"
     }]
 
-    environment = [{
-      name  = "CORS_ORIGINS"
-      value = "http://${aws_lb.main.dns_name},https://${aws_lb.main.dns_name}"
-    }]
+    environment = [
+      {
+        name  = "CORS_ORIGINS"
+        value = "http://${aws_lb.main.dns_name},https://${aws_lb.main.dns_name}"
+      },
+      {
+        name  = "SEED_DEMO_DATA"
+        value = "true"
+      }
+    ]
 
     secrets = [{
       name      = "DATABASE_URL"
@@ -80,10 +86,7 @@ resource "aws_ecs_task_definition" "frontend" {
       protocol      = "tcp"
     }]
 
-    environment = [{
-      name  = "VITE_API_URL"
-      value = "http://${aws_lb.main.dns_name}"
-    }]
+    environment = []
 
     logConfiguration = {
       logDriver = "awslogs"

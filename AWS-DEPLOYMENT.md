@@ -69,6 +69,15 @@ This single command will:
 
 **Deployment time:** Approximately 15-20 minutes
 
+### Demo-Oriented Defaults
+
+This AWS setup is optimized for a low-cost, short-lived demo environment:
+
+- ECS desired count defaults to `1` task per service to reduce cost
+- The frontend uses relative [`/api`](booking_system_frontend/src/services/api.ts:13) requests behind the ALB, so no custom domain is required
+- Backend demo seeding is disabled in ECS via `SEED_DEMO_DATA=false` to avoid reseeding on task restarts
+- You can still enable seeding for local development by setting `SEED_DEMO_DATA=true`
+
 ### Tear Down Infrastructure
 
 ```bash
@@ -116,6 +125,8 @@ AWS_REGION=us-east-1 ./deploy-to-aws.sh  # Override default region
 - CloudWatch log groups
 - Security groups and IAM roles
 - Secrets Manager for database credentials
+
+**Note:** This setup intentionally uses the ALB DNS name directly over HTTP for demo simplicity and lower cost.
 
 ### teardown-aws.sh
 

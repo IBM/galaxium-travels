@@ -113,7 +113,11 @@ mcp_app = mcp.http_app()
 async def lifespan(app: FastAPI):
     # Startup
     init_db()
-    seed()
+
+    should_seed = os.getenv("SEED_DEMO_DATA", "true").lower() in {"1", "true", "yes", "on"}
+    if should_seed:
+        seed()
+
     yield
     # Shutdown (nothing to do)
 
