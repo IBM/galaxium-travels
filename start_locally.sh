@@ -34,10 +34,10 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-# Kill any existing processes on ports 8080 and 5173
-EXISTING_BACKEND=$(lsof -ti :8080 2>/dev/null)
+# Kill any existing processes on ports 8001 and 5173
+EXISTING_BACKEND=$(lsof -ti :8001 2>/dev/null)
 if [ -n "$EXISTING_BACKEND" ]; then
-    echo "Stopping existing backend process on port 8080..."
+    echo "Stopping existing backend process on port 8001..."
     echo "$EXISTING_BACKEND" | xargs kill -9 2>/dev/null
     sleep 1
 fi
@@ -68,7 +68,7 @@ BACKEND_PID=$!
 
 # Wait for backend to start and verify
 sleep 3
-if ! curl -s http://localhost:8080/ > /dev/null 2>&1; then
+if ! curl -s http://localhost:8001/ > /dev/null 2>&1; then
     echo "❌ Backend failed to start. Check backend.log for errors:"
     cat backend.log
     kill $BACKEND_PID 2>/dev/null
@@ -76,7 +76,7 @@ if ! curl -s http://localhost:8080/ > /dev/null 2>&1; then
 fi
 
 cd ..
-echo -e "${GREEN}✅ Backend started on http://localhost:8080${NC}"
+echo -e "${GREEN}✅ Backend started on http://localhost:8001${NC}"
 echo ""
 
 # Start Frontend
@@ -99,9 +99,9 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🌟 Galaxium Travels is running!"
 echo ""
-echo "   Backend:  http://localhost:8080"
+echo "   Backend:  http://localhost:8001"
 echo "   Frontend: http://localhost:5173"
-echo "   API Docs: http://localhost:8080/docs"
+echo "   API Docs: http://localhost:8001/docs"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

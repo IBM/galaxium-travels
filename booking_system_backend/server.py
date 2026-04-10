@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Union, Optional
 from dotenv import load_dotenv
 import os
+import httpx
 from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
@@ -266,6 +267,122 @@ def register_user_endpoint(request: UserRegistration, db: Session = Depends(get_
 
 @app.get("/user", response_model=Union[UserOut, ErrorResponse], tags=["Users"])
 def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
+    """Get user by name and email."""
+    return user.get_user(db, name, email)
+
+
+# ==================== JAVA SERVICE INTEGRATION ====================
+
+JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL", "http://localhost:8080")
+
+
+@app.post("/internal/bookings/from-hold", response_model=Union[BookingOut, ErrorResponse], tags=["Internal"])
+def create_booking_from_hold(hold_data: dict, db: Session = Depends(get_db)):
+    """Internal endpoint for Java hold service to create bookings.
+    
+    This endpoint is called by the Java inventory hold service when confirming a hold.
+    """
+    return booking.book_flight(
+        db,
+        user_id=hold_data["travelerId"],
+        name=hold_data["travelerName"],
+        flight_id=hold_data["flightId"],
+        seat_class=hold_data["seatClass"]
+    )
+
+
+# ==================== JAVA SERVICE PROXY ENDPOINTS ====================
+
+@app.post("/quotes", tags=["Quotes"])
+async def create_quote(quote_data: dict):
+    """Proxy endpoint to create a quote in the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{JAVA_SERVICE_URL}/api/v1/quotes",
+                json=quote_data,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to create quote: {str(e)}"}
+
+
+@app.get("/quotes/{quote_id}", tags=["Quotes"])
+async def get_quote(quote_id: str):
+    """Proxy endpoint to get a quote from the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{JAVA_SERVICE_URL}/api/v1/quotes/{quote_id}",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to get quote: {str(e)}"}
+
+
+@app.post("/quotes/{quote_id}/holds", tags=["Holds"])
+async def create_hold(quote_id: str):
+    """Proxy endpoint to create a hold from a quote in the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{JAVA_SERVICE_URL}/api/v1/quotes/{quote_id}/holds",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to create hold: {str(e)}"}
+
+
+@app.get("/holds/{hold_id}", tags=["Holds"])
+async def get_hold(hold_id: str):
+    """Proxy endpoint to get a hold from the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{JAVA_SERVICE_URL}/api/v1/holds/{hold_id}",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to get hold: {str(e)}"}
+
+
+@app.post("/holds/{hold_id}/confirm", tags=["Holds"])
+async def confirm_hold(hold_id: str):
+    """Proxy endpoint to confirm a hold in the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{JAVA_SERVICE_URL}/api/v1/holds/{hold_id}/confirm",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to confirm hold: {str(e)}"}
+
+
+@app.post("/holds/{hold_id}/release", tags=["Holds"])
+async def release_hold(hold_id: str):
+    """Proxy endpoint to release a hold in the Java hold service."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{JAVA_SERVICE_URL}/api/v1/holds/{hold_id}/release",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"error": f"Failed to release hold: {str(e)}"}
+
     """Retrieve a user's information by providing both name and email."""
     return user.get_user(db, name, email)
 
@@ -279,4 +396,4 @@ app.mount("/mcp", mcp_app)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
