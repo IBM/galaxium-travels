@@ -29,4 +29,7 @@ This file provides guidance to agents when working with code in this repository.
 ## Commands
 - **Backend tests**: `cd booking_system_backend && pytest` (must run from backend dir)
 - **Frontend dev**: `cd booking_system_frontend && npm run dev`
-- **Start both**: `./start.sh` (creates venv, installs deps, starts both servers)
+- **Start both**: `./start.sh` (wrapper to scripts/local/start_locally.sh)
+- **Deploy AWS**: `./scripts/aws/deploy-to-aws.sh`
+- **Deploy IBM**: `./scripts/ibm/deploy-to-ibm.sh`
+- **Test containers**: `./scripts/local/test-containers.sh`
