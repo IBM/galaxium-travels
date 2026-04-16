@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: galaxium_booking
+      POSTGRES_USER: galaxium
+      POSTGRES_PASSWORD: local_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U galaxium -d galaxium_booking"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./booking_system_backend
+    platform: linux/amd64
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://galaxium:local_dev_password@postgres:5432/galaxium_booking
+      CORS_ORIGINS: http://localhost:5173,http://localhost
+      JAVA_SERVICE_URL: http://java-service:8080
+      SEED_DEMO_DATA: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  java-service:
+    build: ./inventory_hold_service
+    platform: linux/amd64
+    ports:
+      - "8082:8080"
+    environment:
+      PYTHON_BACKEND_URL: http://backend:8000
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/app/data/holds.db
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - java_data:/app/data
+
+  frontend:
+    build: ./booking_system_frontend
+    platform: linux/amd64
+    ports:
+      - "5173:80"
+    environment:
+      VITE_API_URL: http://localhost:8001
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  postgres_data:
+  java_data:
+
+# Made with Bob

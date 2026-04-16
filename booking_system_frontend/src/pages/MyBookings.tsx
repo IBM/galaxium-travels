@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight } from '../types';
+import type { Booking, Flight, StoredHold } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
-import { getUserBookings, getFlights, cancelBooking, isErrorResponse } from '../services/api';
+import { HoldCard } from '../components/bookings/HoldCard';
+import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUser';
 import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -14,6 +16,7 @@ export const MyBookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [activeHolds, setActiveHolds] = useState<StoredHold[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -27,7 +30,46 @@ export const MyBookings = () => {
     loadData();
   }, [user, navigate]);
 
-  const loadData = async () => {
+  const loadHolds = useCallback(async () => {
+    if (!user) return;
+
+    const stored = getStoredHolds(user.user_id);
+    if (stored.length === 0) {
+      setActiveHolds([]);
+      return;
+    }
+
+    // Verify each hold's current status from the API, remove stale ones
+    const stillActive: StoredHold[] = [];
+    const isLocallyExpired = (sh: StoredHold) => {
+      const expiryTime = new Date(sh.reservedUntil).getTime();
+      return isNaN(expiryTime) || expiryTime < Date.now();
+    };
+    await Promise.all(
+      stored.map(async (sh) => {
+        try {
+          const hold = await getHold(sh.holdId);
+          if (hold.status === 'HELD' && !isLocallyExpired(sh)) {
+            stillActive.push(sh);
+          } else {
+            // Hold is no longer active (confirmed, released, expired, or locally timed out)
+            removeHold(user.user_id, sh.holdId);
+          }
+        } catch {
+          // API unavailable — fall back to local expiry check
+          if (!isLocallyExpired(sh)) {
+            stillActive.push(sh);
+          } else {
+            removeHold(user.user_id, sh.holdId);
+          }
+        }
+      })
+    );
+
+    setActiveHolds(stillActive);
+  }, [user]);
+
+  const loadData = useCallback(async () => {
     if (!user) return;
 
     setIsLoading(true);
@@ -38,13 +80,14 @@ export const MyBookings = () => {
       ]);
       setBookings(bookingsData);
       setFlights(flightsData);
+      await loadHolds();
     } catch (error: any) {
       toast.error('Failed to load bookings');
       console.error(error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, loadHolds]);
 
   const handleCancelClick = (bookingId: number) => {
     setBookingToCancel(bookingId);
@@ -66,7 +109,7 @@ export const MyBookings = () => {
       }
 
       toast.success('Booking cancelled successfully');
-      loadData(); // Reload bookings
+      loadData();
     } catch (error: any) {
       toast.error(error.details || error.error || 'Failed to cancel booking');
     } finally {
@@ -77,6 +120,10 @@ export const MyBookings = () => {
 
   const getFlightForBooking = (booking: Booking): Flight | undefined => {
     return flights.find((f) => f.flight_id === booking.flight_id);
+  };
+
+  const getFlightForHold = (hold: StoredHold): Flight | undefined => {
+    return flights.find((f) => f.flight_id === hold.flightId);
   };
 
   const activeBookings = bookings.filter((b) => b.status === 'booked');
@@ -104,25 +151,54 @@ export const MyBookings = () => {
 
       {isLoading ? (
         <LoadingSpinner size="lg" text="Loading your bookings..." />
-      ) : bookings.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="glass-card p-12 text-center"
-        >
-          <AlertCircle className="mx-auto mb-4 text-star-white/50" size={48} />
-          <h3 className="text-xl font-semibold text-star-white mb-2">
-            No bookings yet
-          </h3>
-          <p className="text-star-white/70 mb-6">
-            Start your space adventure by booking your first flight!
-          </p>
-          <Button onClick={() => navigate('/flights')}>
-            Browse Flights
-          </Button>
-        </motion.div>
       ) : (
         <div className="space-y-8">
+          {/* Pending Holds */}
+          {activeHolds.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-2xl font-bold text-solar-orange">
+                  Pending Holds ({activeHolds.length})
+                </h2>
+                <span className="text-xs text-star-white/50 bg-solar-orange/10 border border-solar-orange/30 px-2 py-1 rounded-full">
+                  Confirm before time runs out
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeHolds.map((hold) => (
+                  <HoldCard
+                    key={hold.holdId}
+                    storedHold={hold}
+                    flight={getFlightForHold(hold)}
+                    onAction={loadData}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* No content at all */}
+          {bookings.length === 0 && activeHolds.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="glass-card p-12 text-center"
+            >
+              <AlertCircle className="mx-auto mb-4 text-star-white/50" size={48} />
+              <h3 className="text-xl font-semibold text-star-white mb-2">
+                No bookings yet
+              </h3>
+              <p className="text-star-white/70 mb-6">
+                Start your space adventure by booking your first flight!
+              </p>
+              <Button onClick={() => navigate('/flights')}>Browse Flights</Button>
+            </motion.div>
+          )}
+
           {/* Active Bookings */}
           {activeBookings.length > 0 && (
             <motion.div
@@ -191,11 +267,7 @@ export const MyBookings = () => {
             >
               Keep Booking
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleConfirmCancel}
-              className="flex-1"
-            >
+            <Button variant="danger" onClick={handleConfirmCancel} className="flex-1">
               Cancel Booking
             </Button>
           </div>

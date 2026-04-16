@@ -18,7 +18,7 @@ A complete full-stack application for booking interplanetary space travel, featu
 ## 🏗️ Architecture
 
 ```
-galaxium-travels-infrastructure/
+galaxium-travels/
 ├── booking_system_backend/     # FastAPI backend (Python)
 │   ├── server.py              # Main server with REST & MCP
 │   ├── services/              # Business logic layer
@@ -33,18 +33,29 @@ galaxium-travels-infrastructure/
 │   │   └── types/            # TypeScript definitions
 │   └── dist/                 # Production build
 │
-├── bob_documents/             # Implementation plans & architecture docs
-├── internal_monologue/        # Development session summaries
+├── inventory_hold_service/    # Java hold service (Spring Boot)
+│   └── src/main/java/        # Java source code
+│
+├── docs/                      # 📚 All documentation
+│   ├── AWS-DEPLOYMENT.md     # AWS deployment guide
+│   ├── IBM-CLOUD-DEPLOYMENT.md # IBM Cloud guide
+│   └── ...                   # Other docs
+│
+├── scripts/                   # 🔧 Operational scripts
+│   ├── aws/                  # AWS deployment scripts
+│   ├── ibm/                  # IBM Cloud scripts
+│   └── local/                # Local dev scripts
+│
+├── terraform/                 # Infrastructure as code
 ├── AGENTS.md                  # Critical patterns for AI agents
-├── DEMO_BACKLOG.md           # 76 demo tasks organized by complexity
-└── start.sh                   # Unix/Mac startup script
+└── start.sh                   # Quick start script
 ```
 
-### Key Architecture Documents
+### Key Documentation
 
 - **[AGENTS.md](AGENTS.md)** - Critical non-obvious patterns, testing specifics, and architectural constraints
-- **[DEMO_BACKLOG.md](DEMO_BACKLOG.md)** - 76 organized tasks (tiny to large) for demos and contributions
-- **[bob_documents/](bob_documents/)** - Detailed implementation plans and architecture decisions
+- **[docs/](docs/)** - All documentation (deployment guides, implementation ideas, etc.)
+- **[scripts/](scripts/)** - All operational scripts organized by deployment target
 
 ## 🚀 Quick Start
 
@@ -101,19 +112,20 @@ Once started, access:
 
 ## 📚 Documentation
 
-### Backend
-See [booking_system_backend/README.md](booking_system_backend/README.md) for:
-- API endpoints documentation
-- MCP tools reference
-- Database schema
-- Testing instructions
+### Component Documentation
+- **Backend**: [booking_system_backend/README.md](booking_system_backend/README.md) - API endpoints, MCP tools, database schema
+- **Frontend**: [booking_system_frontend/README.md](booking_system_frontend/README.md) - Components, styling, build instructions
+- **Java Service**: [inventory_hold_service/README.md](inventory_hold_service/README.md) - Hold service API and architecture
 
-### Frontend
-See [booking_system_frontend/README.md](booking_system_frontend/README.md) for:
-- Component documentation
-- Styling guide
-- Build instructions
-- Deployment options
+### Deployment Guides
+- **AWS**: [docs/AWS-DEPLOYMENT.md](docs/AWS-DEPLOYMENT.md) - Complete AWS ECS deployment guide
+- **IBM Cloud**: [docs/IBM-CLOUD-DEPLOYMENT.md](docs/IBM-CLOUD-DEPLOYMENT.md) - IBM Cloud Code Engine deployment
+- **Local**: [docs/QUICK_START.md](docs/QUICK_START.md) - Quick start guide for local development
+
+### Additional Documentation
+- **[AGENTS.md](AGENTS.md)** - Critical patterns for AI agents working with this codebase
+- **[docs/](docs/)** - All other documentation (implementation ideas, migration plans, etc.)
+- **[scripts/](scripts/)** - Operational scripts organized by deployment target
 
 ## 🎯 User Guide
 

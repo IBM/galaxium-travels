@@ -6,6 +6,8 @@ import type {
   BookingRequest,
   UserRegistration,
   ErrorResponse,
+  Quote,
+  Hold,
 } from '../types';
 
 // Create axios instance with base configuration
@@ -142,6 +144,60 @@ export const cancelBooking = async (
     `/cancel/${bookingId}`
   );
   return response.data;
+};
+
+// ==================== Quote & Hold Endpoints (Java Inventory Hold Service) ====================
+
+export interface CreateQuoteRequest {
+  flightId: number;
+  seatClass: string;
+  quantity: number;
+  travelerId: number;
+  travelerName: string;
+}
+
+// The Python proxy returns {"error": "..."} with HTTP 200 when the Java service is unavailable.
+// Axios won't reject these, so we check manually.
+const assertNotProxyError = (data: unknown): void => {
+  if (data && typeof data === 'object' && 'error' in data) {
+    throw new Error((data as { error: string }).error);
+  }
+};
+
+export const createQuote = async (data: CreateQuoteRequest): Promise<Quote> => {
+  const response = await api.post('/quotes', data);
+  assertNotProxyError(response.data);
+  return response.data as Quote;
+};
+
+export const getQuote = async (quoteId: string): Promise<Quote> => {
+  const response = await api.get(`/quotes/${quoteId}`);
+  assertNotProxyError(response.data);
+  return response.data as Quote;
+};
+
+export const createHold = async (quoteId: string): Promise<Hold> => {
+  const response = await api.post(`/quotes/${quoteId}/holds`);
+  assertNotProxyError(response.data);
+  return response.data as Hold;
+};
+
+export const getHold = async (holdId: string): Promise<Hold> => {
+  const response = await api.get(`/holds/${holdId}`);
+  assertNotProxyError(response.data);
+  return response.data as Hold;
+};
+
+export const confirmHold = async (holdId: string): Promise<Hold> => {
+  const response = await api.post(`/holds/${holdId}/confirm`);
+  assertNotProxyError(response.data);
+  return response.data as Hold;
+};
+
+export const releaseHold = async (holdId: string): Promise<Hold> => {
+  const response = await api.post(`/holds/${holdId}/release`);
+  assertNotProxyError(response.data);
+  return response.data as Hold;
 };
 
 // ==================== Helper Functions ====================

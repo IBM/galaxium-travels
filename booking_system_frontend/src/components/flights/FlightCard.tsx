@@ -1,6 +1,6 @@
 import type { Flight, SeatClass } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Clock, Users, Sparkles, Crown, Rocket } from 'lucide-react';
+import { Plane, Clock, Users, Crown, Rocket } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 

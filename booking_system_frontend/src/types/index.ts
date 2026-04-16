@@ -73,4 +73,44 @@ export interface UserContextType {
   logout: () => void;
 }
 
+// Java Inventory Hold Service types
+
+export interface Quote {
+  quoteId: string;
+  flightId: number;
+  seatClass: string;
+  quantity: number;
+  travelerId: number;
+  travelerName: string;
+  pricePerSeat: number;
+  totalPrice: number;
+  expiresAt: string;
+  status: 'CREATED';
+  createdAt: string;
+}
+
+export type HoldStatus = 'HELD' | 'EXPIRED' | 'CONFIRMED' | 'RELEASED' | 'CONFIRMATION_FAILED';
+
+export interface Hold {
+  holdId: string;
+  quoteId: string;
+  status: HoldStatus;
+  reservedUntil: string;
+  externalBookingReference?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Persisted hold data (stored in localStorage for MyBookings display)
+export interface StoredHold {
+  holdId: string;
+  quoteId: string;
+  flightId: number;
+  seatClass: SeatClass;
+  pricePerSeat: number;
+  totalPrice: number;
+  reservedUntil: string;
+}
+
 // Made with Bob
