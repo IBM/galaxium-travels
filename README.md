@@ -294,104 +294,138 @@ For issues or questions:
 
 *Explore the cosmos, one booking at a time!*
 
-## 💡 Consolidated Implementation Ideas
+## 💡 Product Backlog
 
-This section collects and consolidates feature ideas that were originally generated in parallel by different AI agents during exploration and brainstorming. Rather than treating them as a strict product roadmap, think of them as a curated backlog of promising directions for evolving the demo.
+This is the active backlog for evolving Galaxium Travels from a thin demo into something that feels like a real travel product. It sits at the end of the README on purpose: the rest of the document describes what exists today; this section describes what should exist next.
 
-It sits at the end of [`README.md`](README.md) intentionally: the main body of the README explains what the project already is, while this final section captures what it could become next. That keeps the core documentation focused on the current system, while still preserving a clear, high-signal set of future enhancements for demos, planning, and experimentation.
+Items are derived from a gap analysis against what any modern travel site (Expedia, Delta, Kayak, Airbnb) already does. The current app has four surfaces — Home, Flights, booking modal, My Bookings — and most of the items below start by filling a hole any experienced traveler would expect to find in one of them.
 
-The ideas below consolidate overlapping suggestions into a single, demo-focused roadmap. They prioritize features that make the system more visually impressive while also highlighting enterprise architecture, agentic workflows, and operational realism.
+Each entry is kept short but includes what's needed to actually pick it up:
 
-### 1. AI Travel Agent Copilot
-Add an in-app assistant that helps users search flights, compare tradeoffs, complete bookings, explain prices, rebook disrupted trips, and summarize itineraries using the existing MCP tooling.
+- **Gap** — what's missing today that a real user expects
+- **Scope** — what ships in the first cut; explicit out-of-scope guardrails where relevant
+- **Touches** — primary files or areas affected
+- **Size** — rough estimate at demo pace
 
-- **Why it matters:** This is the most compelling showcase of an AI-native IDE building AI-powered product functionality.
-- **What it demonstrates:** MCP tool calling, conversational workflows, confirmation steps, auditability, action traces, and agent orchestration.
-- **Possible UX:** Slide-out chat panel, streaming responses, rich flight cards, inline booking actions, and visible tool execution history.
+---
 
-### 2. Mission Control and Real-Time Operations Center
-Create a live operations dashboard for flights across the solar system, showing departures, arrivals, booking velocity, cancellations, seat burn-down, and service alerts.
+### Tier 1 — "How is this missing?" features
 
-- **Why it matters:** It gives the demo an instantly recognizable enterprise command-center feel.
-- **What it demonstrates:** WebSockets or SSE, async backend workflows, background jobs, telemetry, operational monitoring, and role-based admin experiences.
-- **Possible UX:** Split-flap flight boards, animated KPI panels, route activity indicators, and system health widgets.
+The most glaring omissions. Anyone who has booked a flight online will notice their absence the first time they click around.
 
-### 3. Interactive Solar System Route Intelligence Map
-Build an interactive map of the solar system with planets, routes, popularity, delay risk, and price bands. Users can filter and book directly from the visualization.
+#### 1. Flight detail page (`/flights/:id`)
+Make flight cards clickable. The detail page has a route header, ship info, per-class amenities grid, baggage and cancellation policies, and a mission timeline (launch → transfer burn → orbital insertion → landing) with a prominent "Book this flight" CTA.
 
-- **Why it matters:** This is likely the most visually memorable frontend enhancement.
-- **What it demonstrates:** Advanced visualization, state-driven UI, animation performance, data transformation, and rich interaction design.
-- **Possible UX:** Animated orbital routes, glowing planets, route heatmaps, and active-booking particle trails.
+- **Gap:** Cards aren't clickable today. There is nowhere for amenities, policies, or any richer flight context to live.
+- **Scope:** New route + page. Amenities and policies live as static config keyed by class. Mission-timeline milestones computed from `departure_time` and `arrival_time`. Out of scope: editable content, per-flight overrides.
+- **Touches:** new `booking_system_frontend/src/pages/FlightDetail.tsx`, router in `App.tsx`, link from `FlightCard.tsx`; optional ship/aircraft fields in `booking_system_backend/models.py`.
+- **Size:** ~2–3 hours.
 
-### 4. Seat Selection, Holds, and Concurrency Safety
-Expand booking with a spacecraft seat map, temporary seat holds, checkout timers, idempotent booking APIs, and conflict-aware inventory updates.
+#### 2. "My Trip" detail page (`/bookings/:id`)
+Clicking a booking in My Bookings opens the full itinerary: passenger list, seat numbers, a prominently displayed booking reference, a QR code, "Add to calendar," and a refund breakdown.
 
-- **Why it matters:** It solves one of the classic enterprise reliability problems while making booking more interactive.
-- **What it demonstrates:** Transaction safety, optimistic locking, retries, inventory consistency, and graceful conflict resolution.
-- **Possible UX:** Visual seat maps, hold countdowns, real-time seat release, and “seat just taken” recovery suggestions.
+- **Gap:** Booking cards aren't clickable. The `externalBookingReference` from the hold service is shown in a toast and then lost. There's no single place that represents the trip itself.
+- **Scope:** New route + page. QR encodes the trip URL. `.ics` download deferred to #20.
+- **Touches:** new `pages/TripDetail.tsx`, link from `BookingCard.tsx`, backend `GET /bookings/{id}` (verify or add), reuse existing user/flight endpoints.
+- **Size:** ~2–3 hours.
 
-### 5. Booking Wizard and Digital Boarding Pass
-Replace the simple booking flow with a multi-step journey for class selection, seat choice, extras, review, and confirmation, ending with a downloadable boarding pass.
+#### 3. Real passenger details in booking flow
+Add a "Passenger details" step to the booking modal: full legal name, DOB, passport/ID number, contact phone, emergency contact, dietary preference.
 
-- **Why it matters:** It turns the core conversion flow into a polished, demo-worthy customer experience.
-- **What it demonstrates:** Form orchestration, validation, pricing logic, transaction boundaries, QR generation, and document creation.
-- **Possible UX:** Step transitions, add-on pricing, animated confirmation states, and a premium space-themed boarding pass.
+- **Gap:** Every booking today carries only `user.name` and `user.email`. A multi-million-credit interplanetary flight with no ID collection feels wrong the moment anyone looks at the flow.
+- **Scope:** New step between "select class" and "quote." Stored on the booking as a `passenger_details` JSON column (or new `Passenger` table — see #4). No verification against a real ID provider. Required fields validated client-side.
+- **Touches:** `components/bookings/BookingModal.tsx` (new step), `models.py`, `services/booking.py`, schema seeding.
+- **Size:** ~2 hours.
 
-### 6. Disruption Management and Auto-Rebooking
-Introduce delays, cancellations, missed connections, and alternate-flight recommendations, with one-click rebooking for travelers and support staff.
+#### 4. Multi-passenger booking
+Expose the hold service's existing `quantity` field. "Add passenger" in the modal adds another passenger-details form; the price total updates live; one booking covers up to 6 passengers.
 
-- **Why it matters:** It makes the system feel operationally realistic instead of just transactional.
-- **What it demonstrates:** Rules engines, dependency handling, exception flows, timeline state changes, and AI-assisted recovery workflows.
-- **Possible UX:** Alert banners, trip timeline changes, alternate-route cards, and recovery recommendations.
+- **Gap:** Users can only book one seat at a time. No family trips, no group travel. The backend hold service already accepts a quantity — the frontend just doesn't use it.
+- **Scope:** Up to 6 passengers per booking, all in the same class. Mixed-class bookings out of scope. Seat assignment per passenger deferred to #6.
+- **Touches:** `BookingModal.tsx`, `services/booking.py` (one booking → N `Passenger` rows), hold-service quote call in `services/api.ts` (`quantity` wire-through), `models.py` (`Passenger` table).
+- **Size:** ~3 hours (builds on #3).
 
-### 7. Enterprise Authentication, Roles, and Support Workspace
-Evolve the simple name/email flow into enterprise auth with roles such as traveler, support agent, finance reviewer, and operations admin, plus a back-office support console.
+#### 5. Mock payment step
+A credit-card form at the end of the booking flow with Luhn check, expiry and CVV validation, and a billing ZIP. Fake "Processing…" spinner, fake authorization code, store last-4 and card brand on the booking.
 
-- **Why it matters:** It makes the application feel like a real business system instead of a consumer-only demo.
-- **What it demonstrates:** SSO or JWT-based auth, RBAC, protected routes, permission-aware controls, admin tooling, and safe operational actions.
-- **Possible UX:** Org-aware navigation, protected admin pages, customer lookup tools, refund/rebooking controls, and support case notes.
+- **Gap:** Users currently click "Confirm Booking" and own a reservation. There is no payment step at all — the single most jarring omission for a new user.
+- **Scope:** Client-side validation plus a backend `POST /payments/authorize` stub that always succeeds after a 1–2s delay. No real PSP integration, no 3DS, no saved cards.
+- **Touches:** new `components/bookings/PaymentStep.tsx`, new `services/payment.py` stub, booking model gets `payment_last4`, `payment_brand`, `payment_auth_code`, `paid_at`.
+- **Size:** ~2–3 hours.
 
-### 8. Multi-Tenant Corporate Travel Portal
-Allow one company to manage employees, budgets, travel policies, approval chains, and cost centers within isolated tenant boundaries.
+---
 
-- **Why it matters:** This is a strong enterprise differentiator and naturally expands the domain.
-- **What it demonstrates:** Tenant scoping, policy enforcement, approval workflows, administrative dashboards, and scoped analytics.
-- **Possible UX:** Company dashboards, traveler directories, approval queues, budget views, and policy alerts.
+### Tier 2 — Signature travel-site features
 
-### 9. Dynamic Pricing, Forecasting, and Loyalty
-Evolve pricing from static multipliers into a demand-aware pricing engine, and pair it with price history, alerts, and a loyalty program with tiered rewards.
+Each is a recognizable airline-app moment. Together they move the app from "demo" to "this is clearly a real product."
 
-- **Why it matters:** It adds richer business logic and gives users a stronger sense of a living commercial system.
-- **What it demonstrates:** Pricing algorithms, scheduled jobs, simulation logic, time-series data, perk calculation, and progression systems.
-- **Possible UX:** Sparklines on flight cards, “price rising” signals, drop alerts, loyalty tiers, and reward progress indicators.
+#### 6. Seat selection map
+A 2D cabin layout for the selected class. Click to pick a seat; taken seats disabled; the chosen seat stored on the booking.
 
-### 10. Payments, Refunds, and Finance Ledger
-Introduce checkout, payment authorization, refund workflows, invoices, and finance reporting.
+- **Gap:** Users pick a *class* today, not a *seat*. Every airline app has a seat picker, and it's one of the most recognizable interactions in the category.
+- **Scope:** Per-class cabin layouts defined as static config (rows × cols). First cut: one passenger = one seat. Multi-passenger seat picks are a follow-up.
+- **Touches:** new `components/bookings/SeatMap.tsx`, `seat_number` column on `Booking` (or per-passenger seat), `services/booking.py` (validate seat not already taken for that flight/class).
+- **Size:** ~3 hours.
 
-- **Why it matters:** It completes the commercial lifecycle and creates realistic back-office finance scenarios.
-- **What it demonstrates:** Idempotency, provider integrations, reconciliation, financial state machines, and reporting workflows.
-- **Possible UX:** Checkout states, refund timelines, invoice downloads, payment status chips, and finance views.
+#### 7. Galaxium Miles loyalty program
+A profile page showing tier (Meteor → Comet → Nova → Nebula), miles balance, next-tier progress bar, and a ledger of per-booking earnings. Each confirmed booking earns miles proportional to distance × class multiplier.
 
-### 11. Observability, Audit Trail, and Health Operations
-Add structured logging, correlation IDs, tracing, health checks, and an internal audit explorer for bookings, cancellations, policy decisions, and administrative actions.
+- **Gap:** There is no profile page, no loyalty program, no reason to come back. Every real airline has this and it's a core part of what makes travel apps feel commercial.
+- **Scope:** Compute miles on booking confirm; seed tier thresholds in code; show tier badge in header. Out of scope: redemption, partner programs, status match.
+- **Touches:** new `pages/Profile.tsx`, `models.py` (`miles_ledger` table), `services/booking.py` (emit ledger entry on confirm), `components/layout/Header.tsx` (tier badge + link).
+- **Size:** ~3 hours.
 
-- **Why it matters:** This is a major enterprise credibility layer, especially in live demos.
-- **What it demonstrates:** OpenTelemetry patterns, structured logs, traceability, compliance-oriented design, and production diagnostics.
-- **Possible UX:** Searchable audit feed, trace-linked actions, JSON log viewer, and system readiness panels.
+#### 8. Destination detail pages (`/destinations/:slug`)
+Per-planet/moon page with facts (gravity, orbital distance, typical transit time), hazards, a small gallery, and a "flights departing soon" list.
 
-### 12. Quality, Globalization, and Demo Readiness
-Improve enterprise polish with end-to-end tests, CI pipelines, internationalization, and multi-currency support.
+- **Gap:** The app sells trips to Jupiter and tells you literally nothing about Jupiter. Every travel site has destination content.
+- **Scope:** Static content file keyed by destination name. Upcoming flights queried from the existing list endpoint with a destination filter. No user-generated content, no maps.
+- **Touches:** new `pages/DestinationDetail.tsx`, `data/destinations.ts`, router in `App.tsx`, featured-destinations row on `Home.tsx`.
+- **Size:** ~2 hours.
 
-- **Why it matters:** These features are less flashy individually, but they strongly reinforce production-readiness.
-- **What it demonstrates:** Automated quality gates, deployment confidence, localization pipelines, locale-aware formatting, and broader market readiness.
-- **Possible UX:** Language picker, localized prices and dates, CI badges, and stable end-to-end demo flows.
+#### 9. Checkout add-ons
+An "Extras" step before payment: extra baggage, gourmet meals, Wi-Fi, travel insurance, zero-G session. Each priced; total updates live.
 
-## 🎯 Suggested Demo-First Priority
+- **Gap:** Real travel-site checkout is 70% upsell. Ours is 0%.
+- **Scope:** Static add-on catalog with fixed prices. Selections stored as a JSON column on the booking. First cut: add-ons apply to the whole booking, not per passenger.
+- **Touches:** new `components/bookings/AddOnsStep.tsx`, `data/addOns.ts`, `models.py` (`addons` JSON column), booking total calculation on both backend and frontend.
+- **Size:** ~2 hours.
 
-For the strongest blend of visual impact, technical depth, and “enterprise AI” storytelling, prioritize:
+#### 10. Boarding pass / e-ticket
+A styled boarding pass shown as the final step of booking and as a permanent link from the My Trip page: passenger name, flight, seat, pod/gate, QR code, barcode strip.
 
-1. **AI Travel Agent Copilot**
-2. **Mission Control and Real-Time Operations Center**
-3. **Interactive Solar System Route Intelligence Map**
-4. **Seat Selection, Holds, and Concurrency Safety**
-5. **Disruption Management and Auto-Rebooking**
+- **Gap:** The confirmation today is a transient toast. There is no artifact to screenshot, download, or keep.
+- **Scope:** In-browser HTML view with print styling. PDF export is a nice-to-have follow-up.
+- **Touches:** new `pages/BoardingPass.tsx` (or modal variant), `utils/qr.ts`, data already available from #2.
+- **Size:** ~2 hours.
+
+---
+
+### Tier 3 — Flavor
+
+Smaller items that add personality or polish. Each is fast and roughly independent.
+
+- **11. Homepage search widget** — From/To/When/Passengers on the hero; deep-links to `/flights?...`. Updates `Home.tsx` and the filter-parsing in `Flights.tsx`. ~1h.
+- **12. Flight status chip** — "On time / Boarding / Departed / Delayed" derived from `departure_time` vs. now; shown on flight cards and booking cards. Pure frontend. ~1h.
+- **13. Saved flights / wishlist** — heart icon on cards; new "Saved" tab. Store IDs in `localStorage` first; promote to a `user_saved_flights` table later. ~1h.
+- **14. Reviews & ratings** — 5-star ratings + comments on flight detail pages (#1). New `reviews` table; seed demo reviews. ~1.5h.
+- **15. Destination conditions widget** — solar flare index, dust-storm forecast, orbital debris risk on destination and flight detail pages; mocked data with a daily seed. ~1h.
+- **16. Price alerts** — "Notify me if this drops below X" button on flight detail; stored server-side, listed in profile. No real notifications in the first cut. ~1.5h.
+- **17. Check-in flow** — becomes available 24h before departure; issues the boarding pass from #10 and flips the booking to `CHECKED_IN`. ~2h.
+- **18. Promo codes** — input field at checkout; backend validates against a small code table (`SPACE20` → 20% off). ~1h.
+- **19. Refund preview on cancel** — the cancel modal shows "$X refund, $Y fee, $Z kept as travel credit" before confirming, with real cancellation-policy wording. ~1h.
+- **20. Calendar export (`.ics`)** — `GET /bookings/{id}.ics` endpoint + "Add to calendar" button on the trip detail page from #2. ~1h.
+
+---
+
+### Suggested build order
+
+For a cohesive arc where each step visibly builds on the previous:
+
+1. **Flight detail page** (#1) — establishes the missing surface area.
+2. **Passenger details + multi-passenger** (#3, #4) — fixes the weirdest part of the current flow.
+3. **Mock payment + boarding pass** (#5, #10) — closes the commercial loop.
+4. **Seat selection map** (#6) — the classic airline moment.
+5. **Loyalty program** (#7) — the "this is a real product" moment.
+
+Everything else in Tier 2 and Tier 3 slots in naturally once those five are in place.

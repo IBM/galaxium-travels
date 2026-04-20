@@ -4,6 +4,6 @@
 # Actual script is in scripts/local/start_locally.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "${SCRIPT_DIR}/scripts/local/start_locally.sh" "$@"
+exec "${SCRIPT_DIR}/deployment_scripts/local/start_locally.sh" "$@"
 
 # Made with Bob
