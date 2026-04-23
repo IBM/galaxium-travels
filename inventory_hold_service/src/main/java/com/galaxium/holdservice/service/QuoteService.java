@@ -1,6 +1,7 @@
 package com.galaxium.holdservice.service;
 
 import com.galaxium.holdservice.api.dto.CreateQuoteRequest;
+import com.galaxium.holdservice.client.PythonBackendClient;
 import com.galaxium.holdservice.domain.AuditEvent;
 import com.galaxium.holdservice.domain.Quote;
 import com.galaxium.holdservice.repository.AuditEventRepository;
@@ -23,23 +24,26 @@ public class QuoteService {
     private final QuoteRepository quoteRepository;
     private final AuditEventRepository auditEventRepository;
     private final PricingService pricingService;
+    private final PythonBackendClient pythonBackendClient;
 
     @Transactional
     public Quote createQuote(CreateQuoteRequest request) {
-        log.info("Creating quote for flight {} with {} {} seats", 
+        log.info("Creating quote for flight {} with {} {} seats",
                 request.getFlightId(), request.getQuantity(), request.getSeatClass());
 
-        // Generate quote ID
         String quoteId = generateQuoteId();
 
-        // Calculate pricing
+        PythonBackendClient.FlightResponse flight = pythonBackendClient.getFlight(request.getFlightId());
+        if (flight.getBasePrice() == null) {
+            throw new IllegalStateException("Flight base price missing for flight " + request.getFlightId());
+        }
+
         long pricePerSeat = pricingService.calculatePrice(
-                request.getFlightId(), 
+                flight.getBasePrice(),
                 request.getSeatClass()
         );
         long totalPrice = pricePerSeat * request.getQuantity();
 
-        // Create quote
         Quote quote = Quote.builder()
                 .quoteId(quoteId)
                 .flightId(request.getFlightId())
@@ -55,9 +59,8 @@ public class QuoteService {
 
         quote = quoteRepository.save(quote);
 
-        // Audit event
-        createAuditEvent("QUOTE", quoteId, "CREATED", 
-                String.format("Quote created for flight %d, %d %s seats", 
+        createAuditEvent("QUOTE", quoteId, "CREATED",
+                String.format("Quote created for flight %d, %d %s seats",
                         request.getFlightId(), request.getQuantity(), request.getSeatClass()));
 
         log.info("Quote {} created successfully", quoteId);

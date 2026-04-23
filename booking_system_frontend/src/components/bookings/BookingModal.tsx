@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Flight, SeatClass, Quote, Hold } from '../../types';
+import { ADDONS_CATALOG } from '../../data/addOns';
 import { Modal, Button } from '../common';
 import {
   Plane,
@@ -35,6 +36,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   const [quote, setQuote] = useState<Quote | null>(null);
   const [hold, setHold] = useState<Hold | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
 
   // Reset state when modal opens
   useEffect(() => {
@@ -44,6 +46,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
       setQuote(null);
       setHold(null);
       setTimeLeft(0);
+      setSelectedAddons(new Set());
     }
   }, [isOpen]);
 
@@ -100,11 +103,28 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   ];
 
   const selectedClassData = seatClasses.find((sc) => sc.class === selectedClass);
+  const addonsTotal = Array.from(selectedAddons).reduce((sum, id) => {
+    const addon = ADDONS_CATALOG.find((item) => item.id === id);
+    return sum + (addon?.price || 0);
+  }, 0);
+  const totalWithAddons = (quote?.totalPrice || 0) + addonsTotal;
 
   const minutes = Math.floor(timeLeft / 60000);
   const seconds = Math.floor((timeLeft % 60000) / 1000);
   const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   const isExpired = hold !== null && timeLeft === 0;
+
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddons((previous) => {
+      const next = new Set(previous);
+      if (next.has(addonId)) {
+        next.delete(addonId);
+      } else {
+        next.add(addonId);
+      }
+      return next;
+    });
+  };
 
   const flightSummary = (
     <div className="glass-card p-4 bg-white/5">
@@ -200,15 +220,22 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
 
     setIsLoading(true);
     try {
-      const confirmed = await confirmHold(hold.holdId);
+      const confirmed = await confirmHold(hold.holdId, Array.from(selectedAddons));
       removeHold(user.user_id, hold.holdId);
       toast.success(
         `Booking confirmed! Reference: #${confirmed.externalBookingReference}`
       );
       onSuccess();
       onClose();
-    } catch {
-      toast.error('Failed to confirm booking');
+    } catch (error: any) {
+      const backendMessage =
+        error?.details ||
+        error?.error ||
+        error?.response?.data?.detail?.details ||
+        error?.response?.data?.detail?.error ||
+        error?.message;
+
+      toast.error(backendMessage || 'Failed to confirm booking');
     } finally {
       setIsLoading(false);
     }
@@ -398,14 +425,63 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
 
       {flightSummary}
 
-      <div className="flex items-center justify-between p-4 rounded-xl bg-cosmic-gradient">
-        <div className="flex items-center gap-2">
-          <DollarSign className="text-white" size={20} />
-          <span className="text-white font-semibold">Total</span>
+      <div className="glass-card p-4 bg-white/5">
+        <h4 className="text-sm font-semibold text-star-white mb-3">
+          ✨ Enhance Your Journey
+        </h4>
+        <div className="space-y-2">
+          {ADDONS_CATALOG.map((addon) => (
+            <label
+              key={addon.id}
+              className="flex items-start gap-3 p-3 rounded-lg border border-white/10 hover:border-alien-green/30 hover:bg-white/5 cursor-pointer transition-all"
+            >
+              <input
+                type="checkbox"
+                checked={selectedAddons.has(addon.id)}
+                onChange={() => toggleAddon(addon.id)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{addon.icon}</span>
+                  <span className="text-sm font-medium text-star-white">
+                    {addon.name}
+                  </span>
+                  <span className="text-sm font-bold text-alien-green ml-auto">
+                    {formatCurrency(addon.price)}
+                  </span>
+                </div>
+                <p className="text-xs text-star-white/60">{addon.description}</p>
+              </div>
+            </label>
+          ))}
         </div>
-        <span className="text-xl font-bold text-white">
-          {formatCurrency(quote?.totalPrice || 0)}
-        </span>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+          <span className="text-sm text-star-white/70">Base Fare</span>
+          <span className="text-star-white font-medium">
+            {formatCurrency(quote?.totalPrice || 0)}
+          </span>
+        </div>
+        {addonsTotal > 0 && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+            <span className="text-sm text-star-white/70">Add-ons</span>
+            <span className="text-alien-green font-medium">
+              +{formatCurrency(addonsTotal)}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between p-4 rounded-xl bg-cosmic-gradient">
+          <div className="flex items-center gap-2">
+            <DollarSign className="text-white" size={20} />
+            <span className="text-white font-semibold">Total</span>
+          </div>
+          <span className="text-xl font-bold text-white">
+            {formatCurrency(totalWithAddons)}
+          </span>
+        </div>
       </div>
 
       {isExpired ? (

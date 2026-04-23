@@ -2,6 +2,14 @@
 
 export type SeatClass = 'economy' | 'business' | 'galaxium';
 
+export interface AddOn {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  icon: string;
+}
+
 export interface Flight {
   flight_id: number;
   origin: string;
@@ -25,6 +33,7 @@ export interface Booking {
   booking_time: string;
   seat_class: SeatClass;
   price_paid: number;
+  addons?: AddOn[];
 }
 
 export interface User {

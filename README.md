@@ -47,8 +47,7 @@ galaxium-travels/
 │   └── local/                # Local dev scripts
 │
 ├── terraform/                 # Infrastructure as code
-├── AGENTS.md                  # Critical patterns for AI agents
-└── start.sh                   # Quick start script
+└── AGENTS.md                  # Critical patterns for AI agents
 ```
 
 ### Key Documentation
@@ -67,14 +66,8 @@ galaxium-travels/
 
 ### Option 1: One-Command Start (Recommended)
 
-#### On macOS/Linux:
 ```bash
-./start.sh
-```
-
-#### On Windows:
-```bash
-start.bat
+./deployment_scripts/local/start_locally.sh
 ```
 
 This will automatically:

@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 
 @Component
@@ -57,6 +58,38 @@ public class PythonBackendClient {
         }
     }
 
+    public FlightResponse getFlight(int flightId) {
+        try {
+            String url = pythonBackendUrl + "/flights";
+
+            log.info("Calling Python backend to fetch flight pricing data: {}", url);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                FlightResponse[] flights = objectMapper.readValue(response.body(), FlightResponse[].class);
+                return Arrays.stream(flights)
+                        .filter(flight -> flight.getFlightId() != null && flight.getFlightId() == flightId)
+                        .findFirst()
+                        .orElseThrow(() -> new FlightLookupException("Flight not found: " + flightId));
+            } else {
+                log.error("Failed to fetch flights. Status: {}, Body: {}", response.statusCode(), response.body());
+                throw new FlightLookupException("Failed to fetch flights: " + response.body());
+            }
+        } catch (FlightLookupException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error calling Python backend for flight lookup", e);
+            throw new FlightLookupException("Error calling Python backend for flight lookup: " + e.getMessage(), e);
+        }
+    }
+
     public static class BookingResponse {
         @JsonProperty("booking_id")
         private Integer bookingId;
@@ -68,7 +101,6 @@ public class PythonBackendClient {
         private String seatClass;
         private String status;
 
-        // Getters and setters
         public Integer getBookingId() { return bookingId; }
         public void setBookingId(Integer bookingId) { this.bookingId = bookingId; }
         public Integer getUserId() { return userId; }
@@ -81,11 +113,32 @@ public class PythonBackendClient {
         public void setStatus(String status) { this.status = status; }
     }
 
+    public static class FlightResponse {
+        @JsonProperty("flight_id")
+        private Integer flightId;
+        @JsonProperty("base_price")
+        private Integer basePrice;
+
+        public Integer getFlightId() { return flightId; }
+        public void setFlightId(Integer flightId) { this.flightId = flightId; }
+        public Integer getBasePrice() { return basePrice; }
+        public void setBasePrice(Integer basePrice) { this.basePrice = basePrice; }
+    }
+
     public static class BookingCreationException extends RuntimeException {
         public BookingCreationException(String message) {
             super(message);
         }
         public BookingCreationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class FlightLookupException extends RuntimeException {
+        public FlightLookupException(String message) {
+            super(message);
+        }
+        public FlightLookupException(String message, Throwable cause) {
             super(message, cause);
         }
     }

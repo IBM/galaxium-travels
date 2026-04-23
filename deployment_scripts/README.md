@@ -77,14 +77,6 @@ Scripts for local development and testing:
 ./scripts/local/test-containers.sh
 ```
 
-## Convenience Wrappers
-
-For backward compatibility, convenience wrapper scripts are available in the root directory:
-
-- `start.sh` → `scripts/local/start_locally.sh`
-- `deploy-aws.sh` → `scripts/aws/deploy-to-aws.sh`
-- `deploy-ibm.sh` → `scripts/ibm/deploy-to-ibm.sh`
-
 ## Prerequisites
 
 ### All Scripts
