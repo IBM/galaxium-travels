@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.Year;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -72,7 +74,7 @@ public class HoldService {
     }
 
     @Transactional
-    public Hold confirmHold(String holdId) {
+    public Hold confirmHold(String holdId, List<Map<String, Object>> addons) {
         log.info("Confirming hold {}", holdId);
 
         Hold hold = holdRepository.findById(holdId)
@@ -101,12 +103,15 @@ public class HoldService {
 
         try {
             // Call Python backend to create booking
-            Map<String, Object> holdData = Map.of(
-                    "travelerId", quote.getTravelerId(),
-                    "travelerName", quote.getTravelerName(),
-                    "flightId", quote.getFlightId(),
-                    "seatClass", quote.getSeatClass()
-            );
+            Map<String, Object> holdData = new HashMap<>();
+            holdData.put("user_id", quote.getTravelerId());
+            holdData.put("traveler_name", quote.getTravelerName());
+            holdData.put("flight_id", quote.getFlightId());
+            holdData.put("seat_class", quote.getSeatClass());
+
+            if (addons != null && !addons.isEmpty()) {
+                holdData.put("addons", addons);
+            }
 
             PythonBackendClient.BookingResponse booking = pythonBackendClient.createBookingFromHold(holdData);
 

@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -40,10 +43,24 @@ public class HoldController {
     }
 
     @PostMapping("/holds/{holdId}/confirm")
-    public ResponseEntity<Hold> confirmHold(@PathVariable String holdId) {
+    public ResponseEntity<Hold> confirmHold(
+            @PathVariable String holdId,
+            @RequestBody(required = false) Map<String, Object> requestBody
+    ) {
         log.info("POST /api/v1/holds/{}/confirm - Confirming hold", holdId);
         try {
-            Hold hold = holdService.confirmHold(holdId);
+            List<Map<String, Object>> addons = null;
+            if (requestBody != null && requestBody.containsKey("addons")) {
+                Object rawAddons = requestBody.get("addons");
+                if (rawAddons instanceof List<?> addonList) {
+                    addons = addonList.stream()
+                            .filter(Map.class::isInstance)
+                            .map(addon -> (Map<String, Object>) addon)
+                            .toList();
+                }
+            }
+
+            Hold hold = holdService.confirmHold(holdId, addons);
             return ResponseEntity.ok(hold);
         } catch (IllegalArgumentException e) {
             log.error("Hold not found: {}", holdId, e);

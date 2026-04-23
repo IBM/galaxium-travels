@@ -9,6 +9,7 @@ import type {
   Quote,
   Hold,
 } from '../types';
+import { ADDONS_CATALOG } from '../data/addOns';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -188,8 +189,19 @@ export const getHold = async (holdId: string): Promise<Hold> => {
   return response.data as Hold;
 };
 
-export const confirmHold = async (holdId: string): Promise<Hold> => {
-  const response = await api.post(`/holds/${holdId}/confirm`);
+export const confirmHold = async (
+  holdId: string,
+  selectedAddons?: string[]
+): Promise<Hold> => {
+  const body: { addons?: Array<(typeof ADDONS_CATALOG)[number] & { selected: true }> } = {};
+
+  if (selectedAddons && selectedAddons.length > 0) {
+    body.addons = ADDONS_CATALOG
+      .filter((addon) => selectedAddons.includes(addon.id))
+      .map((addon) => ({ ...addon, selected: true as const }));
+  }
+
+  const response = await api.post(`/holds/${holdId}/confirm`, body);
   assertNotProxyError(response.data);
   return response.data as Hold;
 };
