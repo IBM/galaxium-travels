@@ -10,6 +10,7 @@ import httpx
 from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
+from services.addons import get_addons_catalog
 from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
 
 # Load environment variables from .env file
@@ -241,7 +242,14 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
     Optional seat_class: 'economy' (default), 'business', or 'galaxium'.
     Decrements available seats for the selected class if successful.
     """
-    return booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
+    return booking.book_flight(
+        db,
+        request.user_id,
+        request.name,
+        request.flight_id,
+        request.seat_class,
+        request.addons
+    )
 
 
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])
@@ -271,6 +279,12 @@ def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
     return user.get_user(db, name, email)
 
 
+@app.get("/addons", tags=["Add-ons"])
+def get_addons():
+    """Get available add-ons catalog."""
+    return get_addons_catalog()
+
+
 # ==================== JAVA SERVICE INTEGRATION ====================
 
 JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL", "http://localhost:8080")
@@ -285,10 +299,11 @@ def create_booking_from_hold(hold_data: dict, db: Session = Depends(get_db)):
     """
     result = booking.book_flight(
         db,
-        user_id=hold_data["travelerId"],
-        name=hold_data["travelerName"],
-        flight_id=hold_data["flightId"],
-        seat_class=hold_data["seatClass"]
+        user_id=hold_data.get("travelerId", hold_data.get("user_id")),
+        name=hold_data.get("travelerName", hold_data.get("traveler_name")),
+        flight_id=hold_data.get("flightId", hold_data.get("flight_id")),
+        seat_class=hold_data.get("seatClass", hold_data.get("seat_class", "economy")),
+        addons=hold_data.get("addons")
     )
     if isinstance(result, ErrorResponse):
         raise HTTPException(status_code=400, detail=result.model_dump())

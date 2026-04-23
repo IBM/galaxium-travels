@@ -242,6 +242,96 @@ class TestRegisterEndpoint:
         assert data["error_code"] == "EMAIL_EXISTS"
 
 
+class TestAddOnsEndpoint:
+    """Test /addons endpoint."""
+
+    def test_get_addons_catalog(self, client):
+        """Test fetching the static add-ons catalog."""
+        response = client.get("/addons")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 7
+        assert data[0]["id"] == "extra_cargo"
+        assert all("price" in addon for addon in data)
+
+
+class TestInternalBookingsFromHoldEndpoint:
+    """Test /internal/bookings/from-hold endpoint."""
+
+    def test_create_booking_from_hold_with_addons(self, client, db_session):
+        """Test hold confirmation booking creation with add-ons."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        response = client.post(
+            "/internal/bookings/from-hold",
+            json={
+                "travelerId": user_obj.user_id,
+                "travelerName": "Test User",
+                "flightId": flight_obj.flight_id,
+                "seatClass": "economy",
+                "addons": [
+                    {"id": "wifi", "price": 45, "selected": True},
+                    {"id": "insurance", "price": 200, "selected": True}
+                ]
+            }
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["price_paid"] == 1245
+        assert len(data["addons"]) == 2
+        assert {addon["id"] for addon in data["addons"]} == {"wifi", "insurance"}
+
+    def test_create_booking_from_hold_invalid_addon_returns_400(self, client, db_session):
+        """Test hold confirmation booking creation rejects invalid add-ons."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        response = client.post(
+            "/internal/bookings/from-hold",
+            json={
+                "travelerId": user_obj.user_id,
+                "travelerName": "Test User",
+                "flightId": flight_obj.flight_id,
+                "seatClass": "economy",
+                "addons": [
+                    {"id": "not_real", "price": 999, "selected": True}
+                ]
+            }
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data["detail"]["error_code"] == "INVALID_ADDON"
+
+
 class TestUserEndpoint:
     """Test /user endpoint."""
 

@@ -1,35 +1,17 @@
 # AGENTS.md
 
-This is a demo, that is supposed to mimic a real enterprise system! This is not a production system!
-It is supposed to showcase different challenges that real enterprise systems face to show the capabilities of the AI-native IDE Bob.
-
 This file provides guidance to agents when working with code in this repository.
 
-## Critical Non-Obvious Patterns
-
-### Backend Architecture
-- **MCP server MUST be created before FastAPI app** (line 16 in server.py) - MCP lifespan must be combined with FastAPI lifespan
-- **MCP tools manually create/close DB sessions** - They use `SessionLocal()` directly, not FastAPI's dependency injection
-- **Service functions return Union types** - Return either success model OR ErrorResponse, not exceptions (see booking.py)
-- **Name verification required for bookings** - book_flight() validates both user_id AND name match (non-standard security pattern)
-- **SQLite is the production database** - No external DB; `DATABASE_URL` env var is intentionally unset in ECS so db.py defaults to SQLite
-- **Data is ephemeral in ECS** - SQLite file lives on container filesystem; demo data re-seeds on every task start via `SEED_DEMO_DATA=true`
-
-### Testing
-- **Tests use in-memory SQLite with StaticPool** - Required for thread safety in tests (conftest.py line 21)
-- **Monkeypatch SessionLocal in tests** - Must patch both `db.SessionLocal` and `server.SessionLocal` (conftest.py lines 49-50)
-- **Seed function disabled in tests** - Explicitly patched to prevent data pollution (conftest.py line 53)
-- Run single test: `cd booking_system_backend && pytest tests/test_services.py::test_name -v`
-
-### Frontend
-- **API base URL from env var** - Uses `import.meta.env.VITE_API_URL` (not process.env)
-- **Error responses have specific structure** - Check `success: false` field, not HTTP status codes (api.ts line 112)
-- **Custom Tailwind colors** - Space-themed palette defined in tailwind.config.js (not standard Tailwind)
-
-## Commands
-- **Backend tests**: `cd booking_system_backend && pytest` (must run from backend dir)
-- **Frontend dev**: `cd booking_system_frontend && npm run dev`
-- **Start both**: `./start.sh` (wrapper to scripts/local/start_locally.sh)
-- **Deploy AWS**: `./scripts/aws/deploy-to-aws.sh`
-- **Deploy IBM**: `./scripts/ibm/deploy-to-ibm.sh`
-- **Test containers**: `./scripts/local/test-containers.sh`
+- Prefer configured MCP integrations when available, especially for GitHub workflows, per [`.bob/rules/rules.md`](.bob/rules/rules.md).
+- Local startup lives in [`deployment_scripts/local/start_locally.sh`](deployment_scripts/local/start_locally.sh), which hard-kills ports 8001, 5173, and 8080 before launching backend, frontend, and the Java hold service.
+- Backend single-test runs must start inside [`booking_system_backend/`](booking_system_backend) because [`pytest.ini`](booking_system_backend/pytest.ini) fixes `testpaths = tests`; use [`pytest tests/test_services.py::test_name -v`](booking_system_backend/tests/test_services.py:1).
+- Test isolation depends on patching both [`db.SessionLocal`](booking_system_backend/db.py:22) and [`server.SessionLocal`](booking_system_backend/server.py:10) to the same in-memory session; patching only one still hits the real DB.
+- The MCP server must be created before the FastAPI app so lifespan composition works; see [`mcp = FastMCP(...)`](booking_system_backend/server.py:22) before [`app = FastAPI(...)`](booking_system_backend/server.py:128).
+- Backend service-layer business failures return [`ErrorResponse`](booking_system_backend/schemas.py) unions instead of raising; the MCP wrappers convert those failures to exceptions, while REST returns payloads.
+- Booking confirmation is identity-checked by both ID and name: [`book_flight()`](booking_system_backend/services/booking.py:15) returns `NAME_MISMATCH` if the [`user_id`](booking_system_backend/services/booking.py:15) exists but the supplied name differs.
+- User lookups and registration lowercase emails before querying, so any feature matching frontend identity to backend records must preserve exact names but can normalize email casing; see [`register_user()`](booking_system_backend/services/user.py:14) and [`get_user()`](booking_system_backend/services/user.py:40).
+- Frontend API callers cannot rely on HTTP status alone; use [`isErrorResponse()`](booking_system_frontend/src/services/api.ts:208) because business failures commonly arrive as `{ success: false, ... }`.
+- Quote/hold calls must keep [`assertNotProxyError()`](booking_system_frontend/src/services/api.ts:161): the Python proxy can return `{ "error": ... }` with HTTP 200 when the Java service is down.
+- Hold state is intentionally split: the Java service stores quote/hold records in SQLite at [`holds.db`](inventory_hold_service/src/main/resources/application.properties:6), but the frontend also keeps per-user hold snapshots in [`localStorage`](booking_system_frontend/src/utils/holdStorage.ts:3) under `galaxium_holds_${userId}`.
+- Hold confirmation is not self-contained in Java: [`HoldService.confirmHold()`](inventory_hold_service/src/main/java/com/galaxium/holdservice/service/HoldService.java:75) calls the Python backend at [`/internal/bookings/from-hold`](inventory_hold_service/src/main/java/com/galaxium/holdservice/client/PythonBackendClient.java:32), so cross-service changes must preserve that contract.
+- Quote and hold IDs are generated from repository counts ([`Q-<year>-<seq>`](inventory_hold_service/src/main/java/com/galaxium/holdservice/service/QuoteService.java:72), [`H-<year>-<seq>`](inventory_hold_service/src/main/java/com/galaxium/holdservice/service/HoldService.java:157)); they are demo-friendly, not collision-safe under concurrent writers.

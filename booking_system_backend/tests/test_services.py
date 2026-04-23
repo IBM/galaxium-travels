@@ -276,8 +276,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -288,10 +290,112 @@ class TestBookingService:
         assert result.status == "booked"
         assert result.user_id == user_obj.user_id
         assert result.flight_id == flight_obj.flight_id
+        assert result.seat_class == "economy"
+        assert result.price_paid == 1000
+        assert result.addons is None
 
-        # Verify seat was decremented
         db_session.refresh(flight_obj)
-        assert flight_obj.seats_available == 4
+        assert flight_obj.economy_seats_available == 4
+
+    def test_book_flight_with_valid_addons(self, db_session):
+        """Test booking with valid selected add-ons."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        addons = [
+            {"id": "wifi", "name": "Interstellar Wi-Fi", "price": 45, "selected": True},
+            {"id": "insurance", "name": "Cosmic Travel Insurance", "price": 200, "selected": True},
+            {"id": "window_seat", "name": "Window Seat Upgrade", "price": 120, "selected": False}
+        ]
+
+        result = booking.book_flight(
+            db_session,
+            user_obj.user_id,
+            "Test User",
+            flight_obj.flight_id,
+            addons=addons
+        )
+
+        assert result.status == "booked"
+        assert result.price_paid == 1245
+        assert result.addons is not None
+        assert len(result.addons) == 2
+        assert {addon.id for addon in result.addons} == {"wifi", "insurance"}
+
+        persisted_booking = db_session.query(Booking).filter(Booking.booking_id == result.booking_id).first()
+        assert persisted_booking.addons is not None
+        assert len(persisted_booking.addons) == 2
+
+    def test_book_flight_invalid_addon_fails(self, db_session):
+        """Test booking fails for unknown add-on ID."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        result = booking.book_flight(
+            db_session,
+            user_obj.user_id,
+            "Test User",
+            flight_obj.flight_id,
+            addons=[{"id": "fake_addon", "price": 999, "selected": True}]
+        )
+
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "INVALID_ADDON"
+
+    def test_book_flight_price_tampering_fails(self, db_session):
+        """Test booking fails when add-on price is tampered with."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        result = booking.book_flight(
+            db_session,
+            user_obj.user_id,
+            "Test User",
+            flight_obj.flight_id,
+            addons=[{"id": "wifi", "price": 999, "selected": True}]
+        )
+
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "PRICE_TAMPERING"
 
     def test_book_flight_not_found(self, db_session):
         """Test booking non-existent flight."""
@@ -311,8 +415,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=0
+            base_price=1000,
+            economy_seats_available=0,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -330,8 +436,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
         flight_obj = db_session.query(Flight).first()
@@ -348,8 +456,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -368,8 +478,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=4
+            base_price=1000,
+            economy_seats_available=4,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -380,7 +492,9 @@ class TestBookingService:
             user_id=user_obj.user_id,
             flight_id=flight_obj.flight_id,
             status="booked",
-            booking_time="2099-01-01T10:00:00Z"
+            booking_time="2099-01-01T10:00:00Z",
+            seat_class="economy",
+            price_paid=1000
         ))
         db_session.commit()
 
@@ -389,9 +503,8 @@ class TestBookingService:
 
         assert result.status == "cancelled"
 
-        # Verify seat was restored
         db_session.refresh(flight_obj)
-        assert flight_obj.seats_available == 5
+        assert flight_obj.economy_seats_available == 5
 
     def test_cancel_booking_not_found(self, db_session):
         """Test cancelling non-existent booking."""
@@ -407,8 +520,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -419,7 +534,9 @@ class TestBookingService:
             user_id=user_obj.user_id,
             flight_id=flight_obj.flight_id,
             status="cancelled",
-            booking_time="2099-01-01T10:00:00Z"
+            booking_time="2099-01-01T10:00:00Z",
+            seat_class="economy",
+            price_paid=1000
         ))
         db_session.commit()
 
@@ -437,8 +554,10 @@ class TestBookingService:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
 
@@ -449,13 +568,18 @@ class TestBookingService:
             user_id=user_obj.user_id,
             flight_id=flight_obj.flight_id,
             status="booked",
-            booking_time="2099-01-01T10:00:00Z"
+            booking_time="2099-01-01T10:00:00Z",
+            seat_class="economy",
+            price_paid=1000,
+            addons=[{"id": "wifi", "name": "Interstellar Wi-Fi", "price": 45, "icon": "📡"}]
         ))
         db_session.commit()
 
         result = booking.get_bookings(db_session, user_obj.user_id)
         assert len(result) == 1
         assert result[0].status == "booked"
+        assert result[0].addons is not None
+        assert result[0].addons[0].id == "wifi"
 
     def test_get_bookings_empty(self, db_session):
         """Test getting bookings when user has none."""

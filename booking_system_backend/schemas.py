@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 # Seat class type definition
 SeatClass = Literal['economy', 'business', 'galaxium']
@@ -48,11 +48,21 @@ class FlightOut(BaseModel):
         from_attributes = True
 
 
+class AddOn(BaseModel):
+    id: str
+    name: str
+    price: int
+    selected: bool = False
+    description: Optional[str] = None
+    icon: Optional[str] = None
+
+
 class BookingRequest(BaseModel):
     user_id: int
     name: str
     flight_id: int
     seat_class: SeatClass = 'economy'  # Default to economy
+    addons: Optional[List[AddOn]] = None
 
 
 class BookingOut(BaseModel):
@@ -63,6 +73,7 @@ class BookingOut(BaseModel):
     booking_time: str
     seat_class: str
     price_paid: int
+    addons: Optional[List[AddOn]] = None
 
     class Config:
         from_attributes = True

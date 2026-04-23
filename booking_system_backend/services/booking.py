@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
+from services.addons import ADDONS_CATALOG
 
 
 # Price multipliers for each seat class
@@ -12,7 +13,14 @@ SEAT_CLASS_MULTIPLIERS = {
 }
 
 
-def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy') -> BookingOut | ErrorResponse:
+def book_flight(
+    db: Session,
+    user_id: int,
+    name: str,
+    flight_id: int,
+    seat_class: SeatClass = 'economy',
+    addons: list[dict] | None = None
+) -> BookingOut | ErrorResponse:
     """Book a seat on a specific flight for a user in the specified seat class."""
     # Validate seat class
     if seat_class not in SEAT_CLASS_MULTIPLIERS:
@@ -64,7 +72,42 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class
             )
 
     # Calculate price based on seat class
-    price_paid = int(flight.base_price * SEAT_CLASS_MULTIPLIERS[seat_class])
+    base_price = int(flight.base_price * SEAT_CLASS_MULTIPLIERS[seat_class])
+
+    # Validate selected add-ons and recalculate total price
+    addons_total = 0
+    validated_addons = []
+
+    if addons:
+        catalog_by_id = {addon["id"]: addon for addon in ADDONS_CATALOG}
+
+        for addon in addons:
+            addon_data = addon.model_dump() if hasattr(addon, "model_dump") else addon
+
+            if not addon_data.get("selected", False):
+                continue
+
+            addon_id = addon_data.get("id")
+            catalog_item = catalog_by_id.get(addon_id)
+
+            if not catalog_item:
+                return ErrorResponse(
+                    error="Invalid add-on",
+                    error_code="INVALID_ADDON",
+                    details=f"Add-on '{addon_id}' not found in catalog."
+                )
+
+            if addon_data.get("price") != catalog_item["price"]:
+                return ErrorResponse(
+                    error="Price tampering detected",
+                    error_code="PRICE_TAMPERING",
+                    details=f"Add-on price mismatch for '{addon_id}'."
+                )
+
+            addons_total += catalog_item["price"]
+            validated_addons.append(catalog_item)
+
+    price_paid = base_price + addons_total
 
     # Decrement the correct seat class counter
     if seat_class == 'economy':
@@ -81,7 +124,8 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class
         status="booked",
         booking_time=datetime.utcnow().isoformat(),
         seat_class=seat_class,
-        price_paid=price_paid
+        price_paid=price_paid,
+        addons=validated_addons if validated_addons else None
     )
     db.add(new_booking)
     db.commit()
