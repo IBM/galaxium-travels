@@ -338,6 +338,22 @@ class TestBookingService:
         persisted_booking = db_session.query(Booking).filter(Booking.booking_id == result.booking_id).first()
         assert persisted_booking.addons is not None
         assert len(persisted_booking.addons) == 2
+        assert persisted_booking.addons == [
+            {
+                "id": "wifi",
+                "name": "Interstellar Wi-Fi",
+                "description": "High-speed quantum-entangled connectivity throughout your journey",
+                "price": 45,
+                "icon": "📡"
+            },
+            {
+                "id": "insurance",
+                "name": "Cosmic Travel Insurance",
+                "description": "Comprehensive coverage including meteor strikes and alien encounters",
+                "price": 200,
+                "icon": "🛡️"
+            }
+        ]
 
     def test_book_flight_invalid_addon_fails(self, db_session):
         """Test booking fails for unknown add-on ID."""
@@ -396,6 +412,42 @@ class TestBookingService:
 
         assert isinstance(result, ErrorResponse)
         assert result.error_code == "PRICE_TAMPERING"
+
+    def test_book_flight_ignores_unselected_addons(self, db_session):
+        """Test unselected add-ons do not affect persisted booking or total."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        result = booking.book_flight(
+            db_session,
+            user_obj.user_id,
+            "Test User",
+            flight_obj.flight_id,
+            addons=[
+                {"id": "wifi", "price": 45, "selected": False},
+                {"id": "insurance", "price": 200, "selected": False}
+            ]
+        )
+
+        assert result.status == "booked"
+        assert result.price_paid == 1000
+        assert result.addons is None
+
+        persisted_booking = db_session.query(Booking).filter(Booking.booking_id == result.booking_id).first()
+        assert persisted_booking.addons is None
 
     def test_book_flight_not_found(self, db_session):
         """Test booking non-existent flight."""

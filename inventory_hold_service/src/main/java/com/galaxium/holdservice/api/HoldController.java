@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -40,10 +43,43 @@ public class HoldController {
     }
 
     @PostMapping("/holds/{holdId}/confirm")
-    public ResponseEntity<Hold> confirmHold(@PathVariable String holdId) {
+    public ResponseEntity<?> confirmHold(
+            @PathVariable String holdId,
+            @RequestBody(required = false) Map<String, Object> requestBody
+    ) {
         log.info("POST /api/v1/holds/{}/confirm - Confirming hold", holdId);
         try {
-            Hold hold = holdService.confirmHold(holdId);
+            List<Map<String, Object>> addons = null;
+            if (requestBody != null && requestBody.containsKey("addons")) {
+                Object rawAddons = requestBody.get("addons");
+                
+                // Validate that addons is a list
+                if (!(rawAddons instanceof List<?>)) {
+                    log.error("Invalid addons type: expected List but got {}",
+                            rawAddons != null ? rawAddons.getClass().getSimpleName() : "null");
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid request: 'addons' must be a list"));
+                }
+                
+                List<?> addonList = (List<?>) rawAddons;
+                
+                // Validate that all elements are maps
+                for (int i = 0; i < addonList.size(); i++) {
+                    Object item = addonList.get(i);
+                    if (!(item instanceof Map)) {
+                        log.error("Invalid addon element at index {}: expected Map but got {}",
+                                i, item != null ? item.getClass().getSimpleName() : "null");
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Invalid request: all elements in 'addons' must be objects"));
+                    }
+                }
+                
+                addons = addonList.stream()
+                        .map(addon -> (Map<String, Object>) addon)
+                        .toList();
+            }
+
+            Hold hold = holdService.confirmHold(holdId, addons);
             return ResponseEntity.ok(hold);
         } catch (IllegalArgumentException e) {
             log.error("Hold not found: {}", holdId, e);

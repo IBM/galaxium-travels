@@ -374,12 +374,13 @@ async def get_hold(hold_id: str):
 
 
 @app.post("/holds/{hold_id}/confirm", tags=["Holds"])
-async def confirm_hold(hold_id: str):
+async def confirm_hold(hold_id: str, request_body: dict | None = None):
     """Proxy endpoint to confirm a hold in the Java hold service."""
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
                 f"{JAVA_SERVICE_URL}/api/v1/holds/{hold_id}/confirm",
+                json=request_body or {},
                 timeout=30.0
             )
             response.raise_for_status()

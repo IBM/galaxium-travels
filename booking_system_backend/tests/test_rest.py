@@ -331,6 +331,74 @@ class TestInternalBookingsFromHoldEndpoint:
         data = response.json()
         assert data["detail"]["error_code"] == "INVALID_ADDON"
 
+    def test_create_booking_from_hold_price_tampering_returns_400(self, client, db_session):
+        """Test hold confirmation booking creation rejects tampered add-on prices."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        response = client.post(
+            "/internal/bookings/from-hold",
+            json={
+                "travelerId": user_obj.user_id,
+                "travelerName": "Test User",
+                "flightId": flight_obj.flight_id,
+                "seatClass": "economy",
+                "addons": [
+                    {"id": "wifi", "price": 999, "selected": True}
+                ]
+            }
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data["detail"]["error_code"] == "PRICE_TAMPERING"
+
+    def test_create_booking_from_hold_without_addons(self, client, db_session):
+        """Test hold confirmation booking creation still works without add-ons."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        response = client.post(
+            "/internal/bookings/from-hold",
+            json={
+                "travelerId": user_obj.user_id,
+                "travelerName": "Test User",
+                "flightId": flight_obj.flight_id,
+                "seatClass": "economy"
+            }
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["price_paid"] == 1000
+        assert data["addons"] is None
+
 
 class TestUserEndpoint:
     """Test /user endpoint."""

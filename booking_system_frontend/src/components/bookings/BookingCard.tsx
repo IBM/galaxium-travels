@@ -147,6 +147,22 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           </div>
         )}
 
+        {booking.addons && booking.addons.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="text-xs text-star-white/60 mb-2">Add-ons:</p>
+            <div className="flex flex-wrap gap-2">
+              {booking.addons.map((addon) => (
+                <span
+                  key={addon.id}
+                  className="text-xs px-2 py-1 rounded-full bg-alien-green/10 border border-alien-green/30 text-alien-green"
+                >
+                  {addon.icon} {addon.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Booking Time */}
         <div className="flex items-center gap-2 text-sm text-star-white/60 mb-4">
           <Calendar size={16} />
