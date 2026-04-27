@@ -91,25 +91,50 @@ echo ""
 
 # Start Java Hold Service (if it exists)
 JAVA_PID=""
-if [ -d "booking_system_inventory_hold_service" ] && [ -f "booking_system_inventory_hold_service/pom.xml" ]; then
-    if ! command -v mvn &> /dev/null; then
-        echo "⚠️  Maven is not installed. Skipping Java Hold Service..."
+HOLD_SERVICE_DIR="booking_system_inventory_hold_service"
+if [ -d "$HOLD_SERVICE_DIR" ]; then
+    HOLD_SERVICE_CMD=""
+
+    if [ -f "$HOLD_SERVICE_DIR/pom.xml" ]; then
+        if command -v mvn &> /dev/null; then
+            HOLD_SERVICE_CMD="mvn -q spring-boot:run"
+        else
+            echo "⚠️  Maven is not installed. Looking for a built Java Hold Service JAR..."
+        fi
+    fi
+
+    if [ -z "$HOLD_SERVICE_CMD" ]; then
+        for jar in "$HOLD_SERVICE_DIR"/target/*.jar; do
+            if [ -f "$jar" ] && [[ "$jar" != *.original ]]; then
+                HOLD_SERVICE_CMD="java -jar target/$(basename "$jar")"
+                break
+            fi
+        done
+    fi
+
+    if [ -z "$HOLD_SERVICE_CMD" ]; then
+        echo "⚠️  Java Hold Service found, but no pom.xml or runnable JAR exists in $HOLD_SERVICE_DIR. Skipping..."
+        echo ""
+    elif ! command -v java &> /dev/null; then
+        echo "⚠️  Java is not installed. Skipping Java Hold Service..."
         echo ""
     else
         echo -e "${BLUE}☕ Starting Java Hold Service...${NC}"
-        cd booking_system_inventory_hold_service
-        mvn -q spring-boot:run > java.log 2>&1 &
+        cd "$HOLD_SERVICE_DIR"
+        PYTHON_BACKEND_URL=http://localhost:8001 $HOLD_SERVICE_CMD > java.log 2>&1 &
         JAVA_PID=$!
 
         # Wait for Java service to start and verify
         sleep 8
-        if ! curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
-            # Try the root path as fallback
-            if ! curl -s http://localhost:8080/ > /dev/null 2>&1; then
-                echo "⚠️  Java Hold Service failed to start. Check booking_system_inventory_hold_service/java.log for errors:"
-                cat java.log
-                echo "⚠️  Continuing without Java Hold Service..."
-                JAVA_PID=""
+        if ! curl -s http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+            # Try alternate health paths as fallbacks
+            if ! curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                if ! curl -s http://localhost:8080/ > /dev/null 2>&1; then
+                    echo "⚠️  Java Hold Service failed to start. Check $HOLD_SERVICE_DIR/java.log for errors:"
+                    cat java.log
+                    echo "⚠️  Continuing without Java Hold Service..."
+                    JAVA_PID=""
+                fi
             fi
         fi
 
