@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Flight, SeatClass, Quote, Hold } from '../../types';
 import { Modal, Button } from '../common';
 import {
@@ -13,7 +14,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
-import { createQuote, createHold, confirmHold, releaseHold } from '../../services/api';
+import { createQuote, createHold, confirmHold, releaseHold, getUserBookings } from '../../services/api';
 import { storeHold, removeHold } from '../../utils/holdStorage';
 import { useUser } from '../../hooks/useUser';
 import toast from 'react-hot-toast';
@@ -29,6 +30,7 @@ interface BookingModalProps {
 
 export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>('select');
   const [selectedClass, setSelectedClass] = useState<SeatClass>('economy');
   const [isLoading, setIsLoading] = useState(false);
@@ -196,17 +198,55 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   };
 
   const handleConfirmHold = async () => {
-    if (!hold || !user) return;
+    if (!hold || !user || !quote) return;
 
     setIsLoading(true);
     try {
       const confirmed = await confirmHold(hold.holdId);
       removeHold(user.user_id, hold.holdId);
-      toast.success(
-        `Booking confirmed! Reference: #${confirmed.externalBookingReference}`
-      );
-      onSuccess();
-      onClose();
+      
+      // Fetch updated bookings and only navigate when there is an unambiguous
+      // booking that is strictly newer than when this modal was opened.
+      const bookings = await getUserBookings(user.user_id);
+      const modalOpenedAt = hold.createdAt ? new Date(hold.createdAt).getTime() : 0;
+
+      const matchingBookings = bookings.filter((b) => {
+        if (
+          b.flight_id !== flight.flight_id ||
+          b.seat_class !== selectedClass ||
+          b.status !== 'booked'
+        ) {
+          return false;
+        }
+
+        return new Date(b.booking_time).getTime() > modalOpenedAt;
+      });
+
+      const newBooking =
+        matchingBookings.length === 1 ? matchingBookings[0] : undefined;
+      
+      if (newBooking) {
+        // Navigate to boarding pass with booking reference in router state
+        toast.success(
+          `Booking confirmed! Reference: #${confirmed.externalBookingReference}`
+        );
+        onSuccess();
+        onClose();
+        
+        // Navigate to boarding pass with the booking reference
+        navigate(`/boarding-pass/${newBooking.booking_id}`, {
+          state: {
+            bookingReference: confirmed.externalBookingReference
+          }
+        });
+      } else {
+        // Fallback: show success but don't navigate
+        toast.success(
+          `Booking confirmed! Reference: #${confirmed.externalBookingReference}`
+        );
+        onSuccess();
+        onClose();
+      }
     } catch {
       toast.error('Failed to confirm booking');
     } finally {

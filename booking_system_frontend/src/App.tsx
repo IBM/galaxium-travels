@@ -4,6 +4,7 @@ import { Layout } from './components/layout/Layout';
 import { Home } from './pages/Home';
 import { Flights } from './pages/Flights';
 import { MyBookings } from './pages/MyBookings';
+import { BoardingPass } from './pages/BoardingPass';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/flights" element={<Flights />} />
             <Route path="/bookings" element={<MyBookings />} />
+            <Route path="/boarding-pass/:bookingId" element={<BoardingPass />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </Layout>
