@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common';
-import { Rocket, Globe, Shield, Zap } from 'lucide-react';
+import { Rocket, Globe, Shield, Zap, Star, Sparkles, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const Home = () => {
@@ -107,6 +107,145 @@ export const Home = () => {
               <p className="text-star-white/70">{feature.description}</p>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* Flight Classes Section */}
+      <section>
+        <motion.h2
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-3xl md:text-4xl font-bold text-center mb-4 text-star-white"
+        >
+          Choose Your Travel Experience
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-center text-star-white/70 mb-12 max-w-2xl mx-auto"
+        >
+          Select from our three distinct classes, each designed to provide a unique journey through the cosmos
+        </motion.p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Economy Class */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0 }}
+            className="glass-card p-8 hover:bg-white/10 transition-all duration-300"
+          >
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/20 mb-4 mx-auto">
+              <Star className="text-blue-400" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-star-white mb-2 text-center">
+              Economy Class
+            </h3>
+            <p className="text-star-white/60 text-center mb-4">Base Price</p>
+            <ul className="space-y-3 text-star-white/80">
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">✓</span>
+                <span>Standard seating with cosmic views</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">✓</span>
+                <span>Entry-level space travel experience</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">✓</span>
+                <span>Access to onboard entertainment</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">✓</span>
+                <span>Complimentary space meals</span>
+              </li>
+            </ul>
+          </motion.div>
+
+          {/* Business Class */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-8 hover:bg-white/10 transition-all duration-300 border-2 border-purple-500/30"
+          >
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/20 mb-4 mx-auto">
+              <Sparkles className="text-purple-400" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-star-white mb-2 text-center">
+              Business Class
+            </h3>
+            <p className="text-star-white/60 text-center mb-4">1.5x Base Price</p>
+            <ul className="space-y-3 text-star-white/80">
+              <li className="flex items-start">
+                <span className="text-purple-400 mr-2">✓</span>
+                <span>Enhanced comfort with reclining seats</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-purple-400 mr-2">✓</span>
+                <span>Priority boarding and departure</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-purple-400 mr-2">✓</span>
+                <span>Premium dining experience</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-purple-400 mr-2">✓</span>
+                <span>Extra luggage allowance</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-purple-400 mr-2">✓</span>
+                <span>Access to business lounge</span>
+              </li>
+            </ul>
+          </motion.div>
+
+          {/* Galaxium Class */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="glass-card p-8 hover:bg-white/10 transition-all duration-300 border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-500/5 to-purple-500/5"
+          >
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/20 mb-4 mx-auto">
+              <Crown className="text-yellow-400" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-star-white mb-2 text-center">
+              Galaxium Class
+            </h3>
+            <p className="text-star-white/60 text-center mb-4">2.5x Base Price</p>
+            <ul className="space-y-3 text-star-white/80">
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Luxury private pods with panoramic views</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Exclusive VIP boarding experience</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Gourmet dining by stellar chefs</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Personal concierge service</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Premium amenities and gifts</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-yellow-400 mr-2">✓</span>
+                <span>Unlimited luggage allowance</span>
+              </li>
+            </ul>
+          </motion.div>
         </div>
       </section>
 
