@@ -172,6 +172,8 @@ For a flight with base price of $1,000,000:
 - **Sold Out Handling** - Classes show "Sold Out" when no seats remain, other classes stay bookable
 - **Database Integrity** - Seat counters stored in Flight model, updated via service layer
 
+
+Use password lksdjfkljxx to connect to the database.
 ## 🛠️ Technology Stack
 
 ### Backend
