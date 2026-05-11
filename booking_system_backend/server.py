@@ -250,6 +250,12 @@ def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     return booking.get_bookings(db, user_id)
 
 
+@app.get("/bookings/{user_id}/count", response_model=Union[int, ErrorResponse], tags=["Bookings"])
+def get_user_booking_count_endpoint(user_id: int, status: str = None, db: Session = Depends(get_db)):
+    """Get the total number of bookings for a user, optionally filtered by status."""
+    return booking.get_user_booking_count(db, user_id, status)
+
+
 @app.post("/cancel/{booking_id}", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
 def cancel_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
     """Cancel an existing booking by its booking_id.

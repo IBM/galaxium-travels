@@ -126,3 +126,39 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_user_booking_count(db: Session, user_id: int, status: str = None) -> int | ErrorResponse:
+    """Get the total number of bookings for a user, optionally filtered by status.
+    
+    Args:
+        db: Database session
+        user_id: ID of the user
+        status: Optional status filter (booked, cancelled)
+    
+    Returns:
+        Count of bookings or ErrorResponse if user not found
+    """
+    # Check if user exists
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return ErrorResponse(
+            error="User not found",
+            error_code="USER_NOT_FOUND",
+            details=f"User with ID {user_id} not found"
+        )
+    
+    # Build query
+    query = db.query(Booking).filter(Booking.user_id == user_id)
+    
+    # Apply status filter if provided
+    if status:
+        if status not in ["booked", "cancelled"]:
+            return ErrorResponse(
+                error="Invalid status",
+                error_code="INVALID_STATUS",
+                details=f"Status must be 'booked' or 'cancelled', got '{status}'"
+            )
+        query = query.filter(Booking.status == status)
+    
+    return query.count()
