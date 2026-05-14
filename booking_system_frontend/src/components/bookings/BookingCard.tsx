@@ -1,6 +1,6 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckmarkFilled, CloseFilled, Time, Trophy, Rocket, User } from '@carbon/icons-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -15,11 +15,11 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   const getSeatClassIcon = () => {
     switch (booking.seat_class) {
       case 'business':
-        return <Crown className="text-purple-400" size={16} />;
+        return <Trophy className="text-interactive-01" size={16} />;
       case 'galaxium':
-        return <Rocket className="text-alien-green" size={16} />;
+        return <Rocket className="text-support-02" size={16} />;
       default:
-        return <Plane className="text-blue-400" size={16} />;
+        return <Plane className="text-support-04" size={16} />;
     }
   };
 
@@ -37,36 +37,36 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   const getSeatClassColor = () => {
     switch (booking.seat_class) {
       case 'business':
-        return 'text-purple-400';
+        return 'text-interactive-01';
       case 'galaxium':
-        return 'text-alien-green';
+        return 'text-support-02';
       default:
-        return 'text-blue-400';
+        return 'text-support-04';
     }
   };
   const getStatusIcon = () => {
     switch (booking.status) {
       case 'booked':
-        return <CheckCircle className="text-alien-green" size={20} />;
+        return <CheckmarkFilled className="text-support-02" size={20} />;
       case 'cancelled':
-        return <XCircle className="text-red-500" size={20} />;
+        return <CloseFilled className="text-support-01" size={20} />;
       case 'completed':
-        return <CheckCircle className="text-blue-500" size={20} />;
+        return <CheckmarkFilled className="text-support-04" size={20} />;
       default:
-        return <Clock className="text-star-white/50" size={20} />;
+        return <Time className="text-text-03" size={20} />;
     }
   };
 
   const getStatusColor = () => {
     switch (booking.status) {
       case 'booked':
-        return 'text-alien-green';
+        return 'text-support-02';
       case 'cancelled':
-        return 'text-red-500';
+        return 'text-support-01';
       case 'completed':
-        return 'text-blue-500';
+        return 'text-support-04';
       default:
-        return 'text-star-white/50';
+        return 'text-text-03';
     }
   };
 
@@ -81,13 +81,13 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
     >
       <Card>
         {/* Header */}
-        <div className="flex items-start justify-between mb-4 pb-4 border-b border-white/10">
+        <div className="flex items-start justify-between mb-4 pb-4 border-b border-ui-03">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cosmic-gradient">
-              <Plane className="text-white" size={20} />
+            <div className="p-2 rounded bg-interactive-01">
+              <Plane className="text-text-04" size={20} />
             </div>
             <div>
-              <p className="text-sm text-star-white/60">Booking #{booking.booking_id}</p>
+              <p className="text-sm text-text-03">Booking #{booking.booking_id}</p>
               <div className="flex items-center gap-2 mt-1">
                 {getStatusIcon()}
                 <span className={`text-sm font-semibold capitalize ${getStatusColor()}`}>
@@ -102,30 +102,30 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
         {flight ? (
           <div className="space-y-3 mb-4">
             <div>
-              <h3 className="text-xl font-bold text-star-white mb-1">
+              <h3 className="text-xl font-bold text-text-01 mb-1">
                 {flight.origin} → {flight.destination}
               </h3>
-              <p className="text-sm text-star-white/60">Flight #{flight.flight_id}</p>
+              <p className="text-sm text-text-03">Flight #{flight.flight_id}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-star-white/60 mb-1">Departure</p>
-                <p className="text-sm text-star-white font-medium">
+                <p className="text-xs text-text-03 mb-1">Departure</p>
+                <p className="text-sm text-text-01 font-medium">
                   {formatDate(flight.departure_time)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-star-white/60 mb-1">Arrival</p>
-                <p className="text-sm text-star-white font-medium">
+                <p className="text-xs text-text-03 mb-1">Arrival</p>
+                <p className="text-sm text-text-01 font-medium">
                   {formatDate(flight.arrival_time)}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2 pt-3 border-t border-white/10">
+            <div className="space-y-2 pt-3 border-t border-ui-03">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-star-white/60">Seat Class</span>
+                <span className="text-sm text-text-03">Seat Class</span>
                 <div className="flex items-center gap-2">
                   {getSeatClassIcon()}
                   <span className={`text-sm font-semibold ${getSeatClassColor()}`}>
@@ -133,9 +133,20 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
                   </span>
                 </div>
               </div>
+              {booking.infant_count > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-text-03">Infants</span>
+                  <div className="flex items-center gap-2">
+                    <User size={16} className="text-interactive-01" />
+                    <span className="text-sm font-semibold text-interactive-01">
+                      {booking.infant_count} {booking.infant_count === 1 ? 'infant' : 'infants'}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-star-white/60">Price Paid</span>
-                <span className="text-lg font-bold text-star-white">
+                <span className="text-sm text-text-03">Price Paid</span>
+                <span className="text-lg font-bold text-text-01">
                   {formatCurrency(booking.price_paid)}
                 </span>
               </div>
@@ -143,12 +154,12 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           </div>
         ) : (
           <div className="mb-4">
-            <p className="text-sm text-star-white/60">Flight ID: {booking.flight_id}</p>
+            <p className="text-sm text-text-03">Flight ID: {booking.flight_id}</p>
           </div>
         )}
 
         {/* Booking Time */}
-        <div className="flex items-center gap-2 text-sm text-star-white/60 mb-4">
+        <div className="flex items-center gap-2 text-sm text-text-03 mb-4">
           <Calendar size={16} />
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>

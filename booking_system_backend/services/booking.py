@@ -11,9 +11,27 @@ SEAT_CLASS_MULTIPLIERS = {
     'galaxium': 5.0
 }
 
+# Infant pricing (percentage of adult fare)
+INFANT_PRICE_PERCENTAGE = 0.1  # 10% of adult fare
 
-def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy') -> BookingOut | ErrorResponse:
-    """Book a seat on a specific flight for a user in the specified seat class."""
+
+def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy', infant_count: int = 0) -> BookingOut | ErrorResponse:
+    """Book a seat on a specific flight for a user in the specified seat class with optional infants."""
+    # Validate infant count
+    if infant_count < 0:
+        return ErrorResponse(
+            error="Invalid infant count",
+            error_code="INVALID_INFANT_COUNT",
+            details="Infant count cannot be negative."
+        )
+    
+    if infant_count > 2:
+        return ErrorResponse(
+            error="Too many infants",
+            error_code="TOO_MANY_INFANTS",
+            details="Maximum 2 infants per adult passenger. For more infants, please book additional seats."
+        )
+    
     # Validate seat class
     if seat_class not in SEAT_CLASS_MULTIPLIERS:
         return ErrorResponse(
@@ -63,8 +81,10 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class
                 details=f"User with ID {user_id} is not registered in our system. The user might need to register first, or you may need to check if the user_id is correct."
             )
 
-    # Calculate price based on seat class
-    price_paid = int(flight.base_price * SEAT_CLASS_MULTIPLIERS[seat_class])
+    # Calculate price based on seat class and infants
+    adult_price = int(flight.base_price * SEAT_CLASS_MULTIPLIERS[seat_class])
+    infant_price = int(adult_price * INFANT_PRICE_PERCENTAGE * infant_count)
+    price_paid = adult_price + infant_price
 
     # Decrement the correct seat class counter
     if seat_class == 'economy':
@@ -81,7 +101,8 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class
         status="booked",
         booking_time=datetime.utcnow().isoformat(),
         seat_class=seat_class,
-        price_paid=price_paid
+        price_paid=price_paid,
+        infant_count=infant_count
     )
     db.add(new_booking)
     db.commit()

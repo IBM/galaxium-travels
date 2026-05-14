@@ -8,7 +8,7 @@ import { BookingModal } from '../components/bookings/BookingModal';
 import { getFlights } from '../services/api';
 import type { FlightFilters as FlightFiltersType } from '../services/api';
 import { useUser } from '../hooks/useUser';
-import { Search } from 'lucide-react';
+import { Search } from '@carbon/icons-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -98,10 +98,10 @@ export const Flights = () => {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <h1 className="text-4xl md:text-5xl font-bold text-star-white mb-4">
-          Available <span className="bg-cosmic-gradient bg-clip-text text-transparent">Flights</span>
+        <h1 className="text-4xl md:text-5xl font-bold text-text-01 mb-4">
+          Available <span className="text-interactive-01">Flights</span>
         </h1>
-        <p className="text-star-white/70 text-lg">
+        <p className="text-text-02 text-lg">
           Choose your destination and embark on an interplanetary adventure
         </p>
       </motion.div>
@@ -111,16 +111,19 @@ export const Flights = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="glass-card p-6"
+        className="carbon-card p-6"
       >
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-star-white/50" size={20} />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-icon-02">
+            <Search size={20} />
+          </div>
           <input
             type="text"
+            id="search"
             placeholder="Search by origin or destination..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-star-white placeholder-star-white/50 focus:outline-none focus:ring-2 focus:ring-cosmic-purple"
+            className="w-full bg-field-01 border-b-2 border-ui-04 rounded-none pl-12 pr-4 py-3 text-text-01 placeholder-text-03 focus:outline-none focus:border-focus transition-colors duration-200"
           />
         </div>
       </motion.div>
@@ -135,7 +138,7 @@ export const Flights = () => {
       </motion.div>
 
       {/* Results Count */}
-      <div className="text-center text-star-white/70">
+      <div className="text-center text-text-02">
         Showing {displayFlights.length} flight{displayFlights.length !== 1 ? 's' : ''}
       </div>
 
@@ -148,7 +151,7 @@ export const Flights = () => {
           animate={{ opacity: 1 }}
           className="text-center py-12"
         >
-          <p className="text-star-white/70 text-lg">
+          <p className="text-text-02 text-lg">
             No flights found matching your criteria
           </p>
         </motion.div>

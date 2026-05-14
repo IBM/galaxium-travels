@@ -1,6 +1,6 @@
 import type { Flight, SeatClass } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Clock, Users, Crown, Rocket } from 'lucide-react';
+import { Plane, Time, User, Trophy, Rocket } from '@carbon/icons-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -20,19 +20,19 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
       price: flight.economy_price,
       seats: flight.economy_seats_available,
       icon: Plane,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30',
+      color: 'text-support-04',
+      bgColor: 'bg-support-04/10',
+      borderColor: 'border-support-04/30',
     },
     {
       name: 'Business',
       class: 'business' as SeatClass,
       price: flight.business_price,
       seats: flight.business_seats_available,
-      icon: Crown,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/30',
+      icon: Trophy,
+      color: 'text-interactive-01',
+      bgColor: 'bg-interactive-01/10',
+      borderColor: 'border-interactive-01/30',
     },
     {
       name: 'Galaxium Class',
@@ -40,9 +40,9 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
       price: flight.galaxium_price,
       seats: flight.galaxium_seats_available,
       icon: Rocket,
-      color: 'text-alien-green',
-      bgColor: 'bg-alien-green/10',
-      borderColor: 'border-alien-green/30',
+      color: 'text-support-02',
+      bgColor: 'bg-support-02/10',
+      borderColor: 'border-support-02/30',
     },
   ];
 
@@ -55,16 +55,16 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
     >
       <Card className="h-full flex flex-col">
         {/* Route Header */}
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-ui-03">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cosmic-gradient">
-              <Plane className="text-white" size={24} />
+            <div className="p-2 rounded bg-interactive-01">
+              <Plane className="text-text-04" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-star-white">
+              <h3 className="text-xl font-bold text-text-01">
                 {flight.origin} → {flight.destination}
               </h3>
-              <p className="text-sm text-star-white/60">
+              <p className="text-sm text-text-03">
                 Flight #{flight.flight_id}
               </p>
             </div>
@@ -76,28 +76,28 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
           {/* Departure & Arrival */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-star-white/60 mb-1">Departure</p>
-              <p className="text-sm font-medium text-star-white">
+              <p className="text-xs text-text-03 mb-1">Departure</p>
+              <p className="text-sm font-medium text-text-01">
                 {formatDate(flight.departure_time, 'MMM dd, yyyy')}
               </p>
-              <p className="text-lg font-bold text-cosmic-purple">
+              <p className="text-lg font-bold text-interactive-01">
                 {formatTime(flight.departure_time)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-star-white/60 mb-1">Arrival</p>
-              <p className="text-sm font-medium text-star-white">
+              <p className="text-xs text-text-03 mb-1">Arrival</p>
+              <p className="text-sm font-medium text-text-01">
                 {formatDate(flight.arrival_time, 'MMM dd, yyyy')}
               </p>
-              <p className="text-lg font-bold text-cosmic-purple">
+              <p className="text-lg font-bold text-interactive-01">
                 {formatTime(flight.arrival_time)}
               </p>
             </div>
           </div>
 
           {/* Duration */}
-          <div className="flex items-center gap-2 text-star-white/70">
-            <Clock size={16} />
+          <div className="flex items-center gap-2 text-text-02">
+            <Time size={16} />
             <span className="text-sm">
               Duration: {calculateDuration(flight.departure_time, flight.arrival_time)}
             </span>
@@ -105,7 +105,7 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
 
           {/* Seat Classes */}
           <div className="space-y-2">
-            <p className="text-xs text-star-white/60 mb-2">Available Seat Classes</p>
+            <p className="text-xs text-text-03 mb-2">Available Seat Classes</p>
             {seatClasses.map((seatClass) => {
               const Icon = seatClass.icon;
               const isClassSoldOut = seatClass.seats === 0;
@@ -114,22 +114,22 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
               return (
                 <div
                   key={seatClass.class}
-                  className={`p-3 rounded-lg border ${seatClass.borderColor} ${seatClass.bgColor} ${
+                  className={`p-3 rounded border ${seatClass.borderColor} ${seatClass.bgColor} ${
                     isClassSoldOut ? 'opacity-50' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon size={18} className={seatClass.color} />
-                      <span className="font-medium text-star-white">{seatClass.name}</span>
+                      <span className="font-medium text-text-01">{seatClass.name}</span>
                     </div>
                     <div className="text-right">
                       <div className={`text-lg font-bold ${seatClass.color}`}>
                         {formatCurrency(seatClass.price)}
                       </div>
                       <div className="flex items-center gap-1 text-xs">
-                        <Users size={12} className={isLowSeats ? 'text-solar-orange' : 'text-star-white/60'} />
-                        <span className={isLowSeats ? 'text-solar-orange font-semibold' : 'text-star-white/60'}>
+                        <User size={12} className={isLowSeats ? 'text-support-03' : 'text-text-03'} />
+                        <span className={isLowSeats ? 'text-support-03 font-semibold' : 'text-text-03'}>
                           {isClassSoldOut ? 'Sold Out' : `${seatClass.seats} left`}
                         </span>
                       </div>

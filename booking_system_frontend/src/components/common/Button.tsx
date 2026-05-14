@@ -1,10 +1,10 @@
-import { motion } from 'framer-motion';
+import { Button as CarbonButton } from '@carbon/react';
 import clsx from 'clsx';
 
 interface ButtonProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'secondary' | 'danger' | 'tertiary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   isLoading?: boolean;
   onClick?: () => void;
   disabled?: boolean;
@@ -22,38 +22,29 @@ export const Button = ({
   type = 'button',
   onClick,
 }: ButtonProps) => {
-  const baseClasses = 'font-semibold rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2';
+  const kind = variant === 'danger' ? 'danger' : variant;
   
-  const variantClasses = {
-    primary: 'bg-cosmic-gradient text-white hover:shadow-lg hover:shadow-cosmic-purple/50',
-    secondary: 'bg-white/10 text-white hover:bg-white/20',
-    danger: 'bg-red-600 text-white hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/50',
-  };
-  
-  const sizeClasses = {
-    sm: 'py-2 px-4 text-sm',
-    md: 'py-3 px-6 text-base',
-    lg: 'py-4 px-8 text-lg',
-  };
+  const sizeMap = {
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
+    xl: 'xl',
+    '2xl': '2xl',
+  } as const;
 
   return (
-    <motion.button
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
-      className={clsx(
-        baseClasses,
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
+    <CarbonButton
+      kind={kind}
+      size={sizeMap[size]}
+      className={clsx(className)}
       disabled={disabled || isLoading}
       type={type}
       onClick={onClick}
     >
       {isLoading ? (
-        <>
+        <div className="flex items-center gap-2">
           <svg
-            className="animate-spin h-5 w-5"
+            className="animate-spin h-4 w-4"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -73,11 +64,11 @@ export const Button = ({
             />
           </svg>
           Loading...
-        </>
+        </div>
       ) : (
         children
       )}
-    </motion.button>
+    </CarbonButton>
   );
 };
 

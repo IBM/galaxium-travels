@@ -34,15 +34,17 @@ def list_flights() -> list[FlightOut]:
 
 
 @mcp.tool()
-def book_flight(user_id: int, name: str, flight_id: int, seat_class: str = "economy") -> BookingOut:
-    """Book a seat on a specific flight for a user in the specified seat class.
+def book_flight(user_id: int, name: str, flight_id: int, seat_class: str = "economy", infant_count: int = 0) -> BookingOut:
+    """Book a seat on a specific flight for a user in the specified seat class with optional infants.
     Requires user_id, name, and flight_id.
     Optional seat_class: 'economy' (default), 'business', or 'galaxium'.
+    Optional infant_count: Number of infants (0-2 years old, lap children). Default is 0. Maximum 2 per adult.
+    Infants are charged at 10% of the adult fare.
     Decrements available seats for the selected class if successful.
     Returns booking details or raises an error if booking is not possible."""
     db = SessionLocal()
     try:
-        result = booking.book_flight(db, user_id, name, flight_id, seat_class)
+        result = booking.book_flight(db, user_id, name, flight_id, seat_class, infant_count)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -235,13 +237,15 @@ def get_flights(
 
 @app.post("/book", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
 def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
-    """Book a seat on a specific flight for a user in the specified seat class.
+    """Book a seat on a specific flight for a user in the specified seat class with optional infants.
 
     Requires user_id, name, and flight_id.
     Optional seat_class: 'economy' (default), 'business', or 'galaxium'.
+    Optional infant_count: Number of infants (0-2 years old, lap children). Default is 0. Maximum 2 per adult.
+    Infants are charged at 10% of the adult fare.
     Decrements available seats for the selected class if successful.
     """
-    return booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
+    return booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class, request.infant_count)
 
 
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])

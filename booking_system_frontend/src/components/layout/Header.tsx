@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Rocket, User, LogOut } from 'lucide-react';
+import { Header as CarbonHeader, HeaderName, HeaderNavigation, HeaderMenuItem, HeaderGlobalBar, HeaderGlobalAction } from '@carbon/react';
+import { Rocket, User, Logout } from '@carbon/icons-react';
 import { useUser } from '../../hooks/useUser';
 import { Button } from '../common';
 import { UserIdentification } from '../user/UserIdentification';
-import { motion } from 'framer-motion';
 
 export const Header = () => {
   const location = useLocation();
@@ -15,141 +15,82 @@ export const Header = () => {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-30 glass-card border-b border-white/10">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <motion.div
-              whileHover={{ rotate: 15 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Rocket className="text-cosmic-purple" size={32} />
-            </motion.div>
-            <span className="text-2xl font-bold bg-cosmic-gradient bg-clip-text text-transparent">
-              Galaxium Travels
-            </span>
-          </Link>
-
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              to="/"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/')
-                  ? 'text-cosmic-purple'
-                  : 'text-star-white/70 hover:text-star-white'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/flights"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/flights')
-                  ? 'text-cosmic-purple'
-                  : 'text-star-white/70 hover:text-star-white'
-              }`}
-            >
-              Flights
-            </Link>
-            {user && (
-              <Link
-                to="/bookings"
-                className={`text-sm font-medium transition-colors ${
-                  isActive('/bookings')
-                    ? 'text-cosmic-purple'
-                    : 'text-star-white/70 hover:text-star-white'
-                }`}
-              >
-                My Bookings
-              </Link>
-            )}
-          </nav>
-
-          {/* User Section */}
-          <div className="flex items-center gap-4">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="hidden md:flex items-center gap-2 text-sm">
-                  <User size={16} className="text-cosmic-purple" />
-                  <span className="text-star-white">{user.name}</span>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={logout}
-                  className="flex items-center gap-2"
-                >
-                  <LogOut size={16} />
-                  <span className="hidden md:inline">Logout</span>
-                </Button>
-              </div>
-            ) : (
-              <>
-                {location.pathname === '/' ? (
-                  <Link to="/flights">
-                    <Button size="sm">Book a Flight</Button>
-                  </Link>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => setShowUserModal(true)}
-                  >
-                    Login
-                  </Button>
-                )}
-              </>
-            )}
+      <CarbonHeader aria-label="Galaxium Travels">
+        <HeaderName as={Link} to="/" prefix="">
+          <div className="flex items-center gap-2">
+            <Rocket size={24} />
+            <span>Galaxium Travels</span>
           </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        <nav className="md:hidden flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
-          <Link
+        </HeaderName>
+        
+        <HeaderNavigation aria-label="Main navigation">
+          <HeaderMenuItem
+            as={Link}
             to="/"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/')
-                ? 'text-cosmic-purple'
-                : 'text-star-white/70 hover:text-star-white'
-            }`}
+            isActive={isActive('/')}
           >
             Home
-          </Link>
-          <Link
+          </HeaderMenuItem>
+          <HeaderMenuItem
+            as={Link}
             to="/flights"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/flights')
-                ? 'text-cosmic-purple'
-                : 'text-star-white/70 hover:text-star-white'
-            }`}
+            isActive={isActive('/flights')}
           >
             Flights
-          </Link>
+          </HeaderMenuItem>
           {user && (
-            <Link
+            <HeaderMenuItem
+              as={Link}
               to="/bookings"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/bookings')
-                  ? 'text-cosmic-purple'
-                  : 'text-star-white/70 hover:text-star-white'
-              }`}
+              isActive={isActive('/bookings')}
             >
               My Bookings
-            </Link>
+            </HeaderMenuItem>
           )}
-        </nav>
-      </div>
-    </header>
-    
-    {/* User Identification Modal - Outside header for proper z-index */}
-    <UserIdentification
-      isOpen={showUserModal}
-      onClose={() => setShowUserModal(false)}
-      onSuccess={() => {
-        setShowUserModal(false);
-      }}
-    />
+        </HeaderNavigation>
+
+        <HeaderGlobalBar>
+          {user ? (
+            <>
+              <div className="flex items-center gap-2 px-4 text-text-02">
+                <User size={16} />
+                <span className="hidden md:inline">{user.name}</span>
+              </div>
+              <HeaderGlobalAction
+                aria-label="Logout"
+                onClick={logout}
+                tooltipAlignment="end"
+              >
+                <Logout size={20} />
+              </HeaderGlobalAction>
+            </>
+          ) : (
+            <div className="px-4">
+              {location.pathname === '/' ? (
+                <Link to="/flights">
+                  <Button size="sm">Book a Flight</Button>
+                </Link>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => setShowUserModal(true)}
+                >
+                  Login
+                </Button>
+              )}
+            </div>
+          )}
+        </HeaderGlobalBar>
+      </CarbonHeader>
+      
+      {/* User Identification Modal */}
+      <UserIdentification
+        isOpen={showUserModal}
+        onClose={() => setShowUserModal(false)}
+        onSuccess={() => {
+          setShowUserModal(false);
+        }}
+      />
     </>
   );
 };

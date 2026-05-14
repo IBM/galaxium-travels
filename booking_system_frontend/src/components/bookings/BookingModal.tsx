@@ -11,6 +11,7 @@ import {
   Tag,
   Timer,
   Zap,
+  Baby,
 } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
 import { createQuote, createHold, confirmHold, releaseHold } from '../../services/api';
@@ -31,6 +32,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   const { user } = useUser();
   const [step, setStep] = useState<Step>('select');
   const [selectedClass, setSelectedClass] = useState<SeatClass>('economy');
+  const [infantCount, setInfantCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [hold, setHold] = useState<Hold | null>(null);
@@ -41,6 +43,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
     if (isOpen) {
       setStep('select');
       setSelectedClass('economy');
+      setInfantCount(0);
       setQuote(null);
       setHold(null);
       setTimeLeft(0);
@@ -291,6 +294,46 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         </div>
       </div>
 
+      {/* Infant Selection */}
+      <div className="glass-card p-4 bg-white/5">
+        <div className="flex items-center gap-2 mb-3">
+          <Baby size={18} className="text-cosmic-purple" />
+          <h4 className="text-sm font-semibold text-star-white">Infants (0-2 years)</h4>
+        </div>
+        <p className="text-xs text-star-white/60 mb-3">
+          Lap children travel at 10% of adult fare. Maximum 2 infants per adult.
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setInfantCount(Math.max(0, infantCount - 1))}
+            disabled={infantCount === 0}
+            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-star-white font-semibold transition-colors"
+          >
+            −
+          </button>
+          <div className="flex-1 text-center">
+            <span className="text-2xl font-bold text-star-white">{infantCount}</span>
+            <span className="text-sm text-star-white/60 ml-2">
+              {infantCount === 1 ? 'infant' : 'infants'}
+            </span>
+          </div>
+          <button
+            onClick={() => setInfantCount(Math.min(2, infantCount + 1))}
+            disabled={infantCount === 2}
+            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-star-white font-semibold transition-colors"
+          >
+            +
+          </button>
+        </div>
+        {infantCount > 0 && selectedClassData && (
+          <div className="mt-3 p-2 rounded bg-cosmic-purple/10 border border-cosmic-purple/30">
+            <p className="text-xs text-star-white/70">
+              Infant fee: {formatCurrency(Math.floor(selectedClassData.price * 0.1 * infantCount))}
+            </p>
+          </div>
+        )}
+      </div>
+
       {user && (
         <div className="glass-card p-4 bg-white/5">
           <h4 className="text-sm font-semibold text-star-white mb-2">Passenger</h4>
@@ -313,6 +356,10 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   // Step 2: Quote review
   const renderQuoteStep = () => {
     const Icon = selectedClassData?.icon || Plane;
+    const adultPrice = selectedClassData?.price || 0;
+    const infantPrice = infantCount > 0 ? Math.floor(adultPrice * 0.1 * infantCount) : 0;
+    const totalPrice = adultPrice + infantPrice;
+    
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2 p-3 rounded-lg bg-cosmic-purple/10 border border-cosmic-purple/30">
@@ -331,13 +378,26 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
               <span className="text-sm text-star-white/70">{selectedClassData?.name} × 1</span>
             </div>
             <span className="text-star-white font-medium">
-              {formatCurrency(quote?.pricePerSeat || 0)}
+              {formatCurrency(adultPrice)}
             </span>
           </div>
+          {infantCount > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Baby size={16} className="text-cosmic-purple" />
+                <span className="text-sm text-star-white/70">
+                  {infantCount} {infantCount === 1 ? 'infant' : 'infants'} (10% each)
+                </span>
+              </div>
+              <span className="text-star-white font-medium">
+                {formatCurrency(infantPrice)}
+              </span>
+            </div>
+          )}
           <div className="border-t border-white/10 pt-3 flex items-center justify-between">
             <span className="font-semibold text-star-white">Total</span>
             <span className="text-xl font-bold text-alien-green">
-              {formatCurrency(quote?.totalPrice || 0)}
+              {formatCurrency(totalPrice)}
             </span>
           </div>
           <p className="text-xs text-star-white/50">

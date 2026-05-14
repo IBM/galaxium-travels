@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { Tile } from '@carbon/react';
 import clsx from 'clsx';
 
 interface CardProps {
@@ -10,22 +10,17 @@ interface CardProps {
 }
 
 export const Card = ({ children, className, hover = false, onClick }: CardProps) => {
-  const Component = onClick ? motion.button : motion.div;
-  
   return (
-    <Component
+    <Tile
       className={clsx(
-        'glass-card p-6',
-        hover && 'hover:bg-white/10 cursor-pointer',
-        onClick && 'w-full text-left',
+        'carbon-card',
+        hover && 'carbon-card-hover cursor-pointer',
         className
       )}
-      whileHover={hover ? { scale: 1.02, y: -4 } : undefined}
-      transition={{ duration: 0.2 }}
       onClick={onClick}
     >
       {children}
-    </Component>
+    </Tile>
   );
 };
 
