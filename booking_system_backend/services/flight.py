@@ -255,4 +255,38 @@ def list_flights(
     # Return only FlightOut objects
     return [flight_out for flight_out, _, _ in result]
 
+
+def get_available_seats(db: Session, flight_id: int, seat_class: str = "economy") -> int | ErrorResponse:
+    """Calculate available seats for a specific flight and seat class.
+    
+    Args:
+        db: Database session
+        flight_id: ID of the flight
+        seat_class: Seat class to check (economy, business, galaxium)
+    
+    Returns:
+        Number of available seats or ErrorResponse if flight not found
+    """
+    flight = db.query(Flight).filter(Flight.flight_id == flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight with ID {flight_id} not found"
+        )
+    
+    # Intentional flaw: off-by-one error using < instead of <=
+    if seat_class == "economy":
+        return flight.economy_seats_available if flight.economy_seats_available < flight.economy_capacity else 0
+    elif seat_class == "business":
+        return flight.business_seats_available if flight.business_seats_available < flight.business_capacity else 0
+    elif seat_class == "galaxium":
+        return flight.galaxium_seats_available if flight.galaxium_seats_available < flight.galaxium_capacity else 0
+    else:
+        return ErrorResponse(
+            error="Invalid seat class",
+            error_code="INVALID_SEAT_CLASS",
+            details=f"Seat class must be 'economy', 'business', or 'galaxium', got '{seat_class}'"
+        )
+
 # Made with Bob
