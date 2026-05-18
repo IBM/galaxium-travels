@@ -284,8 +284,10 @@ class TestBookEndpoint:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
         flight = db_session.query(Flight).first()
@@ -334,8 +336,10 @@ class TestBookingsEndpoint:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
         flight = db_session.query(Flight).first()
@@ -344,7 +348,9 @@ class TestBookingsEndpoint:
             user_id=user_id,
             flight_id=flight.flight_id,
             status="booked",
-            booking_time="2099-01-01T10:00:00Z"
+            booking_time="2099-01-01T10:00:00Z",
+            seat_class="economy",
+            price_paid=1000000
         ))
         db_session.commit()
 
@@ -376,8 +382,10 @@ class TestCancelEndpoint:
             destination="Mars",
             departure_time="2099-01-01T09:00:00Z",
             arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=4
+            base_price=1000000,
+            economy_seats_available=4,
+            business_seats_available=3,
+            galaxium_seats_available=1
         ))
         db_session.commit()
         flight = db_session.query(Flight).first()
@@ -386,7 +394,9 @@ class TestCancelEndpoint:
             user_id=user_id,
             flight_id=flight.flight_id,
             status="booked",
-            booking_time="2099-01-01T10:00:00Z"
+            booking_time="2099-01-01T10:00:00Z",
+            seat_class="economy",
+            price_paid=1000000
         ))
         db_session.commit()
         booking = db_session.query(Booking).first()

@@ -20,8 +20,8 @@ const api = axios.create({
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: any) => response,
+  (error: { response: { data: any; }; message: any; }) => {
     if (error.response?.data) {
       // Backend returned an error response
       return Promise.reject(error.response.data);

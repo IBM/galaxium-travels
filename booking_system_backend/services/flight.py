@@ -80,24 +80,34 @@ def list_flights(
     
     # Date range filter (supports both ISO format and YYYY-MM-DD)
     if departure_date_from:
-        try:
-            # Try ISO format first
-            date_from = datetime.fromisoformat(departure_date_from.replace('Z', '+00:00'))
-            query = query.filter(Flight.departure_time >= date_from.isoformat())
-        except ValueError:
-            # Fall back to simple string comparison for YYYY-MM-DD format
+        # Check if it's a simple date format (YYYY-MM-DD) without time
+        if len(departure_date_from) == 10 and departure_date_from.count('-') == 2:
+            # Simple date format - compare as string with time appended
             query = query.filter(Flight.departure_time >= departure_date_from)
+        else:
+            # ISO format with time
+            try:
+                date_from = datetime.fromisoformat(departure_date_from.replace('Z', '+00:00'))
+                query = query.filter(Flight.departure_time >= date_from.isoformat())
+            except ValueError:
+                # Fall back to simple string comparison
+                query = query.filter(Flight.departure_time >= departure_date_from)
     
     if departure_date_to:
-        try:
-            # Try ISO format first
-            date_to = datetime.fromisoformat(departure_date_to.replace('Z', '+00:00'))
-            # Add one day to include the entire end date
-            date_to = date_to + timedelta(days=1)
-            query = query.filter(Flight.departure_time < date_to.isoformat())
-        except ValueError:
-            # Fall back to simple string comparison for YYYY-MM-DD format
+        # Check if it's a simple date format (YYYY-MM-DD) without time
+        if len(departure_date_to) == 10 and departure_date_to.count('-') == 2:
+            # Simple date format - include entire day
             query = query.filter(Flight.departure_time <= f'{departure_date_to} 23:59')
+        else:
+            # ISO format with time
+            try:
+                date_to = datetime.fromisoformat(departure_date_to.replace('Z', '+00:00'))
+                # Add one day to include the entire end date
+                date_to = date_to + timedelta(days=1)
+                query = query.filter(Flight.departure_time < date_to.isoformat())
+            except ValueError:
+                # Fall back to simple string comparison
+                query = query.filter(Flight.departure_time <= f'{departure_date_to} 23:59')
     
     # Price range filter
     if min_price is not None:
@@ -170,12 +180,7 @@ def list_flights(
     # Phase 3: Route category filter
     if route_category and route_category in ROUTE_CATEGORIES:
         destinations = ROUTE_CATEGORIES[route_category]
-        query = query.filter(
-            or_(
-                Flight.origin.in_(destinations),
-                Flight.destination.in_(destinations)
-            )
-        )
+        query = query.filter(Flight.destination.in_(destinations))
     
     # Get all flights before sorting (needed for duration calculation)
     flights = query.all()
