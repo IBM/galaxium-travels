@@ -12,8 +12,23 @@ SEAT_CLASS_MULTIPLIERS = {
 }
 
 
-def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy') -> BookingOut | ErrorResponse:
-    """Book a seat on a specific flight for a user in the specified seat class."""
+def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy', infant_count: int = 0) -> BookingOut | ErrorResponse:
+    """Book a seat on a specific flight for a user in the specified seat class with optional infants."""
+    # Validate infant count
+    if infant_count < 0:
+        return ErrorResponse(
+            error="Invalid infant count",
+            error_code="INVALID_INFANT_COUNT",
+            details="Infant count cannot be negative."
+        )
+    
+    if infant_count > 2:
+        return ErrorResponse(
+            error="Too many infants",
+            error_code="TOO_MANY_INFANTS",
+            details="Maximum 2 infants allowed per adult passenger (lap children)."
+        )
+    
     # Validate seat class
     if seat_class not in SEAT_CLASS_MULTIPLIERS:
         return ErrorResponse(
@@ -81,7 +96,8 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class
         status="booked",
         booking_time=datetime.utcnow().isoformat(),
         seat_class=seat_class,
-        price_paid=price_paid
+        price_paid=price_paid,
+        infant_count=infant_count
     )
     db.add(new_booking)
     db.commit()

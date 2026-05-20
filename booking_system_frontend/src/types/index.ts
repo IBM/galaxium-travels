@@ -25,6 +25,7 @@ export interface Booking {
   booking_time: string;
   seat_class: SeatClass;
   price_paid: number;
+  infant_count: number;
 }
 
 export interface User {
@@ -39,6 +40,7 @@ export interface BookingRequest {
   name: string;
   flight_id: number;
   seat_class?: SeatClass;
+  infant_count?: number;
 }
 
 export interface UserRegistration {

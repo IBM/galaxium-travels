@@ -31,6 +31,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
   const { user } = useUser();
   const [step, setStep] = useState<Step>('select');
   const [selectedClass, setSelectedClass] = useState<SeatClass>('economy');
+  const [infantCount, setInfantCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [hold, setHold] = useState<Hold | null>(null);
@@ -41,6 +42,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
     if (isOpen) {
       setStep('select');
       setSelectedClass('economy');
+      setInfantCount(0);
       setQuote(null);
       setHold(null);
       setTimeLeft(0);
@@ -291,6 +293,36 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         </div>
       </div>
 
+      {/* Infant Selection */}
+      <div className="glass-card p-4 bg-white/5">
+        <h4 className="text-sm font-semibold text-star-white mb-3">Infants (Lap Children)</h4>
+        <p className="text-xs text-star-white/60 mb-3">
+          Infants under 2 years old can travel on your lap without a seat (max 2 per adult)
+        </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setInfantCount(Math.max(0, infantCount - 1))}
+            disabled={infantCount === 0}
+            className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-star-white font-bold"
+          >
+            −
+          </button>
+          <div className="flex-1 text-center">
+            <div className="text-2xl font-bold text-star-white">{infantCount}</div>
+            <div className="text-xs text-star-white/60">
+              {infantCount === 1 ? 'infant' : 'infants'}
+            </div>
+          </div>
+          <button
+            onClick={() => setInfantCount(Math.min(2, infantCount + 1))}
+            disabled={infantCount === 2}
+            className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-star-white font-bold"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
       {user && (
         <div className="glass-card p-4 bg-white/5">
           <h4 className="text-sm font-semibold text-star-white mb-2">Passenger</h4>
@@ -334,6 +366,16 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
               {formatCurrency(quote?.pricePerSeat || 0)}
             </span>
           </div>
+          {infantCount > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-star-white/70">
+                  {infantCount} {infantCount === 1 ? 'Infant' : 'Infants'} (lap child)
+                </span>
+              </div>
+              <span className="text-star-white/60 font-medium text-sm">Free</span>
+            </div>
+          )}
           <div className="border-t border-white/10 pt-3 flex items-center justify-between">
             <span className="font-semibold text-star-white">Total</span>
             <span className="text-xl font-bold text-alien-green">
@@ -397,6 +439,17 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
       </div>
 
       {flightSummary}
+
+      {infantCount > 0 && (
+        <div className="glass-card p-3 bg-white/5">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-star-white/70">
+              {infantCount} {infantCount === 1 ? 'Infant' : 'Infants'} (lap child)
+            </span>
+            <span className="text-sm text-star-white/60">Free</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between p-4 rounded-xl bg-cosmic-gradient">
         <div className="flex items-center gap-2">

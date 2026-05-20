@@ -133,6 +133,14 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
                   </span>
                 </div>
               </div>
+              {booking.infant_count > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-star-white/60">Infants</span>
+                  <span className="text-sm text-star-white">
+                    {booking.infant_count} {booking.infant_count === 1 ? 'infant' : 'infants'} (lap child)
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-star-white/60">Price Paid</span>
                 <span className="text-lg font-bold text-star-white">
