@@ -7,18 +7,20 @@ import { MyBookings } from './pages/MyBookings';
 
 function App() {
   return (
-    <BrowserRouter>
-      <UserProvider>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/flights" element={<Flights />} />
-            <Route path="/bookings" element={<MyBookings />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </Layout>
-      </UserProvider>
-    </BrowserRouter>
+    <div className="cds--g100" data-carbon-theme="g100">
+      <BrowserRouter>
+        <UserProvider>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/flights" element={<Flights />} />
+              <Route path="/bookings" element={<MyBookings />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </Layout>
+        </UserProvider>
+      </BrowserRouter>
+    </div>
   );
 }
 

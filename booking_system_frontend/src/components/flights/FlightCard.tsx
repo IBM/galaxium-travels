@@ -1,5 +1,6 @@
 import type { Flight, SeatClass } from '../../types';
-import { Card, Button } from '../common';
+import { Button } from '../common';
+import { Tile } from '@carbon/react';
 import { Plane, Clock, Users, Crown, Rocket } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
@@ -53,7 +54,7 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="h-full flex flex-col">
+      <Tile className="h-full flex flex-col">
         {/* Route Header */}
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -112,9 +113,9 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
               const isLowSeats = seatClass.seats <= 2 && seatClass.seats > 0;
               
               return (
-                <div
+                <Tile
                   key={seatClass.class}
-                  className={`p-3 rounded-lg border ${seatClass.borderColor} ${seatClass.bgColor} ${
+                  className={`p-3 border ${seatClass.borderColor} ${seatClass.bgColor} ${
                     isClassSoldOut ? 'opacity-50' : ''
                   }`}
                 >
@@ -135,7 +136,7 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Tile>
               );
             })}
           </div>
@@ -149,7 +150,7 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
         >
           {isSoldOut ? 'All Classes Sold Out' : 'Select Seat Class'}
         </Button>
-      </Card>
+      </Tile>
     </motion.div>
   );
 };
