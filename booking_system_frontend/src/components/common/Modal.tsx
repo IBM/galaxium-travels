@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Modal as CarbonModal } from '@carbon/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import clsx from 'clsx';
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,27 +12,57 @@ interface ModalProps {
 }
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
-  // Map custom sizes to Carbon sizes
-  const carbonSize = size === 'sm' ? 'xs' : size === 'lg' ? 'lg' : 'md';
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <CarbonModal
-            open={isOpen}
-            onRequestClose={onClose}
-            modalHeading={title}
-            size={carbonSize}
-            passiveModal
-          >
-            {children}
-          </CarbonModal>
-        </motion.div>
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+          />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className={clsx(
+                'bg-space-blue rounded-lg shadow-2xl w-full',
+                sizeClasses[size],
+                'border border-gray-700'
+              )}
+            >
+              {/* Header */}
+              {title && (
+                <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                  <h2 className="text-2xl font-bold text-star-white">{title}</h2>
+                  <button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-star-white transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              )}
+              
+              {/* Content */}
+              <div className="p-6">
+                {children}
+              </div>
+            </motion.div>
+          </div>
+        </>
       )}
     </AnimatePresence>
   );

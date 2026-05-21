@@ -141,4 +141,110 @@ def cancel_booking(db: Session, booking_id: int) -> BookingOut | ErrorResponse:
 def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
+
+def modify_booking(db: Session, booking_id: int, new_seat_class: SeatClass, new_infant_count: int = 0) -> BookingOut | ErrorResponse:
+    """Modify an existing booking's seat class and/or infant count."""
+    # Validate infant count
+    if new_infant_count < 0:
+        return ErrorResponse(
+            error="Invalid infant count",
+            error_code="INVALID_INFANT_COUNT",
+            details="Infant count cannot be negative."
+        )
+    
+    if new_infant_count > 2:
+        return ErrorResponse(
+            error="Too many infants",
+            error_code="TOO_MANY_INFANTS",
+            details="Maximum 2 infants allowed per adult passenger (lap children)."
+        )
+    
+    # Validate seat class
+    if new_seat_class not in SEAT_CLASS_MULTIPLIERS:
+        return ErrorResponse(
+            error="Invalid seat class",
+            error_code="INVALID_SEAT_CLASS",
+            details=f"Seat class '{new_seat_class}' is not valid. Valid options are: economy, business, galaxium."
+        )
+    
+    # Get the booking
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+    
+    # Check if booking is cancelled
+    if booking.status == "cancelled":
+        return ErrorResponse(
+            error="Cannot modify cancelled booking",
+            error_code="BOOKING_CANCELLED",
+            details="This booking has been cancelled and cannot be modified."
+        )
+    
+    # Get the flight
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Associated flight not found."
+        )
+    
+    old_seat_class = booking.seat_class
+    
+    # If seat class is changing, handle seat availability
+    if old_seat_class != new_seat_class:
+        # Check if new seat class has availability
+        if new_seat_class == 'economy':
+            if flight.economy_seats_available < 1:
+                return ErrorResponse(
+                    error=f"No {new_seat_class} seats available",
+                    error_code="NO_SEATS_AVAILABLE",
+                    details=f"Cannot change to {new_seat_class} class - no seats available."
+                )
+        elif new_seat_class == 'business':
+            if flight.business_seats_available < 1:
+                return ErrorResponse(
+                    error=f"No {new_seat_class} seats available",
+                    error_code="NO_SEATS_AVAILABLE",
+                    details=f"Cannot change to {new_seat_class} class - no seats available."
+                )
+        else:  # galaxium
+            if flight.galaxium_seats_available < 1:
+                return ErrorResponse(
+                    error=f"No {new_seat_class} seats available",
+                    error_code="NO_SEATS_AVAILABLE",
+                    details=f"Cannot change to {new_seat_class} class - no seats available."
+                )
+        
+        # Restore old seat class
+        if old_seat_class == 'economy':
+            flight.economy_seats_available += 1
+        elif old_seat_class == 'business':
+            flight.business_seats_available += 1
+        else:  # galaxium
+            flight.galaxium_seats_available += 1
+        
+        # Take new seat class
+        if new_seat_class == 'economy':
+            flight.economy_seats_available -= 1
+        elif new_seat_class == 'business':
+            flight.business_seats_available -= 1
+        else:  # galaxium
+            flight.galaxium_seats_available -= 1
+        
+        # Update price based on new seat class
+        new_price = int(flight.base_price * SEAT_CLASS_MULTIPLIERS[new_seat_class])
+        booking.price_paid = new_price
+        booking.seat_class = new_seat_class
+    
+    # Update infant count (no seat availability check needed)
+    booking.infant_count = new_infant_count
+    
+    db.commit()
+    db.refresh(booking)
+    return BookingOut.model_validate(booking)
     return [BookingOut.model_validate(b) for b in bookings]

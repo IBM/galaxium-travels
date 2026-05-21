@@ -56,6 +56,12 @@ class BookingRequest(BaseModel):
     infant_count: int = 0  # Number of infants (lap children, no seat required)
 
 
+class ModifyBookingRequest(BaseModel):
+    booking_id: int
+    seat_class: SeatClass
+    infant_count: int = 0
+
+
 class BookingOut(BaseModel):
     booking_id: int
     user_id: int

@@ -10,7 +10,7 @@ import httpx
 from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
-from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration, ModifyBookingRequest
 
 # Load environment variables from .env file
 load_dotenv()
@@ -259,6 +259,16 @@ def cancel_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
     Increments available seats for the flight if successful.
     """
     return booking.cancel_booking(db, booking_id)
+
+
+@app.put("/modify-booking", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
+def modify_booking_endpoint(request: ModifyBookingRequest, db: Session = Depends(get_db)):
+    """Modify an existing booking's seat class and/or infant count.
+    
+    Allows changing the seat class (economy/business/galaxium) and infant count (0-2).
+    Handles seat availability and price adjustments automatically.
+    """
+    return booking.modify_booking(db, request.booking_id, request.seat_class, request.infant_count)
 
 
 @app.post("/register", response_model=Union[UserOut, ErrorResponse], tags=["Users"])
