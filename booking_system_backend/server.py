@@ -3,11 +3,11 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 from sqlalchemy.orm import Session
-from typing import Union
+from typing import Union, Optional
 from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
-from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration, BookingUpdateRequest
 
 
 # ==================== MCP SERVER (for AI agents) ====================
@@ -28,14 +28,39 @@ def list_flights() -> list[FlightOut]:
 
 
 @mcp.tool()
-def book_flight(user_id: int, name: str, flight_id: int) -> BookingOut:
+def book_flight(user_id: int, name: str, flight_id: int, 
+                num_adults: int = 1, num_infants: int = 0,
+                passenger_names: Optional[str] = None) -> BookingOut:
     """Book a seat on a specific flight for a user.
     Requires user_id, name, and flight_id.
+    Optional: num_adults (default 1), num_infants (default 0), passenger_names (comma-separated).
     Decrements available seats if successful.
     Returns booking details or raises an error if booking is not possible."""
     db = SessionLocal()
     try:
-        result = booking.book_flight(db, user_id, name, flight_id)
+        result = booking.book_flight(db, user_id, name, flight_id, num_adults, num_infants, passenger_names)
+        if isinstance(result, ErrorResponse):
+            raise Exception(result.details or result.error)
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def update_booking(booking_id: int, num_adults: Optional[int] = None,
+                   num_infants: Optional[int] = None,
+                   passenger_names: Optional[str] = None) -> BookingOut:
+    """Update an existing booking.
+    Can modify number of adults, infants, or passenger names.
+    Returns updated booking details or raises an error."""
+    db = SessionLocal()
+    try:
+        update_data = BookingUpdateRequest(
+            num_adults=num_adults,
+            num_infants=num_infants,
+            passenger_names=passenger_names
+        )
+        result = booking.update_booking(db, booking_id, update_data)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -147,8 +172,19 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
     """Book a seat on a specific flight for a user.
 
     Requires user_id, name, and flight_id. Decrements available seats if successful.
+    Optional: num_adults (default 1), num_infants (default 0), passenger_names.
     """
-    return booking.book_flight(db, request.user_id, request.name, request.flight_id)
+    return booking.book_flight(db, request.user_id, request.name, request.flight_id,
+                               request.num_adults, request.num_infants, request.passenger_names)
+
+
+@app.put("/bookings/{booking_id}", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
+def update_booking_endpoint(booking_id: int, request: BookingUpdateRequest, db: Session = Depends(get_db)):
+    """Update an existing booking.
+    
+    Can modify number of adults, infants, or passenger names.
+    """
+    return booking.update_booking(db, booking_id, request)
 
 
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])
@@ -188,3 +224,5 @@ app.mount("/mcp", mcp_app)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)
+
+# Made with Bob

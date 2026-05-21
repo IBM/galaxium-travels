@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from models import User, Flight, Booking
-from schemas import BookingOut, ErrorResponse
+from schemas import BookingOut, ErrorResponse, BookingUpdateRequest
 
 
-def book_flight(db: Session, user_id: int, name: str, flight_id: int) -> BookingOut | ErrorResponse:
+def book_flight(db: Session, user_id: int, name: str, flight_id: int, 
+                num_adults: int = 1, num_infants: int = 0, 
+                passenger_names: str = None) -> BookingOut | ErrorResponse:
     """Book a seat on a specific flight for a user."""
     # Check flight exists
     flight = db.query(Flight).filter(Flight.flight_id == flight_id).first()
@@ -15,12 +17,15 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int) -> Booking
             details=f"The specified flight_id {flight_id} does not exist in our system. Please check the flight_id or use list_flights to see available flights."
         )
 
+    # Calculate total seats needed (adults only, infants don't need seats)
+    seats_needed = num_adults
+    
     # Check seats available
-    if flight.seats_available < 1:
+    if flight.seats_available < seats_needed:
         return ErrorResponse(
-            error="No seats available",
+            error="Not enough seats available",
             error_code="NO_SEATS_AVAILABLE",
-            details="The flight is fully booked. Please check other flights or try again later if seats become available."
+            details=f"The flight only has {flight.seats_available} seats available, but you requested {seats_needed} seats. Please check other flights or try again later."
         )
 
     # Check user exists and name matches
@@ -41,17 +46,72 @@ def book_flight(db: Session, user_id: int, name: str, flight_id: int) -> Booking
             )
 
     # Create booking
-    flight.seats_available -= 1
+    flight.seats_available -= seats_needed
     new_booking = Booking(
         user_id=user_id,
         flight_id=flight_id,
         status="booked",
-        booking_time=datetime.utcnow().isoformat()
+        booking_time=datetime.utcnow().isoformat(),
+        num_adults=num_adults,
+        num_infants=num_infants,
+        passenger_names=passenger_names
     )
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)
     return BookingOut.model_validate(new_booking)
+
+
+def update_booking(db: Session, booking_id: int, update_data: BookingUpdateRequest) -> BookingOut | ErrorResponse:
+    """Update an existing booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    if booking.status == "cancelled":
+        return ErrorResponse(
+            error="Cannot modify cancelled booking",
+            error_code="BOOKING_CANCELLED",
+            details=f"Booking {booking_id} is cancelled and cannot be modified."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    
+    # Calculate seat changes
+    old_seats = booking.num_adults
+    new_adults = update_data.num_adults if update_data.num_adults is not None else booking.num_adults
+    new_infants = update_data.num_infants if update_data.num_infants is not None else booking.num_infants
+    
+    seat_difference = new_adults - old_seats
+    
+    if seat_difference > 0:
+        # Need more seats
+        if flight.seats_available < seat_difference:
+            return ErrorResponse(
+                error="Not enough seats available",
+                error_code="NO_SEATS_AVAILABLE",
+                details=f"Cannot add {seat_difference} more seats. Only {flight.seats_available} seats available."
+            )
+        flight.seats_available -= seat_difference
+    elif seat_difference < 0:
+        # Releasing seats
+        flight.seats_available += abs(seat_difference)
+    
+    # Update booking
+    if update_data.num_adults is not None:
+        booking.num_adults = update_data.num_adults
+    if update_data.num_infants is not None:
+        booking.num_infants = update_data.num_infants
+    if update_data.passenger_names is not None:
+        booking.passenger_names = update_data.passenger_names
+    
+    db.commit()
+    db.refresh(booking)
+    return BookingOut.model_validate(booking)
 
 
 def cancel_booking(db: Session, booking_id: int) -> BookingOut | ErrorResponse:
@@ -71,10 +131,10 @@ def cancel_booking(db: Session, booking_id: int) -> BookingOut | ErrorResponse:
             details=f"Booking {booking_id} is already cancelled and cannot be cancelled again. The booking status is currently '{booking.status}'. If you need to make changes, please contact support."
         )
 
-    # Restore seat
+    # Restore seats (only adults need seats)
     flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
     if flight:
-        flight.seats_available += 1
+        flight.seats_available += booking.num_adults
 
     booking.status = "cancelled"
     db.commit()
@@ -86,3 +146,5 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+# Made with Bob

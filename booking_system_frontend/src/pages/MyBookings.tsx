@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Booking, Flight } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
+import { EditBookingModal } from '../components/bookings/EditBookingModal';
 import { getUserBookings, getFlights, cancelBooking, isErrorResponse } from '../services/api';
 import { useUser } from '../hooks/useUser';
 import { AlertCircle } from 'lucide-react';
@@ -18,6 +19,8 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -51,6 +54,11 @@ export const MyBookings = () => {
     setShowCancelModal(true);
   };
 
+  const handleEditClick = (booking: Booking) => {
+    setBookingToEdit(booking);
+    setShowEditModal(true);
+  };
+
   const handleConfirmCancel = async () => {
     if (!bookingToCancel) return;
 
@@ -73,6 +81,12 @@ export const MyBookings = () => {
       setCancellingId(null);
       setBookingToCancel(null);
     }
+  };
+
+  const handleEditSuccess = () => {
+    loadData(); // Reload bookings after edit
+    setShowEditModal(false);
+    setBookingToEdit(null);
   };
 
   const getFlightForBooking = (booking: Booking): Flight | undefined => {
@@ -140,6 +154,7 @@ export const MyBookings = () => {
                     booking={booking}
                     flight={getFlightForBooking(booking)}
                     onCancel={handleCancelClick}
+                    onEdit={handleEditClick}
                     isCancelling={cancellingId === booking.booking_id}
                   />
                 ))}
@@ -201,6 +216,18 @@ export const MyBookings = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Edit Booking Modal */}
+      <EditBookingModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setBookingToEdit(null);
+        }}
+        booking={bookingToEdit}
+        flight={bookingToEdit ? getFlightForBooking(bookingToEdit) : undefined}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 };

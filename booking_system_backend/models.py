@@ -25,4 +25,9 @@ class Booking(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     flight_id = Column(Integer, ForeignKey('flights.flight_id'), nullable=False)
     status = Column(String, nullable=False)
-    booking_time = Column(String, nullable=False) 
+    booking_time = Column(String, nullable=False)
+    num_adults = Column(Integer, nullable=False, default=1)
+    num_infants = Column(Integer, nullable=False, default=0)
+    passenger_names = Column(String, nullable=True)  # JSON string of passenger names
+
+# Made with Bob

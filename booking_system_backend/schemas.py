@@ -19,6 +19,9 @@ class BookingRequest(BaseModel):
     user_id: int
     name: str
     flight_id: int
+    num_adults: int = 1
+    num_infants: int = 0
+    passenger_names: Optional[str] = None
 
 
 class BookingOut(BaseModel):
@@ -27,9 +30,18 @@ class BookingOut(BaseModel):
     flight_id: int
     status: str
     booking_time: str
+    num_adults: int = 1
+    num_infants: int = 0
+    passenger_names: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class BookingUpdateRequest(BaseModel):
+    num_adults: Optional[int] = None
+    num_infants: Optional[int] = None
+    passenger_names: Optional[str] = None
 
 
 class UserRegistration(BaseModel):
@@ -51,3 +63,5 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: Optional[str] = None
+
+# Made with Bob

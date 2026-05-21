@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Flight } from '../../types';
-import { Modal, Button } from '../common';
-import { Plane, Calendar, Clock, DollarSign } from 'lucide-react';
+import { Modal, Button, Input } from '../common';
+import { Plane, Calendar, Clock, DollarSign, Users, Baby } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
 import { bookFlight, isErrorResponse } from '../../services/api';
 import { useUser } from '../../hooks/useUser';
@@ -17,12 +17,28 @@ interface BookingModalProps {
 export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [numAdults, setNumAdults] = useState(1);
+  const [numInfants, setNumInfants] = useState(0);
+  const [passengerNames, setPassengerNames] = useState('');
 
   if (!flight) return null;
+
+  const totalSeatsNeeded = numAdults;
+  const totalPrice = flight.price * numAdults;
 
   const handleConfirmBooking = async () => {
     if (!user) {
       toast.error('Please sign in to book a flight');
+      return;
+    }
+
+    if (numAdults < 1) {
+      toast.error('At least one adult passenger is required');
+      return;
+    }
+
+    if (totalSeatsNeeded > flight.seats_available) {
+      toast.error(`Only ${flight.seats_available} seats available`);
       return;
     }
 
@@ -33,6 +49,9 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         user_id: user.user_id,
         name: user.name,
         flight_id: flight.flight_id,
+        num_adults: numAdults,
+        num_infants: numInfants,
+        passenger_names: passengerNames || undefined,
       });
 
       if (isErrorResponse(result)) {
@@ -43,6 +62,10 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
       toast.success('Flight booked successfully!');
       onSuccess();
       onClose();
+      // Reset form
+      setNumAdults(1);
+      setNumInfants(0);
+      setPassengerNames('');
     } catch (error: any) {
       toast.error(error.details || error.error || 'Failed to book flight');
     } finally {
@@ -107,17 +130,108 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
                 </p>
               </div>
             </div>
+
+            {/* Available Seats */}
+            <div className="flex items-start gap-3">
+              <Users className="text-cosmic-purple mt-1" size={20} />
+              <div>
+                <p className="text-xs text-star-white/60">Available Seats</p>
+                <p className="text-star-white font-medium">
+                  {flight.seats_available} seats
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Passenger Info */}
+        {/* Passenger Details */}
+        <div className="glass-card p-4 bg-white/5 space-y-4">
+          <h4 className="text-sm font-semibold text-star-white mb-2">
+            Passenger Details
+          </h4>
+
+          {/* Number of Adults */}
+          <div>
+            <label className="block text-sm text-star-white/80 mb-2">
+              <Users className="inline mr-2" size={16} />
+              Number of Adults
+            </label>
+            <Input
+              type="number"
+              min="1"
+              max={flight.seats_available}
+              value={numAdults}
+              onChange={(e) => setNumAdults(parseInt(e.target.value) || 1)}
+              className="w-full"
+            />
+            <p className="text-xs text-star-white/60 mt-1">
+              Each adult requires a seat
+            </p>
+          </div>
+
+          {/* Number of Infants */}
+          <div>
+            <label className="block text-sm text-star-white/80 mb-2">
+              <Baby className="inline mr-2" size={16} />
+              Number of Infants (under 2 years)
+            </label>
+            <Input
+              type="number"
+              min="0"
+              max="10"
+              value={numInfants}
+              onChange={(e) => setNumInfants(parseInt(e.target.value) || 0)}
+              className="w-full"
+            />
+            <p className="text-xs text-star-white/60 mt-1">
+              Infants travel on lap, no seat required
+            </p>
+          </div>
+
+          {/* Passenger Names */}
+          <div>
+            <label className="block text-sm text-star-white/80 mb-2">
+              Passenger Names (Optional)
+            </label>
+            <Input
+              type="text"
+              placeholder="e.g., John Doe, Jane Smith, Baby Smith"
+              value={passengerNames}
+              onChange={(e) => setPassengerNames(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-star-white/60 mt-1">
+              Comma-separated list of all passenger names
+            </p>
+          </div>
+        </div>
+
+        {/* Booking Summary */}
         {user && (
           <div className="glass-card p-4 bg-white/5">
             <h4 className="text-sm font-semibold text-star-white mb-2">
-              Passenger Information
+              Booking Summary
             </h4>
-            <p className="text-star-white">{user.name}</p>
-            <p className="text-star-white/60 text-sm">{user.email}</p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-star-white/60">Booked by:</span>
+                <span className="text-star-white">{user.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-star-white/60">Adults:</span>
+                <span className="text-star-white">{numAdults}</span>
+              </div>
+              {numInfants > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-star-white/60">Infants:</span>
+                  <span className="text-star-white">{numInfants}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-star-white/60">Seats needed:</span>
+                <span className="text-star-white">{totalSeatsNeeded}</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -128,7 +242,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
             <span className="text-white font-semibold">Total Price</span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(flight.price)}
+            {formatCurrency(totalPrice)}
           </span>
         </div>
 

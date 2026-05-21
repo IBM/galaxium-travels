@@ -4,6 +4,7 @@ import type {
   Booking,
   User,
   BookingRequest,
+  BookingUpdateRequest,
   UserRegistration,
   ErrorResponse,
 } from '../types';
@@ -78,6 +79,20 @@ export const bookFlight = async (
   data: BookingRequest
 ): Promise<Booking | ErrorResponse> => {
   const response = await api.post<Booking | ErrorResponse>('/book', data);
+  return response.data;
+};
+
+/**
+ * Update a booking
+ */
+export const updateBooking = async (
+  bookingId: number,
+  data: BookingUpdateRequest
+): Promise<Booking | ErrorResponse> => {
+  const response = await api.put<Booking | ErrorResponse>(
+    `/bookings/${bookingId}`,
+    data
+  );
   return response.data;
 };
 

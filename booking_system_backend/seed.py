@@ -41,22 +41,42 @@ def seed():
     ]
     db.add_all(flights)
     db.commit()
-    # Add demo bookings
+    # Add demo bookings with infant support
     user_ids = [user.user_id for user in db.query(User).all()]
     flight_ids = [flight.flight_id for flight in db.query(Flight).all()]
     statuses = ["booked", "cancelled", "completed"]
     bookings = []
     now = datetime.utcnow()
+    passenger_name_examples = [
+        "John Doe",
+        "Jane Smith, Baby Smith",
+        "Alice Johnson",
+        "Bob Williams, Emma Williams",
+        "Charlie Brown, Lucy Brown, Baby Brown"
+    ]
     for i in range(20):
         user_id = random.choice(user_ids)
         flight_id = random.choice(flight_ids)
         status = random.choice(statuses)
         booking_time = (now - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23))).isoformat() + "Z"
-        bookings.append(Booking(user_id=user_id, flight_id=flight_id, status=status, booking_time=booking_time))
+        num_adults = random.randint(1, 3)
+        num_infants = random.randint(0, 2)
+        passenger_names = random.choice(passenger_name_examples) if random.random() > 0.5 else None
+        bookings.append(Booking(
+            user_id=user_id, 
+            flight_id=flight_id, 
+            status=status, 
+            booking_time=booking_time,
+            num_adults=num_adults,
+            num_infants=num_infants,
+            passenger_names=passenger_names
+        ))
     db.add_all(bookings)
     db.commit()
     db.close()
-    print("Database seeded with elaborate demo data!")
+    print("Database seeded with elaborate demo data including infant bookings!")
 
 if __name__ == "__main__":
-    seed() 
+    seed()
+
+# Made with Bob
