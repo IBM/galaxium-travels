@@ -1,0 +1,14 @@
+aws_region         = "us-east-1"
+environment        = "dev"
+project_name       = "galaxium-booking"
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+ecs_backend_cpu     = 256
+ecs_backend_memory  = 512
+ecs_frontend_cpu    = 256
+ecs_frontend_memory = 512
+ecs_desired_count   = 1
+
+enable_nat_gateway  = false
+single_nat_gateway  = true

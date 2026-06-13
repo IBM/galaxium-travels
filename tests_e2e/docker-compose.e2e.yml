@@ -1,0 +1,39 @@
+# Self-contained stack for end-to-end tests.
+# Isolated from your dev stack: dedicated ports (18001/18082), ephemeral DBs,
+# and a deliberately short hold duration so the auto-expiry path is testable.
+#
+# Deliberately leaner than the prod docker-compose.yml: no Postgres. The backend
+# defaults to SQLite when DATABASE_URL is unset, which is plenty for the tests and
+# keeps the whole stack to two already-built images — important on the small
+# Rancher Desktop VM disk, where pulling Postgres + amd64 emulation runs out of
+# space. Swap SQLite for Postgres here if you ever want to test that path too.
+#
+# Brought up/down automatically by conftest.py. Run manually with:
+#   docker compose -p galaxium_e2e -f tests_e2e/docker-compose.e2e.yml up -d --build
+services:
+  backend:
+    build: ../booking_system_backend
+    platform: linux/amd64
+    ports:
+      - "18001:8080"
+    environment:
+      # No DATABASE_URL -> db.py falls back to SQLite (ephemeral, re-seeded on boot).
+      CORS_ORIGINS: http://localhost:5173
+      JAVA_SERVICE_URL: http://java-service:8080
+      SEED_DEMO_DATA: "true"
+
+  java-service:
+    build: ../booking_system_inventory_hold_service
+    # The Java image's alpine JRE runtime stage is amd64-only, so (like the base
+    # docker-compose.yml) we run this stack under amd64 emulation on Apple Silicon.
+    platform: linux/amd64
+    ports:
+      - "18082:8080"
+    environment:
+      PYTHON_BACKEND_URL: http://backend:8080
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/app/data/holds.db
+      # Short timers so test_holds::test_hold_auto_expiry doesn't wait 15 min.
+      HOLD_DURATION_MINUTES: "1"
+      HOLD_EXPIRATION_CHECK_INTERVAL_SECONDS: "5"
+    depends_on:
+      - backend
