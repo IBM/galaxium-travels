@@ -9,7 +9,7 @@
 # space. Swap SQLite for Postgres here if you ever want to test that path too.
 #
 # Brought up/down automatically by conftest.py. Run manually with:
-#   docker compose -p galaxium_e2e -f tests_e2e/docker-compose.e2e.yml up -d --build
+#   docker compose -p galaxium_e2e -f e2e/docker-compose.e2e.yml up -d --build
 services:
   backend:
     build: ../booking_system_backend
