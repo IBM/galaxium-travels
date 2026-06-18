@@ -65,6 +65,17 @@ galaxium-travels/
 - **Node.js 18+** - [Download](https://nodejs.org/)
 - **npm** (comes with Node.js)
 
+### Resetting the Demo Environment
+
+After completing a demo, quickly reset the environment to a clean state:
+
+```bash
+./reset.sh          # Interactive mode with confirmations
+./reset.sh --force  # Non-interactive mode (use with caution)
+```
+
+The reset script removes database files, build outputs, and resets git to a clean state.
+
 ### Option 1: One-Command Start (Recommended)
 
 #### On macOS/Linux:
