@@ -287,10 +287,22 @@ This project is part of the Galaxium Travels booking system.
 
 ## 🤝 Contributing
 
+We welcome contributions to Galaxium Travels! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- **Developer Certificate of Origin (DCO)** - All commits must be signed off
+- Code style and standards
+- Testing requirements
+- Pull request process
+
+### Quick Start for Contributors
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes following our [coding standards](CONTRIBUTING.md#coding-standards)
+4. **Sign off your commits**: `git commit -s -m "Your message"`
+5. Push and submit a pull request
+
+**Important**: All commits must include a `Signed-off-by` line (use `git commit -s`). See our [DCO requirements](CONTRIBUTING.md#developer-certificate-of-origin-dco) for details.
 
 ## 📧 Support
 
