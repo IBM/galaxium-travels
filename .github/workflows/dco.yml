@@ -1,0 +1,87 @@
+name: DCO Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request_target:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  dco-check:
+    name: Developer Certificate of Origin Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Get PR Commits
+        id: get-pr-commits
+        uses: tim-actions/get-pr-commits@v1.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: DCO Check
+        uses: tim-actions/dco@v1.1.1
+        with:
+          commits: ${{ steps.get-pr-commits.outputs.commits }}
+          
+      - name: Comment on PR if DCO check fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = `## ❌ DCO Check Failed
+            
+            One or more commits in this pull request are missing the required \`Signed-off-by\` line.
+            
+            ### How to fix this:
+            
+            1. **For new commits**, use the \`-s\` flag:
+               \`\`\`bash
+               git commit -s -m "Your commit message"
+               \`\`\`
+            
+            2. **To fix existing commits**, amend them:
+               \`\`\`bash
+               # For the last commit
+               git commit --amend --signoff
+               
+               # For multiple commits (interactive rebase)
+               git rebase -i HEAD~<number-of-commits> --signoff
+               
+               # Force push the changes
+               git push --force-with-lease
+               \`\`\`
+            
+            3. **Bulk sign-off for all commits in this PR**:
+               \`\`\`bash
+               git rebase HEAD~<number-of-commits> --signoff
+               git push --force-with-lease
+               \`\`\`
+            
+            ### What is DCO?
+            
+            The Developer Certificate of Origin (DCO) is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing.
+            
+            By signing off your commits, you agree to the terms in [developercertificate.org](https://developercertificate.org/).
+            
+            The sign-off line should look like:
+            \`\`\`
+            Signed-off-by: Your Name <your.email@example.com>
+            \`\`\`
+            
+            For more details, see our [CONTRIBUTING.md](../CONTRIBUTING.md) guide.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+
+# Made with Bob
