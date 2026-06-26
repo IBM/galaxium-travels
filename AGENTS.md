@@ -1,6 +1,6 @@
-# Galaxium Travels
+# AGENTS.md
 
-A demo interplanetary flight-booking app that mimics a real enterprise system. Its purpose is to **showcase challenges agents face in a multi-service codebase** — not to run in production.
+This file provides guidance to agents when working with code in this repository.
 
 ## Footguns
 
@@ -9,47 +9,43 @@ A demo interplanetary flight-booking app that mimics a real enterprise system. I
 - **Service functions return Union types, not exceptions** — [`booking.py`](booking_system_backend/services/booking.py) returns `BookingOut | ErrorResponse`. Callers check `isinstance(result, ErrorResponse)`.
 - **`book_flight()` validates both `user_id` AND `name`** — intentional non-standard security pattern; name mismatch rejects the booking.
 - **SQLite is the production database** — `DATABASE_URL` is intentionally unset on ECS; [`db.py`](booking_system_backend/db.py) defaults to `./booking.db`. Data is ephemeral per container task.
-- **`SEED_DEMO_DATA=true` re-seeds on every start** — set to `false` if you need data to survive a restart locally.
+- **`SEED_DEMO_DATA=true` re-seeds on every start** — but only if DB is empty (`seed.py` checks `User.count() > 0` first). Set to `false` if you need data to survive a restart.
 - **Tests must patch `SessionLocal` in two places** — [`conftest.py` lines 49–50](booking_system_backend/tests/conftest.py:49) patches both `db.SessionLocal` and `server.SessionLocal`. Patching only one leaves the MCP tools hitting the real DB.
-- **Java hold service requires Java 17 or 21** — Lombok does not support Java 22+. The start script auto-detects sdkman candidates; set `JAVA_HOME` manually if needed.
-- **`docker-compose.yml` Java service is behind a profile** — it uses `profiles: [hold-service]`. Run `docker compose --profile hold-service up` to include it, or use `e2e/docker-compose.e2e.yml` which enables it unconditionally.
-- **Python proxy swallows Java 404s** — proxy endpoints in `server.py` catch `httpx.HTTPError` and return `{"error": "..."}` with HTTP 200. Callers must check the response body, not just the status code (see [`test_holds.py` line 82](e2e/test_holds.py:82)).
-- **`holds.db` and `booking.db` are committed artefacts** — do not delete; they seed local dev. They are regenerated on startup via `spring.jpa.hibernate.ddl-auto=update` and `SEED_DEMO_DATA=true`.
+- **Java hold service requires Java 17 or 21** — Lombok does not support Java 22+. Set `JAVA_HOME` manually if sdkman auto-detect fails.
+- **`docker-compose.yml` Java service is behind a profile** — uses `profiles: [hold-service]`. Use `docker compose --profile hold-service up`, or `e2e/docker-compose.e2e.yml` which enables it unconditionally.
+- **Python proxy swallows Java 404s** — proxy endpoints in `server.py` catch `httpx.HTTPError` and return `{"error": "..."}` with HTTP 200. Callers must check the response body, not status code (see [`test_holds.py` line 82](e2e/test_holds.py:82)).
+- **`holds.db` and `booking.db` are committed artefacts** — do not delete; they seed local dev.
 
 ## Commands
 
 ### Backend (Python / FastAPI)
-
 - **Install:** `cd booking_system_backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 - **Run:** `.venv/bin/python server.py` (listens on `:8001`)
-- **Test:** `cd booking_system_backend && pytest` (must run from this directory)
-- **Single test:** `cd booking_system_backend && pytest tests/test_services.py::test_name -v`
+- **Test (ALL):** `cd booking_system_backend && pytest` — **must run from this directory**, not project root
+- **Single test:** `cd booking_system_backend && pytest tests/test_services.py::TestFlightService::test_list_flights_empty -v`
+- **Single test file:** `cd booking_system_backend && pytest tests/test_rest.py -v`
 
 ### Java Hold Service (Spring Boot / Maven)
-
-- **Build & run:** `cd booking_system_inventory_hold_service && mvn spring-boot:run` (requires Java 17 or 21 + Maven)
-- **Test (Spring):** `cd booking_system_inventory_hold_service && mvn test`
-- **Config:** `PYTHON_BACKEND_URL` env var overrides the Python backend address (default `http://localhost:8001`)
+- **Run:** `cd booking_system_inventory_hold_service && mvn spring-boot:run` (requires Java 17 or 21; port 8080)
+- **Test:** `cd booking_system_inventory_hold_service && mvn test`
+- **Config override:** `PYTHON_BACKEND_URL` env var (default `http://localhost:8001`)
 
 ### Frontend (React / Vite)
-
 - **Install:** `cd booking_system_frontend && npm install`
-- **Dev:** `cd booking_system_frontend && npm run dev` (listens on `:5173`)
-- **Build:** `cd booking_system_frontend && npm run build`
+- **Dev:** `cd booking_system_frontend && npm run dev` (port 5173; proxies `/api` → `http://localhost:8001`)
+- **Build:** `cd booking_system_frontend && npm run build` (runs `tsc -b && vite build`)
 - **Lint:** `cd booking_system_frontend && npm run lint`
 
-### Full stack
-
-- **Start all locally:** `./start.sh` (wraps `scripts/local/start_locally.sh`)
+### Full Stack / E2E
+- **Start all locally:** `./start.sh`
 - **Docker Compose (backend + frontend):** `docker compose up`
 - **Docker Compose (+ Java hold service):** `docker compose --profile hold-service up`
-- **E2E tests:** `./test.sh` (builds full stack in Docker, waits for health, runs pytest)
+- **E2E tests:** `./test.sh` — builds full stack in Docker, waits for health, runs pytest
   - `E2E_BASE_URL=http://host:port` — skip compose, run against existing stack
-  - `E2E_KEEP_STACK=1` — leave stack up after tests (for debugging)
-  - `E2E_RUN_SLOW=1` — include the ~90 s auto-expiry test
+  - `E2E_KEEP_STACK=1` — leave stack up after tests
+  - `E2E_RUN_SLOW=1` — include the ~90s auto-expiry test
 
 ### Deploy
-
 - **AWS:** `./scripts/aws/deploy-to-aws.sh`
 - **IBM Cloud:** `./scripts/ibm/deploy-to-ibm.sh`
 
@@ -62,16 +58,15 @@ booking_system_backend/          Python/FastAPI service — REST API, MCP server
   models.py                        SQLAlchemy ORM models
   schemas.py                       Pydantic request/response schemas
   db.py                            Engine + SessionLocal + get_db()
-  seed.py                          Demo data seeding (disabled in tests)
+  seed.py                          Demo data seeding (skips if DB non-empty; disabled in tests)
   tests/                           pytest suite; in-memory SQLite, StaticPool
 
 booking_system_inventory_hold_service/   Java 17 / Spring Boot 3 — quote & hold lifecycle
   src/main/java/com/galaxium/holdservice/
     api/           REST controllers (Quote, Hold, Health)
     domain/        JPA entities (Quote, Hold, AuditEvent)
-    repository/    Spring Data repositories
     service/       Business logic (QuoteService, HoldService, PricingService)
-    scheduler/     HoldExpirationScheduler (runs every 60 s, expires stale holds)
+    scheduler/     HoldExpirationScheduler (runs every 60s, expires stale holds)
     client/        PythonBackendClient (RestTemplate → /internal/bookings/from-hold)
   application.properties  hold.duration.minutes=15; port=8080
 
@@ -79,41 +74,46 @@ booking_system_frontend/         React 19 + TypeScript + Vite + Tailwind
   src/
     pages/           Route-level components
     components/      Reusable UI pieces
-    services/        API calls (api.ts) — check success:false, not HTTP status
-    types/           Shared TypeScript types
+    services/api.ts  All API calls — check `success:false` or `error` in body, NOT HTTP status
+    types/index.ts   Single source of truth for all shared TypeScript types
     hooks/           Custom React hooks
 
 e2e/                             pytest end-to-end suite (Docker Compose)
-  docker-compose.e2e.yml         Runs backend + Java service + postgres on non-clashing ports
-  test_smoke.py                  Basic backend health and booking flow
-  test_holds.py                  Full quote→hold→confirm→booking cross-service flow
-
-scripts/
-  aws/             ECS/ALB deploy + scale/teardown scripts
-  ibm/             IBM Code Engine deploy + teardown scripts
-  terraform/       Terraform HCL for AWS (VPC, ECS, ALB, ECR, IAM, CloudWatch)
-  local/           start_locally.sh + test-containers.sh
 ```
 
-**Request flow (holds):** Frontend → `POST /quotes` (Python proxy) → Java `/api/v1/quotes` → Java `POST /api/v1/quotes/{id}/holds` → Python `POST /quotes/{id}/holds` proxy → on confirm: Java calls Python `/internal/bookings/from-hold` to create the real booking.
+**Request flow (holds):** Frontend → `POST /quotes` (Python proxy) → Java `/api/v1/quotes` → `POST /api/v1/quotes/{id}/holds` → Python proxy → on confirm: Java calls Python `/internal/bookings/from-hold` to create real booking.
 
-## Conventions
+## Code Style & Conventions
 
-- **Backend:** snake_case for functions/variables; PascalCase for classes/Pydantic models.
-- **Frontend API errors:** always inspect the `success` field or look for `error` in the body — HTTP status is not reliable for error detection (see [`api.ts`](booking_system_frontend/src/services/api.ts:112)).
-- **Custom Tailwind tokens:** space-themed palette defined in [`tailwind.config.js`](booking_system_frontend/tailwind.config.js) — do not assume standard Tailwind color names.
-- **Java:** Lombok `@Data`/`@Builder`/`@RequiredArgsConstructor` used throughout; no manual getters/setters. Service methods are `@Transactional`.
-- **New backend endpoints:** add REST handler + matching MCP tool if agent-accessible, following the pattern in `server.py`.
+### Python (Backend)
+- snake_case for functions/variables; PascalCase for classes/Pydantic models
+- Service functions return `T | ErrorResponse` — never raise exceptions for domain errors
+- `ErrorResponse` has fields: `success=False`, `error`, `error_code`, `details`
+- Pydantic models use `model_validate()` (not `.from_orm()`) — Pydantic v2 style
+- No version pins in `requirements.txt` — all packages unpinned
 
-## Workflow
+### TypeScript (Frontend)
+- Strict TypeScript: `strict`, `noUnusedLocals`, `noUnusedParameters` all enabled in [`tsconfig.app.json`](booking_system_frontend/tsconfig.app.json)
+- All shared types in [`src/types/index.ts`](booking_system_frontend/src/types/index.ts) — single file, no module splitting
+- API error detection: always call `assertNotProxyError(response.data)` for Java proxy endpoints (see [`api.ts`](booking_system_frontend/src/services/api.ts:161)); for direct endpoints, check `success` field or `error` key in body
+- Axios interceptor in [`api.ts`](booking_system_frontend/src/services/api.ts:22) converts HTTP errors to `ErrorResponse` shape — HTTP status is not reliable
+- Frontend `VITE_API_URL` env var sets base URL (default: `/api`, dev proxy rewrites to `http://localhost:8001`)
+- Custom Tailwind tokens: `space-dark`, `space-blue`, `cosmic-purple`, `nebula-pink`, `alien-green`, `solar-orange`, `star-white` — do not assume standard Tailwind color names
 
-- Branch naming: no enforced convention observed; recent branches use `restore/`, `feature/` prefixes.
-- Before a PR: run `cd booking_system_backend && pytest` (all must pass).
-- E2E tests require Docker; run with `./test.sh` before merging hold-service changes.
-## Notes for the agent
+### Java (Hold Service)
+- Lombok `@Data`/`@Builder`/`@RequiredArgsConstructor` throughout — no manual getters/setters
+- Service methods are `@Transactional`
+- SQLite dialect: `org.hibernate.community.dialect.SQLiteDialect`
 
-- `booking_system_inventory_hold_service/target/` is Maven output — never edit files inside it.
-- `booking_system_frontend/dist/` is Vite build output — never edit; regenerate with `npm run build`.
-- The `scripts/terraform/.terraform/` directory contains provider binaries — do not touch.
-- When adding a new Python service function, add both a REST endpoint and an MCP tool (see the pattern in `server.py`).
-- When modifying the Java service's hold duration or expiry interval, update `application.properties` and the e2e `test_holds.py` timeout accordingly.
+## Critical Patterns
+
+- **New backend endpoint rule:** always add BOTH a REST handler in `server.py` AND a matching `@mcp.tool()` if the function should be agent-accessible
+- **Hold duration changes:** if you modify `hold.duration.minutes` in `application.properties`, also update e2e timeout in `test_holds.py` accordingly
+- **Seat class pricing:** multipliers are `economy=1.0x`, `business=2.5x`, `galaxium=5.0x` of `base_price` (defined in [`booking.py`](booking_system_backend/services/booking.py:8))
+- **Flight seat columns:** three separate columns: `economy_seats_available`, `business_seats_available`, `galaxium_seats_available` — no single `seats_available` field
+
+## Do Not Touch
+
+- `booking_system_inventory_hold_service/target/` — Maven build output
+- `booking_system_frontend/dist/` — Vite build output
+- `scripts/terraform/.terraform/` — provider binaries
