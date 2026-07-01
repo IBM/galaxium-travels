@@ -1,6 +1,6 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket, CalendarPlus } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -71,6 +71,14 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+
+  const handleExportIcs = () => {
+    const url = `/api/bookings/${booking.booking_id}/export.ics`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `booking-${booking.booking_id}.ics`;
+    a.click();
+  };
 
   return (
     <motion.div
@@ -153,17 +161,28 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportIcs}
+              className="w-full"
+            >
+              <CalendarPlus size={14} className="mr-1" />
+              Add to Calendar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

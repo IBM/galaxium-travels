@@ -973,3 +973,57 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestIcsExport:
+    """Test generate_ics service function."""
+
+    def _make_booking(self, db_session):
+        db_session.add(User(name="Test User", email="ics@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-01 10:00",
+            arrival_time="2099-06-01 18:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    def test_generate_ics_success(self, db_session):
+        """generate_ics returns a valid iCal string with required fields."""
+        booking_obj = self._make_booking(db_session)
+        result = booking.generate_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "SUMMARY:" in result
+        assert "LOCATION:" in result
+        assert "DTSTART:" in result
+        assert "DTEND:" in result
+        assert "DESCRIPTION:" in result
+        assert f"UID:booking-{booking_obj.booking_id}@galaxium-travels" in result
+        assert "Earth" in result
+        assert "Mars" in result
+
+    def test_generate_ics_not_found(self, db_session):
+        """generate_ics returns ErrorResponse for a missing booking."""
+        from schemas import ErrorResponse
+        result = booking.generate_ics(db_session, 99999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"

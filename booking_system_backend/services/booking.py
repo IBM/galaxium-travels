@@ -126,3 +126,50 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def generate_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an iCalendar (.ics) string for an existing booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} does not exist."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    origin = flight.origin if flight else "Unknown"
+    destination = flight.destination if flight else "Unknown"
+    departure = flight.departure_time if flight else ""
+    arrival = flight.arrival_time if flight else ""
+
+    def to_ical_dt(dt_str: str) -> str:
+        """Convert 'YYYY-MM-DD HH:MM' to iCal basic format YYYYMMDDTHHMMSS."""
+        try:
+            dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+            return dt.strftime("%Y%m%dT%H%M%S")
+        except ValueError:
+            return dt_str.replace("-", "").replace(" ", "T").replace(":", "")
+
+    dtstart = to_ical_dt(departure)
+    dtend = to_ical_dt(arrival)
+    uid = f"booking-{booking_id}@galaxium-travels"
+    dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//Booking//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"DTSTAMP:{dtstamp}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"SUMMARY:Galaxium Travels: {origin} → {destination}\r\n"
+        f"LOCATION:{origin} to {destination}\r\n"
+        f"DESCRIPTION:Booking #{booking_id}\\nSeat class: {booking.seat_class}\\nStatus: {booking.status}\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    return ics
