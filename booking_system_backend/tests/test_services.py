@@ -482,6 +482,51 @@ class TestBookingService:
         result = booking.get_bookings(db_session, 999)
         assert result == []
 
+    def test_generate_ics_success(self, db_session):
+        """Test ICS generation for an existing booking."""
+        db_session.add(User(name="Astro User", email="astro@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-15 10:30",
+            arrival_time="2099-06-15 18:45",
+            base_price=500000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=500000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.generate_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "DTSTART:20990615T103000" in result
+        assert "DTEND:20990615T184500" in result
+        assert "SUMMARY:Galaxium Flight: Earth" in result
+        assert "LOCATION:Earth" in result
+
+    def test_generate_ics_not_found(self, db_session):
+        """Test ICS generation for a non-existent booking."""
+        result = booking.generate_ics(db_session, 9999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
 
 
 class TestFlightFiltering:

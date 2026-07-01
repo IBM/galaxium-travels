@@ -870,3 +870,52 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestIcsExportEndpoint:
+    """Test GET /bookings/{booking_id}/export.ics endpoint."""
+
+    def _seed(self, client, db_session, sample_user_data):
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-15 10:30",
+            arrival_time="2099-06-15 18:45",
+            base_price=500000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=500000
+        ))
+        db_session.commit()
+
+        booking = db_session.query(Booking).first()
+        return booking.booking_id
+
+    def test_export_ics_success(self, client, db_session, sample_user_data):
+        """Test successful ICS export returns correct headers and body."""
+        booking_id = self._seed(client, db_session, sample_user_data)
+
+        response = client.get(f"/bookings/{booking_id}/export.ics")
+
+        assert response.status_code == 200
+        assert "text/calendar" in response.headers["content-type"]
+        assert "BEGIN:VCALENDAR" in response.text
+
+    def test_export_ics_not_found(self, client, db_session):
+        """Test ICS export for unknown booking returns 404."""
+        response = client.get("/bookings/9999/export.ics")
+        assert response.status_code == 404

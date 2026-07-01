@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket, CalendarPlus } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -12,6 +13,35 @@ interface BookingCardProps {
 }
 
 export const BookingCard = ({ booking, flight, onCancel, isCancelling }: BookingCardProps) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExportIcs = () => {
+    setIsExporting(true);
+    setExportError(null);
+    fetch(`/api/bookings/${booking.booking_id}/export.ics`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Could not export booking #${booking.booking_id}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = `booking-${booking.booking_id}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl);
+      })
+      .catch((err: Error) => {
+        setExportError(err.message);
+      })
+      .finally(() => {
+        setIsExporting(false);
+      });
+  };
+
   const getSeatClassIcon = () => {
     switch (booking.seat_class) {
       case 'business':
@@ -153,17 +183,32 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportIcs}
+              isLoading={isExporting}
+              className="w-full"
+            >
+              <CalendarPlus size={14} className="mr-1" />
+              Add to Calendar
+            </Button>
+            {exportError && (
+              <p className="text-xs text-red-400 text-center">{exportError}</p>
+            )}
+          </div>
         )}
       </Card>
     </motion.div>
