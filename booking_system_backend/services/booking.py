@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,59 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def generate_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an iCalendar (.ics) string for a booking's flight event."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+
+    # Format datetimes as iCal basic format: YYYYMMDDTHHmmssZ
+    def to_ical_dt(dt_str: str) -> str:
+        dt = datetime.fromisoformat(dt_str.replace(" ", "T"))
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    now_stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    uid = f"galaxium-booking-{booking_id}@galaxium-travels"
+
+    if flight:
+        dtstart = to_ical_dt(flight.departure_time)
+        dtend = to_ical_dt(flight.arrival_time)
+        summary = f"Galaxium Flight: {flight.origin} → {flight.destination}"
+        location = f"{flight.origin} to {flight.destination}"
+        description = (
+            f"Booking #{booking_id}\\n"
+            f"Flight #{flight.flight_id}\\n"
+            f"Seat Class: {booking.seat_class.capitalize()}\\n"
+            f"Price Paid: {booking.price_paid} credits"
+        )
+    else:
+        dtstart = now_stamp
+        dtend = now_stamp
+        summary = f"Galaxium Booking #{booking_id}"
+        location = ""
+        description = f"Booking #{booking_id}\\nFlight #{booking.flight_id}"
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//Booking Export//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"DTSTAMP:{now_stamp}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"SUMMARY:{summary}\r\n"
+        f"LOCATION:{location}\r\n"
+        f"DESCRIPTION:{description}\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    return ics

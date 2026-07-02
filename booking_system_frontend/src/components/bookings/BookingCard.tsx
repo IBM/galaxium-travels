@@ -72,6 +72,21 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
 
   const canCancel = booking.status === 'booked';
 
+  const handleExportIcs = () => {
+    fetch(`/api/bookings/${booking.booking_id}/export.ics`)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = `booking-${booking.booking_id}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl);
+      });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -153,17 +168,28 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportIcs}
+              className="w-full"
+            >
+              <Calendar size={14} className="mr-1" />
+              Add to Calendar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

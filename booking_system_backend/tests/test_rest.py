@@ -870,3 +870,54 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestIcsExportEndpoint:
+    """Test GET /bookings/{booking_id}/export.ics endpoint."""
+
+    def test_export_ics_success(self, client, db_session, sample_user_data):
+        """Test successful ICS export returns text/calendar response."""
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-15 09:00",
+            arrival_time="2099-06-15 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/export.ics")
+
+        assert response.status_code == 200
+        assert "text/calendar" in response.headers["content-type"]
+        body = response.text
+        assert "BEGIN:VCALENDAR" in body
+        assert "BEGIN:VEVENT" in body
+        assert "SUMMARY:" in body
+        assert "DTSTART:" in body
+        assert "DTEND:" in body
+        assert "DESCRIPTION:" in body
+        assert "UID:" in body
+
+    def test_export_ics_not_found(self, client, db_session):
+        """Test ICS export for non-existent booking returns HTTP 404."""
+        response = client.get("/bookings/99999/export.ics")
+        assert response.status_code == 404
