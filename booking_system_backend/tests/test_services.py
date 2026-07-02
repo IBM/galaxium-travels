@@ -973,3 +973,52 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    """Test get_booking_ics service function."""
+
+    def _seed(self, db_session):
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    def test_ics_success(self, db_session):
+        """get_booking_ics returns a valid iCal string for an existing booking."""
+        booking_obj = self._seed(db_session)
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "DTSTART:20990101T090000Z" in result
+        assert "DTEND:20990101T170000Z" in result
+        assert "Earth" in result
+        assert "Mars" in result
+        assert result.endswith("\r\n")
+
+    def test_ics_booking_not_found(self, db_session):
+        """get_booking_ics returns ErrorResponse for a non-existent booking_id."""
+        result = booking.get_booking_ics(db_session, 999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"

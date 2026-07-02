@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
+import uuid
 
 
 # Price multipliers for each seat class
@@ -126,3 +127,60 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Return an iCalendar (.ics) string for a booking.
+
+    Note: long DESCRIPTION lines may exceed the RFC 5545 75-octet folding limit;
+    this is acceptable for demo use.
+    """
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight for booking {booking_id} not found."
+        )
+
+    def _to_ics_dt(dt_str: str) -> str:
+        """Normalise a datetime string (space-separated or ISO-8601) to iCal format."""
+        normalised = dt_str.replace("Z", "").replace("+00:00", "").replace(" ", "T")
+        dt = datetime.fromisoformat(normalised)
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    dtstart = _to_ics_dt(flight.departure_time)
+    dtend = _to_ics_dt(flight.arrival_time)
+    dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    uid = str(uuid.uuid4())
+    description = (
+        f"Booking #{booking.booking_id} | "
+        f"Seat class: {booking.seat_class} | "
+        f"Price paid: {booking.price_paid} | "
+        f"Flight #{booking.flight_id}"
+    )
+    summary = f"Galaxium Flight: {flight.origin} → {flight.destination}"
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking Export//EN",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART:{dtstart}",
+        f"DTEND:{dtend}",
+        f"SUMMARY:{summary}",
+        f"DESCRIPTION:{description}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(lines) + "\r\n"

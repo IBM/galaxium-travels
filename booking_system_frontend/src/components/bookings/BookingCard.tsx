@@ -1,8 +1,9 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CalendarPlus, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../../services/api';
 
 interface BookingCardProps {
   booking: Booking;
@@ -71,6 +72,10 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+
+  const handleAddToCalendar = () => {
+    window.open(`${API_BASE_URL}/bookings/${booking.booking_id}/export.ics`, '_blank');
+  };
 
   return (
     <motion.div
@@ -153,17 +158,28 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="flex-1"
+            >
+              Cancel Booking
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleAddToCalendar}
+              className="flex-1"
+            >
+              <CalendarPlus size={14} className="mr-1" />
+              Add to Calendar
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

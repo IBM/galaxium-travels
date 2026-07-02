@@ -870,3 +870,49 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestIcsEndpoint:
+    """Test GET /bookings/{booking_id}/export.ics endpoint."""
+
+    def _seed(self, client, db_session):
+        user_response = client.post("/register", json={"name": "Test User", "email": "ics@example.com"})
+        user_id = user_response.json()["user_id"]
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    def test_export_ics_success(self, client, db_session):
+        """Export endpoint returns text/calendar content for a valid booking."""
+        booking_obj = self._seed(client, db_session)
+        response = client.get(f"/bookings/{booking_obj.booking_id}/export.ics")
+        assert response.status_code == 200
+        assert "text/calendar" in response.headers["content-type"]
+        body = response.text
+        assert "BEGIN:VCALENDAR" in body
+        assert "DTSTART:20990101T090000Z" in body
+        assert f"attachment; filename=booking-{booking_obj.booking_id}.ics" in response.headers["content-disposition"]
+
+    def test_export_ics_not_found(self, client, db_session):
+        """Export endpoint returns 404 for a non-existent booking."""
+        response = client.get("/bookings/999/export.ics")
+        assert response.status_code == 404
