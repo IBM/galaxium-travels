@@ -973,3 +973,87 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    """Test get_booking_ics service function."""
+
+    def _make_booking(self, db_session, departure_time="2099-01-01 09:00", arrival_time="2099-01-01 17:00"):
+        """Helper: insert a user, flight, and booking; return the booking object."""
+        from models import User, Flight, Booking
+        db_session.add(User(name="Ics User", email="ics@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time=departure_time,
+            arrival_time=arrival_time,
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    def test_get_booking_ics_returns_valid_icalendar(self, db_session):
+        """ICS output is a well-formed VCALENDAR with required fields and CRLF endings."""
+        booking_obj = self._make_booking(db_session)
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "END:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "END:VEVENT" in result
+        assert "VERSION:2.0" in result
+        assert "PRODID:" in result
+        assert "DTSTART:" in result
+        assert "DTEND:" in result
+        assert "SUMMARY:" in result
+        assert "UID:" in result
+        # RFC 5545 strict CRLF requirement
+        assert "\r\n" in result
+
+    def test_get_booking_ics_contains_flight_details(self, db_session):
+        """ICS SUMMARY includes origin and destination."""
+        booking_obj = self._make_booking(db_session)
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert "Earth" in result
+        assert "Mars" in result
+
+    def test_get_booking_ics_space_separated_datetime(self, db_session):
+        """Space-separated datetime format is handled correctly."""
+        booking_obj = self._make_booking(db_session, departure_time="2099-06-15 14:30", arrival_time="2099-06-15 22:00")
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "DTSTART:20990615T143000Z" in result
+        assert "DTEND:20990615T220000Z" in result
+
+    def test_get_booking_ics_iso8601_datetime(self, db_session):
+        """ISO 8601 'Z'-suffixed datetime format is handled correctly."""
+        booking_obj = self._make_booking(db_session, departure_time="2099-01-01T09:00:00Z", arrival_time="2099-01-01T17:00:00Z")
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "DTSTART:20990101T090000Z" in result
+        assert "DTEND:20990101T170000Z" in result
+
+    def test_get_booking_ics_not_found(self, db_session):
+        """Returns ErrorResponse for unknown booking ID."""
+        from schemas import ErrorResponse
+        result = booking.get_booking_ics(db_session, 99999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"

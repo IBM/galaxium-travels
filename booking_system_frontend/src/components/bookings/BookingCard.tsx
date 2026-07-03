@@ -1,6 +1,6 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket, CalendarPlus } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -71,6 +71,16 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+  const canExportCalendar = booking.status === 'booked';
+
+  const handleAddToCalendar = () => {
+    const base = import.meta.env.VITE_API_URL || '/api';
+    const url = `${base}/bookings/${booking.booking_id}/export.ics`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `booking-${booking.booking_id}.ics`;
+    a.click();
+  };
 
   return (
     <motion.div
@@ -153,18 +163,30 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
-        {canCancel && (
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
           <Button
-            variant="danger"
+            variant="secondary"
             size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
+            onClick={handleAddToCalendar}
+            disabled={!canExportCalendar}
             className="w-full"
           >
-            Cancel Booking
+            <CalendarPlus size={16} />
+            Add to Calendar
           </Button>
-        )}
+          {canCancel && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+          )}
+        </div>
       </Card>
     </motion.div>
   );

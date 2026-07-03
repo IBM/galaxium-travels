@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,62 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Return an iCalendar (.ics) string for a booking.
+
+    Handles both ISO 8601 ('2099-01-01T09:00:00Z') and space-separated
+    ('2099-01-01 09:00') datetime formats stored in the database.
+    """
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight with ID {booking.flight_id} not found."
+        )
+
+    def _parse_dt(raw: str) -> datetime:
+        """Parse both '2099-01-01T09:00:00Z' and '2099-01-01 09:00' formats."""
+        raw = raw.strip().rstrip("Z")
+        return datetime.fromisoformat(raw)
+
+    dtstart = _parse_dt(flight.departure_time)
+    dtend = _parse_dt(flight.arrival_time)
+    dtstamp = datetime.now(timezone.utc)
+
+    fmt = "%Y%m%dT%H%M%SZ"
+    uid = f"booking-{booking.booking_id}@galaxium-travels"
+    summary = f"Galaxium Flight: {flight.origin} → {flight.destination}"
+    description = (
+        f"Booking #{booking.booking_id} | "
+        f"Seat class: {booking.seat_class} | "
+        f"Status: {booking.status}"
+    )
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking System//EN",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp.strftime(fmt)}",
+        f"DTSTART:{dtstart.strftime(fmt)}",
+        f"DTEND:{dtend.strftime(fmt)}",
+        f"SUMMARY:{summary}",
+        f"DESCRIPTION:{description}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+
+    # RFC 5545 requires CRLF line endings
+    return "\r\n".join(lines) + "\r\n"
