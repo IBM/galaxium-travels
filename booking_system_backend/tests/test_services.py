@@ -973,3 +973,48 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    def _seed(self, db_session):
+        """Seed one user, one flight, one booking and return the booking."""
+        from models import User, Flight, Booking
+        user = User(name="Test User", email="test@example.com")
+        db_session.add(user)
+        db_session.flush()
+        flight_obj = Flight(
+            origin="Earth", destination="Mars",
+            departure_time="2099-01-01 09:00", arrival_time="2099-01-01 17:00",
+            base_price=1000000, economy_seats_available=5,
+            business_seats_available=3, galaxium_seats_available=1,
+        )
+        db_session.add(flight_obj)
+        db_session.flush()
+        b = Booking(
+            user_id=user.user_id, flight_id=flight_obj.flight_id,
+            seat_class="economy", price_paid=1000000, status="booked",
+            booking_time="2099-01-01 10:00",
+        )
+        db_session.add(b)
+        db_session.commit()
+        return b
+
+    def test_get_booking_ics_returns_valid_icalendar(self, db_session):
+        b = self._seed(db_session)
+        result = booking.get_booking_ics(db_session, b.booking_id)
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "SUMMARY:" in result
+        assert "DTSTART:" in result
+        assert "DTEND:" in result
+        assert "LOCATION:" in result
+        assert "DESCRIPTION:" in result
+        assert "UID:" in result
+        assert "\r\n" in result  # RFC 5545 line endings
+
+    def test_get_booking_ics_returns_error_for_unknown_id(self, db_session):
+        from schemas import ErrorResponse
+        result = booking.get_booking_ics(db_session, 999999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"

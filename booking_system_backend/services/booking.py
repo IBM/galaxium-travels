@@ -126,3 +126,36 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _parse_dt(s: str) -> datetime:
+    """Parse a datetime string tolerating space-separator and Z/+00:00 UTC suffixes."""
+    return datetime.fromisoformat(s.replace("Z", "").replace("+00:00", "").replace(" ", "T"))
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Return a valid iCalendar string for the given booking (RFC 5545)."""
+    b = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not b:
+        return ErrorResponse(error="Booking not found", error_code="BOOKING_NOT_FOUND")
+
+    f = db.query(Flight).filter(Flight.flight_id == b.flight_id).first()
+
+    dtstart = _parse_dt(f.departure_time).strftime("%Y%m%dT%H%M%SZ")
+    dtend = _parse_dt(f.arrival_time).strftime("%Y%m%dT%H%M%SZ")
+
+    # NOTE: DESCRIPTION line may exceed the RFC 5545 75-octet folding limit; acceptable for demo.
+    return (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:booking-{b.booking_id}@galaxium-travels\r\n"
+        f"SUMMARY:Galaxium Travels: {f.origin} \u2192 {f.destination}\r\n"
+        f"LOCATION:{f.origin} \u2192 {f.destination}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"DESCRIPTION:Booking #{b.booking_id} | Flight #{f.flight_id} | {b.seat_class} class | {b.price_paid} credits\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )

@@ -1,6 +1,6 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket, CalendarPlus } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -71,6 +71,17 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+
+  const handleAddToCalendar = () => {
+    const base = import.meta.env.VITE_API_URL || '/api';
+    const url = `${base}/bookings/${booking.booking_id}/export.ics`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `booking-${booking.booking_id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   return (
     <motion.div
@@ -153,18 +164,30 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
-        {canCancel && (
+        {/* Action Buttons */}
+        <div className="flex gap-2">
           <Button
-            variant="danger"
+            variant="secondary"
             size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
+            onClick={handleAddToCalendar}
+            disabled={booking.status !== 'booked'}
+            className="flex-1"
           >
-            Cancel Booking
+            <CalendarPlus size={14} className="mr-1" />
+            Add to Calendar
           </Button>
-        )}
+          {canCancel && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="flex-1"
+            >
+              Cancel Booking
+            </Button>
+          )}
+        </div>
       </Card>
     </motion.div>
   );
