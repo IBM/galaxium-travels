@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 from sqlalchemy.orm import Session
@@ -97,6 +97,21 @@ def get_user_id(name: str, email: str) -> UserOut:
     db = SessionLocal()
     try:
         result = user.get_user(db, name, email)
+        if isinstance(result, ErrorResponse):
+            raise Exception(result.details or result.error)
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def export_booking_ics(booking_id: int) -> str:
+    """Export a booking as an iCalendar (.ics) string.
+    Returns a valid VCALENDAR document for the given booking_id,
+    or raises an error if the booking does not exist."""
+    db = SessionLocal()
+    try:
+        result = booking.export_booking_ics(db, booking_id)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -257,6 +272,19 @@ def cancel_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
     Increments available seats for the flight if successful.
     """
     return booking.cancel_booking(db, booking_id)
+
+
+@app.get("/bookings/{booking_id}/export.ics", tags=["Bookings"])
+def export_booking_ics_endpoint(booking_id: int, db: Session = Depends(get_db)):
+    """Export a booking as an iCalendar (.ics) file download."""
+    result = booking.export_booking_ics(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        raise HTTPException(status_code=404, detail=result.error)
+    return Response(
+        content=result,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename=booking-{booking_id}.ics"}
+    )
 
 
 @app.post("/register", response_model=Union[UserOut, ErrorResponse], tags=["Users"])

@@ -126,3 +126,37 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def export_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Export a booking as an iCalendar (.ics) string."""
+    booking_obj = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking_obj:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight_obj = db.query(Flight).filter(Flight.flight_id == booking_obj.flight_id).first()
+
+    dtstart = datetime.strptime(flight_obj.departure_time, "%Y-%m-%d %H:%M").strftime("%Y%m%dT%H%M%SZ")
+    dtend = datetime.strptime(flight_obj.arrival_time, "%Y-%m-%d %H:%M").strftime("%Y%m%dT%H%M%SZ")
+    dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:booking-{booking_id}@galaxium.travels\r\n"
+        f"DTSTAMP:{dtstamp}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"SUMMARY:Galaxium Flight: {flight_obj.origin} \u2192 {flight_obj.destination}\r\n"
+        f"LOCATION:{flight_obj.origin} \u2192 {flight_obj.destination}\r\n"
+        f"DESCRIPTION:Booking #{booking_id} \u00b7 {booking_obj.seat_class} class \u00b7 {booking_obj.price_paid} GXC\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    return ics

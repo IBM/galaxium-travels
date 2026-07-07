@@ -72,6 +72,13 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
 
   const canCancel = booking.status === 'booked';
 
+  const handleAddToCalendar = () => {
+    const a = document.createElement('a');
+    a.href = `/api/bookings/${booking.booking_id}/export.ics`;
+    a.download = `booking-${booking.booking_id}.ics`;
+    a.click();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -153,14 +160,24 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Calendar & Cancel Buttons */}
+        {booking.status === 'booked' && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleAddToCalendar}
+            className="w-full"
+          >
+            Add to Calendar
+          </Button>
+        )}
         {canCancel && (
           <Button
             variant="danger"
             size="sm"
             onClick={() => onCancel(booking.booking_id)}
             isLoading={isCancelling}
-            className="w-full"
+            className="w-full mt-2"
           >
             Cancel Booking
           </Button>
