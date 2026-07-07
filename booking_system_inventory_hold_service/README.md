@@ -24,20 +24,26 @@ Frontend → Python Backend → Java Hold Service
 - Java service calls Python backend to confirm bookings
 - No direct frontend-to-Java communication
 
+> **Note (demo/java-premium-legacy branch):** on this branch the service has
+> been intentionally rewritten as a legacy Java 8 / Spring Boot 2.7 application
+> for the Bob Premium Package for Java modernization demos. See
+> [`demos/java-premium-modernization/RUNBOOK.md`](../demos/java-premium-modernization/RUNBOOK.md).
+> The `main` branch keeps the modern (Java 17 / Spring Boot 3.4) version.
+
 ## Technology Stack
 
-- **Java 17** (modern target)
-- **Spring Boot 3.2.0**
-- **Maven** for build management
-- **SQLite** for persistence
-- **JPA/Hibernate** for ORM
-- **Lombok** for reducing boilerplate
+- **Java 8** (legacy demo baseline; `main` targets Java 17)
+- **Spring Boot 2.7.18** (`main` uses 3.4.x)
+- **Maven** for build management, **war** packaging
+- **SQLite** for persistence (hand-rolled Hibernate 5 dialect)
+- **JPA/Hibernate** for ORM (`javax.persistence`)
+- **JSP + JSTL** for the server-rendered Agent Console
 
 ## Quick Start
 
 ### Prerequisites
 
-- Java 17 or higher
+- Java 8+ (builds under JDK 8–21)
 - Maven 3.6+
 - Python backend running on port 8000
 
@@ -51,7 +57,7 @@ mvn clean package
 
 2. **Run the service:**
 ```bash
-java -jar target/inventory-hold-service-1.0.0.jar
+java -jar target/inventory-hold-service-1.0.0.war
 ```
 
 Or use Maven:

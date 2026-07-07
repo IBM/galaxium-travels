@@ -1,19 +1,19 @@
 package com.galaxium.holdservice.domain;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
-import java.time.Instant;
+import java.util.Date;
 
 @Entity
 @Table(name = "quotes")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Quote {
 
     @Id
@@ -41,21 +41,114 @@ public class Quote {
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "expires_at", nullable = false)
-    private Instant expiresAt;
+    private Date expiresAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private QuoteStatus status;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    private Date createdAt;
+
+    public Quote() {
+    }
 
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
-            createdAt = Instant.now();
+            createdAt = new Date();
         }
+    }
+
+    public String getQuoteId() {
+        return quoteId;
+    }
+
+    public void setQuoteId(String quoteId) {
+        this.quoteId = quoteId;
+    }
+
+    public Integer getFlightId() {
+        return flightId;
+    }
+
+    public void setFlightId(Integer flightId) {
+        this.flightId = flightId;
+    }
+
+    public String getSeatClass() {
+        return seatClass;
+    }
+
+    public void setSeatClass(String seatClass) {
+        this.seatClass = seatClass;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Integer getTravelerId() {
+        return travelerId;
+    }
+
+    public void setTravelerId(Integer travelerId) {
+        this.travelerId = travelerId;
+    }
+
+    public String getTravelerName() {
+        return travelerName;
+    }
+
+    public void setTravelerName(String travelerName) {
+        this.travelerName = travelerName;
+    }
+
+    public Long getPricePerSeat() {
+        return pricePerSeat;
+    }
+
+    public void setPricePerSeat(Long pricePerSeat) {
+        this.pricePerSeat = pricePerSeat;
+    }
+
+    public Long getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(Long totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public Date getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(Date expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public QuoteStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(QuoteStatus status) {
+        this.status = status;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     public enum QuoteStatus {

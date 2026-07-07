@@ -128,7 +128,7 @@ if [ -d "$HOLD_SERVICE_DIR" ]; then
     fi
 
     if [ -z "$HOLD_SERVICE_CMD" ]; then
-        for jar in "$HOLD_SERVICE_DIR"/target/*.jar; do
+        for jar in "$HOLD_SERVICE_DIR"/target/*.jar "$HOLD_SERVICE_DIR"/target/*.war; do
             if [ -f "$jar" ] && [[ "$jar" != *.original ]]; then
                 HOLD_SERVICE_CMD="java -jar target/$(basename "$jar")"
                 break

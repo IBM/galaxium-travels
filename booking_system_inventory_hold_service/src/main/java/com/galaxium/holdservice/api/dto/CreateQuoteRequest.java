@@ -1,17 +1,9 @@
 package com.galaxium.holdservice.api.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class CreateQuoteRequest {
 
     @NotNull(message = "Flight ID is required")
@@ -29,6 +21,49 @@ public class CreateQuoteRequest {
 
     @NotBlank(message = "Traveler name is required")
     private String travelerName;
+
+    public CreateQuoteRequest() {
+    }
+
+    public Integer getFlightId() {
+        return flightId;
+    }
+
+    public void setFlightId(Integer flightId) {
+        this.flightId = flightId;
+    }
+
+    public String getSeatClass() {
+        return seatClass;
+    }
+
+    public void setSeatClass(String seatClass) {
+        this.seatClass = seatClass;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Integer getTravelerId() {
+        return travelerId;
+    }
+
+    public void setTravelerId(Integer travelerId) {
+        this.travelerId = travelerId;
+    }
+
+    public String getTravelerName() {
+        return travelerName;
+    }
+
+    public void setTravelerName(String travelerName) {
+        this.travelerName = travelerName;
+    }
 }
 
 // Made with Bob

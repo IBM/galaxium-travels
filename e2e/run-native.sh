@@ -16,7 +16,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 BACKEND_DIR="$ROOT/booking_system_backend"
 JAVA_DIR="$ROOT/booking_system_inventory_hold_service"
-JAR="$JAVA_DIR/target/inventory-hold-service-1.0.0.jar"
+JAR="$JAVA_DIR/target/inventory-hold-service-1.0.0.war"
 
 BACKEND_PORT=8001
 JAVA_PORT=8080
@@ -57,7 +57,7 @@ command -v java >/dev/null || fail "java not found on PATH"
 if [ ! -f "$JAR" ]; then
   echo "[e2e] jar not found — building hold service (this takes ~1 min on first run)..."
   command -v mvn >/dev/null || fail "mvn not found on PATH — install Maven to auto-build the jar"
-  ( cd "$JAVA_DIR" && mvn package -DskipTests -q ) || fail "Maven build failed — check Java version (requires 17 or 21; Lombok doesn't compile under 22+)"
+  ( cd "$JAVA_DIR" && mvn package -DskipTests -q ) || fail "Maven build failed — check Java version (requires 8-21; legacy Spring Boot 2.7 build)"
 fi
 
 # --- start backend (throwaway SQLite) ------------------------------------

@@ -4,49 +4,52 @@ import com.galaxium.holdservice.domain.AuditEvent;
 import com.galaxium.holdservice.domain.Hold;
 import com.galaxium.holdservice.repository.AuditEventRepository;
 import com.galaxium.holdservice.repository.HoldRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class HoldExpirationScheduler {
 
-    private final HoldRepository holdRepository;
-    private final AuditEventRepository auditEventRepository;
+    private static final Logger log = LoggerFactory.getLogger(HoldExpirationScheduler.class);
+
+    @Autowired
+    private HoldRepository holdRepository;
+
+    @Autowired
+    private AuditEventRepository auditEventRepository;
 
     @Scheduled(fixedDelayString = "${hold.expiration.check.interval.seconds:60}000")
     @Transactional
     public void expireHolds() {
-        Instant now = Instant.now();
+        Date now = new Date();
         List<Hold> expiredHolds = holdRepository.findExpiredHolds(now);
 
         if (!expiredHolds.isEmpty()) {
-            log.info("Found {} expired holds to process", expiredHolds.size());
+            log.info("Found " + expiredHolds.size() + " expired holds to process");
 
             for (Hold hold : expiredHolds) {
                 hold.setStatus(Hold.HoldStatus.EXPIRED);
                 holdRepository.save(hold);
 
                 // Create audit event
-                AuditEvent event = AuditEvent.builder()
-                        .entityType("HOLD")
-                        .entityId(hold.getHoldId())
-                        .eventType("EXPIRED")
-                        .details(String.format("Hold expired at %s", now))
-                        .build();
+                AuditEvent event = new AuditEvent();
+                event.setEntityType("HOLD");
+                event.setEntityId(hold.getHoldId());
+                event.setEventType("EXPIRED");
+                event.setDetails("Hold expired at " + now);
                 auditEventRepository.save(event);
 
-                log.info("Hold {} marked as expired", hold.getHoldId());
+                log.info("Hold " + hold.getHoldId() + " marked as expired");
             }
 
-            log.info("Processed {} expired holds", expiredHolds.size());
+            log.info("Processed " + expiredHolds.size() + " expired holds");
         }
     }
 }

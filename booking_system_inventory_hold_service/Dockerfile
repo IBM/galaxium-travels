@@ -20,8 +20,8 @@ RUN mvn clean package -DskipTests
 FROM ${RUNTIME_IMAGE}
 WORKDIR /app
 
-# Copy the built jar from build stage
-COPY --from=build /app/target/*.jar app.jar
+# Copy the built executable war from build stage
+COPY --from=build /app/target/*.war app.war
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
@@ -34,4 +34,4 @@ ENV SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/holds.db
 ENV PYTHON_BACKEND_URL=http://python-backend:8000
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.war"]

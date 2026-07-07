@@ -5,83 +5,95 @@ import com.galaxium.holdservice.domain.AuditEvent;
 import com.galaxium.holdservice.domain.Quote;
 import com.galaxium.holdservice.repository.AuditEventRepository;
 import com.galaxium.holdservice.repository.QuoteRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringSubstitutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.Year;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class QuoteService {
 
-    private final QuoteRepository quoteRepository;
-    private final AuditEventRepository auditEventRepository;
-    private final PricingService pricingService;
+    private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
+
+    @Autowired
+    private QuoteRepository quoteRepository;
+
+    @Autowired
+    private AuditEventRepository auditEventRepository;
+
+    @Autowired
+    private PricingService pricingService;
 
     @Transactional
     public Quote createQuote(CreateQuoteRequest request) {
-        log.info("Creating quote for flight {} with {} {} seats", 
-                request.getFlightId(), request.getQuantity(), request.getSeatClass());
+        log.info("Creating quote for flight " + request.getFlightId() + " with "
+                + request.getQuantity() + " " + request.getSeatClass() + " seats");
 
         // Generate quote ID
         String quoteId = generateQuoteId();
 
         // Calculate pricing
         long pricePerSeat = pricingService.calculatePrice(
-                request.getFlightId(), 
+                request.getFlightId(),
                 request.getSeatClass()
         );
         long totalPrice = pricePerSeat * request.getQuantity();
 
+        // Quotes are valid for 24 hours
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR_OF_DAY, 24);
+
         // Create quote
-        Quote quote = Quote.builder()
-                .quoteId(quoteId)
-                .flightId(request.getFlightId())
-                .seatClass(request.getSeatClass())
-                .quantity(request.getQuantity())
-                .travelerId(request.getTravelerId())
-                .travelerName(request.getTravelerName())
-                .pricePerSeat(pricePerSeat)
-                .totalPrice(totalPrice)
-                .expiresAt(Instant.now().plus(24, ChronoUnit.HOURS))
-                .status(Quote.QuoteStatus.CREATED)
-                .build();
+        Quote quote = new Quote();
+        quote.setQuoteId(quoteId);
+        quote.setFlightId(request.getFlightId());
+        quote.setSeatClass(request.getSeatClass());
+        quote.setQuantity(request.getQuantity());
+        quote.setTravelerId(request.getTravelerId());
+        quote.setTravelerName(request.getTravelerName());
+        quote.setPricePerSeat(pricePerSeat);
+        quote.setTotalPrice(totalPrice);
+        quote.setExpiresAt(cal.getTime());
+        quote.setStatus(Quote.QuoteStatus.CREATED);
 
         quote = quoteRepository.save(quote);
 
         // Audit event
-        createAuditEvent("QUOTE", quoteId, "CREATED", 
-                String.format("Quote created for flight %d, %d %s seats", 
-                        request.getFlightId(), request.getQuantity(), request.getSeatClass()));
+        Map<String, String> values = new HashMap<String, String>();
+        values.put("flightId", String.valueOf(request.getFlightId()));
+        values.put("quantity", String.valueOf(request.getQuantity()));
+        values.put("seatClass", request.getSeatClass());
+        createAuditEvent("QUOTE", quoteId, "CREATED",
+                StringSubstitutor.replace("Quote created for flight ${flightId}, ${quantity} ${seatClass} seats", values));
 
-        log.info("Quote {} created successfully", quoteId);
+        log.info("Quote " + quoteId + " created successfully");
         return quote;
     }
 
     @Transactional(readOnly = true)
-    public Optional<Quote> getQuote(String quoteId) {
-        return quoteRepository.findById(quoteId);
+    public Quote getQuote(String quoteId) {
+        return quoteRepository.findById(quoteId).orElse(null);
     }
 
     private String generateQuoteId() {
-        int year = Year.now().getValue();
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR);
         long count = quoteRepository.count() + 1;
         return String.format("Q-%d-%06d", year, count);
     }
 
     private void createAuditEvent(String entityType, String entityId, String eventType, String details) {
-        AuditEvent event = AuditEvent.builder()
-                .entityType(entityType)
-                .entityId(entityId)
-                .eventType(eventType)
-                .details(details)
-                .build();
+        AuditEvent event = new AuditEvent();
+        event.setEntityType(entityType);
+        event.setEntityId(entityId);
+        event.setEventType(eventType);
+        event.setDetails(details);
         auditEventRepository.save(event);
     }
 }
