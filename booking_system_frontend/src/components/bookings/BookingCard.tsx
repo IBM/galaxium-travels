@@ -4,6 +4,8 @@ import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'luc
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 interface BookingCardProps {
   booking: Booking;
   flight?: Flight;
@@ -71,6 +73,10 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+
+  const handleAddToCalendar = () => {
+    window.open(`${API_BASE}/bookings/${booking.booking_id}/export.ics`, '_blank');
+  };
 
   return (
     <motion.div
@@ -153,17 +159,28 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleAddToCalendar}
+              className="flex-1 flex items-center justify-center gap-1"
+            >
+              <Calendar size={14} />
+              Add to Calendar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="flex-1"
+            >
+              Cancel Booking
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

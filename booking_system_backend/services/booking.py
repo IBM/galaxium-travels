@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,55 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an iCalendar (.ics) file content for a specific booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight with ID {booking.flight_id} not found."
+        )
+
+    departure_dt = datetime.strptime(flight.departure_time, "%Y-%m-%d %H:%M")
+    arrival_dt = datetime.strptime(flight.arrival_time, "%Y-%m-%d %H:%M")
+
+    def fmt_ics_dt(dt: datetime) -> str:
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    uid = f"booking-{booking.booking_id}@galaxium-travels"
+    dtstart = fmt_ics_dt(departure_dt)
+    dtend = fmt_ics_dt(arrival_dt)
+    summary = f"Galaxium Flight: {flight.origin} → {flight.destination}"
+    location = f"{flight.origin} to {flight.destination}"
+    description = (
+        f"Booking #{booking.booking_id} | "
+        f"Seat class: {booking.seat_class} | "
+        f"Price paid: {booking.price_paid}"
+    )
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//Booking Export//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"SUMMARY:{summary}\r\n"
+        f"LOCATION:{location}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"DESCRIPTION:{description}\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    return ics
