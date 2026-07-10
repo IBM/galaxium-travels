@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,53 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an RFC 5545-compliant .ics calendar event for a booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight with ID {booking.flight_id} not found."
+        )
+
+    fmt = "%Y-%m-%d %H:%M"
+    dtstart = datetime.strptime(flight.departure_time, fmt).strftime("%Y%m%dT%H%M%SZ")
+    dtend = datetime.strptime(flight.arrival_time, fmt).strftime("%Y%m%dT%H%M%SZ")
+    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    uid = f"booking-{booking.booking_id}@galaxium-travels"
+
+    seat_label = {
+        'economy': 'Economy',
+        'business': 'Business',
+        'galaxium': 'Galaxium Class',
+    }.get(booking.seat_class, booking.seat_class)
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking System//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART:{dtstart}",
+        f"DTEND:{dtend}",
+        f"SUMMARY:Galaxium Travels – {flight.origin} to {flight.destination}",
+        f"DESCRIPTION:Booking #{booking.booking_id}\\nFlight #{flight.flight_id}\\nSeat class: {seat_label}\\nStatus: {booking.status}",
+        f"LOCATION:{flight.origin} to {flight.destination}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(lines) + "\r\n"

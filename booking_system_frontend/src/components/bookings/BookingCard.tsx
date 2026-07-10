@@ -1,6 +1,6 @@
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
+import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket, CalendarPlus } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -71,6 +71,7 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
   };
 
   const canCancel = booking.status === 'booked';
+  const canExport = booking.status !== 'cancelled';
 
   return (
     <motion.div
@@ -153,18 +154,36 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
-        {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
-        )}
+        {/* Action Buttons */}
+        <div className={canCancel ? "flex gap-2" : ""}>
+          {canExport && (
+            <a
+              href={`/api/bookings/${booking.booking_id}/export.ics`}
+              download={`booking-${booking.booking_id}.ics`}
+              className="flex-1"
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+              >
+                <CalendarPlus size={16} />
+                Add to Calendar
+              </Button>
+            </a>
+          )}
+          {canCancel && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="flex-1"
+            >
+              Cancel Booking
+            </Button>
+          )}
+        </div>
       </Card>
     </motion.div>
   );
