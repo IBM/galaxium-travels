@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
+import uuid
 
 
 # Price multipliers for each seat class
@@ -126,3 +127,51 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _format_ics_datetime(dt_str: str) -> str:
+    """Normalise stored datetime strings to ICS YYYYMMDDTHHMMSSZ format.
+
+    Handles both space-separated ('2099-01-01 09:00') and ISO 8601
+    ('2099-01-01T09:00:00Z') formats.  All times are treated as UTC.
+    """
+    # Strip trailing Z so fromisoformat() can parse it, then replace space with T
+    normalised = dt_str.rstrip('Z').replace(' ', 'T')
+    dt = datetime.fromisoformat(normalised)
+    return dt.strftime('%Y%m%dT%H%M%SZ')
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Return an RFC 5545 VCALENDAR string for a booking, or ErrorResponse if not found."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    origin = flight.origin if flight else "Unknown"
+    destination = flight.destination if flight else "Unknown"
+    departure = _format_ics_datetime(flight.departure_time) if flight else "19700101T000000Z"
+    arrival = _format_ics_datetime(flight.arrival_time) if flight else "19700101T000000Z"
+
+    dtstamp = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+    uid = str(uuid.uuid4())
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking Export//EN",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART:{departure}",
+        f"DTEND:{arrival}",
+        f"SUMMARY:Galaxium Flight {origin} → {destination}",
+        f"DESCRIPTION:Booking #{booking_id} · {booking.seat_class.capitalize()} class · {origin} to {destination}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(lines) + "\r\n"

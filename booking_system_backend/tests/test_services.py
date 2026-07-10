@@ -973,3 +973,96 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    """Test get_booking_ics service function."""
+
+    def test_get_booking_ics_valid(self, db_session):
+        """Test that a valid booking returns a properly formatted ICS string."""
+        from models import User, Flight, Booking
+
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 08:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "END:VEVENT" in result
+        assert "END:VCALENDAR" in result
+        assert "DTSTART:20990101T090000Z" in result
+        assert "DTEND:20990101T170000Z" in result
+        assert "Earth" in result
+        assert "Mars" in result
+        # ICS requires CRLF line endings
+        assert "\r\n" in result
+
+    def test_get_booking_ics_not_found(self, db_session):
+        """Test that a missing booking returns ErrorResponse."""
+        from schemas import ErrorResponse
+
+        result = booking.get_booking_ics(db_session, 99999)
+
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
+    def test_get_booking_ics_iso_datetime_format(self, db_session):
+        """Test that ISO 8601 datetime format (with T and Z) is also handled correctly."""
+        from models import User, Flight, Booking
+
+        db_session.add(User(name="ISO User", email="iso@example.com"))
+        db_session.add(Flight(
+            origin="Moon",
+            destination="Jupiter",
+            departure_time="2099-06-15T12:30:00Z",
+            arrival_time="2099-06-16T08:00:00Z",
+            base_price=2000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-06-01T10:00:00Z",
+            seat_class="business",
+            price_paid=5000000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "DTSTART:20990615T123000Z" in result
+        assert "DTEND:20990616T080000Z" in result
