@@ -870,3 +870,52 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestBookingIcsEndpoint:
+    """Test GET /bookings/{booking_id}/export.ics endpoint."""
+
+    def _create_booking(self, client, db_session, sample_user_data):
+        """Helper: register a user, create a flight + booking; return booking_id."""
+        user_resp = client.post("/register", json=sample_user_data)
+        user_id = user_resp.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-01 10:00",
+            arrival_time="2099-06-01 18:00",
+            base_price=500000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2099-01-01 08:00",
+            seat_class="economy",
+            price_paid=500000,
+        ))
+        db_session.commit()
+        booking = db_session.query(Booking).first()
+        return booking.booking_id
+
+    def test_export_ics_200_with_correct_headers(self, client, db_session, sample_user_data):
+        """Valid booking returns 200 with text/calendar content-type and attachment header."""
+        booking_id = self._create_booking(client, db_session, sample_user_data)
+        response = client.get(f"/bookings/{booking_id}/export.ics")
+
+        assert response.status_code == 200
+        assert "text/calendar" in response.headers["content-type"]
+        assert f"booking-{booking_id}.ics" in response.headers["content-disposition"]
+        assert response.text.startswith("BEGIN:VCALENDAR")
+
+    def test_export_ics_404_for_unknown_id(self, client, db_session):
+        """Unknown booking_id returns 404."""
+        response = client.get("/bookings/99999/export.ics")
+        assert response.status_code == 404

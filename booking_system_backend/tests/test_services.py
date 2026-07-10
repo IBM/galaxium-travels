@@ -973,3 +973,64 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    """Test get_booking_ics service function."""
+
+    def _make_booking(self, db_session):
+        """Helper: create a user, flight, and booking; return (booking_obj, flight_obj)."""
+        db_session.add(User(name="Ics User", email="ics@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-01 10:00",
+            arrival_time="2099-06-01 18:00",
+            base_price=500000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        from models import Booking
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 08:00",
+            seat_class="economy",
+            price_paid=500000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+        return booking_obj, flight_obj
+
+    def test_valid_booking_returns_ics_string(self, db_session):
+        """Valid booking returns a str starting with BEGIN:VCALENDAR."""
+        booking_obj, _ = self._make_booking(db_session)
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert result.startswith("BEGIN:VCALENDAR")
+
+    def test_ics_contains_required_fields(self, db_session):
+        """ICS output contains all required RFC 5545 fields."""
+        booking_obj, flight_obj = self._make_booking(db_session)
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "BEGIN:VEVENT" in result
+        assert "END:VEVENT" in result
+        assert "END:VCALENDAR" in result
+        assert "DTSTART:" in result
+        assert "DTEND:" in result
+        assert "SUMMARY:" in result
+        assert flight_obj.origin in result
+        assert flight_obj.destination in result
+
+    def test_not_found_returns_error_response(self, db_session):
+        """Non-existent booking_id returns ErrorResponse."""
+        from schemas import ErrorResponse
+        result = booking.get_booking_ics(db_session, 99999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
