@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastmcp import FastMCP
 from sqlalchemy.orm import Session
 from typing import Union, Optional
@@ -83,6 +84,20 @@ def register_user(name: str, email: str) -> UserOut:
     db = SessionLocal()
     try:
         result = user.register_user(db, name, email)
+        if isinstance(result, ErrorResponse):
+            raise Exception(result.details or result.error)
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def get_booking_ics(booking_id: int) -> str:
+    """Export a booking as an ICS calendar file string.
+    Returns a VCALENDAR text (RFC 5545) for the booking, or raises an error if not found."""
+    db = SessionLocal()
+    try:
+        result = booking.get_booking_ics(db, booking_id)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -248,6 +263,22 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
 def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     """Retrieve all bookings for a specific user by user_id."""
     return booking.get_bookings(db, user_id)
+
+
+@app.get("/bookings/{booking_id}/export.ics", tags=["Bookings"])
+def export_booking_ics(booking_id: int, db: Session = Depends(get_db)):
+    """Export a booking as an ICS calendar file.
+
+    Returns a text/calendar file with Content-Disposition: attachment.
+    """
+    result = booking.get_booking_ics(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        raise HTTPException(status_code=404, detail=result.model_dump())
+    return Response(
+        content=result,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename=\"booking-{booking_id}.ics\""},
+    )
 
 
 @app.post("/cancel/{booking_id}", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
