@@ -1,0 +1,65 @@
+# ============================================================
+# Data Prepper Pipeline Configuration
+# ============================================================
+# Receives logs from OTEL Collector, parses/enriches them,
+# and writes structured records into OpenSearch daily indices.
+# ============================================================
+
+version: "2"
+
+log-pipeline:
+  source:
+    otel_logs_source:
+      port: 21890
+      ssl: false
+
+  processor:
+    # Parse the standard log format: YYYY-MM-DD HH:MM:SS [LEVEL] logger - message
+    - grok:
+        match:
+          message:
+            - "%{TIMESTAMP_ISO8601:log_timestamp} +\\[%{LOGLEVEL:severity}\\] +%{DATA:logger} +[—-]+ %{GREEDYDATA:log_message}"
+            - "%{GREEDYDATA:log_message}"   # fallback — keep unparseable logs
+
+    # Rename raw message field to preserve original
+    - rename_keys:
+        entries:
+          - from_key: message
+            to_key: raw_message
+
+    # Copy parsed message into the top-level message field
+    - rename_keys:
+        entries:
+          - from_key: log_message
+            to_key: message
+
+    # Normalise severity to uppercase
+    - uppercase_string:
+        with_keys: [severity]
+
+    # Add pipeline metadata
+    - add_entries:
+        entries:
+          - key: pipeline
+            value: "log-intelligence-v1"
+          - key: analysed
+            value: false          # AI analyser sets this to true after processing
+
+    # Drop DEBUG logs in production to reduce noise
+    - drop_events:
+        drop_when: '/severity == "DEBUG"'
+
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "admin"
+        password: "Galaxium2026Secure"
+        insecure: true
+        index: "org-logs-%{yyyy.MM.dd}"    # daily rolling index e.g. org-logs-2026.07.13
+        index_type: custom
+        template_type: index-template
+        template_file: "/usr/share/data-prepper/templates/org-logs-template.json"
+        bulk_size: 4
+        # Retry settings
+        max_retries: 3
+        retry_backoff: 50ms

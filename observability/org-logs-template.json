@@ -1,0 +1,30 @@
+{
+  "index_patterns": ["org-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.refresh_interval": "10s"
+    },
+    "mappings": {
+      "properties": {
+        "timestamp":     { "type": "date" },
+        "log_timestamp": { "type": "date", "format": "yyyy-MM-dd HH:mm:ss||strict_date_optional_time" },
+        "severity":      { "type": "keyword" },
+        "logger":        { "type": "keyword" },
+        "service":       { "type": "keyword" },
+        "message":       { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 512 } } },
+        "raw_message":   { "type": "text" },
+        "error_code":    { "type": "keyword" },
+        "root_cause":    { "type": "text" },
+        "hint":          { "type": "text" },
+        "trace_id":      { "type": "keyword" },
+        "span_id":       { "type": "keyword" },
+        "pipeline":      { "type": "keyword" },
+        "analysed":      { "type": "boolean" },
+        "deployment.environment": { "type": "keyword" },
+        "organisation":  { "type": "keyword" }
+      }
+    }
+  }
+}

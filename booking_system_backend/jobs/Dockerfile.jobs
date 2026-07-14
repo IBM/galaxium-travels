@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend source (models, db, etc.) and jobs folder
+COPY . .
+
+# Create log directory
+RUN mkdir -p /app/jobs/logs
+
+# Default: run both jobs sequentially
+CMD ["sh", "-c", "python jobs/expired_bookings_cleanup.py && python jobs/low_seats_alert.py"]

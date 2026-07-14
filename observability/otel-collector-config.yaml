@@ -1,0 +1,69 @@
+# ============================================================
+# OpenTelemetry Collector Configuration
+# ============================================================
+# All applications/tools in the organisation send logs, traces,
+# and metrics to this collector on port 4317 (gRPC) or 4318 (HTTP).
+# The collector filters, batches, and forwards to Data Prepper.
+# ============================================================
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317   # gRPC — primary for SDK-instrumented apps
+      http:
+        endpoint: 0.0.0.0:4318   # HTTP — for REST-based integrations
+
+  # Reads existing log files from disk (e.g. jobs/logs/*.log)
+  filelog:
+    include:
+      - /var/log/app/*.log
+      - /app/jobs/logs/*.log
+    start_at: beginning
+    operators:
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+\[(?P<severity>[A-Z]+)\]\s+(?P<logger>\S+)\s+[—-]\s+(?P<message>.+)$'
+        timestamp:
+          parse_from: attributes.timestamp
+          layout: "%Y-%m-%d %H:%M:%S"
+        severity:
+          parse_from: attributes.severity
+
+processors:
+  # Batch logs before forwarding — reduces network overhead
+  batch:
+    timeout: 5s
+    send_batch_size: 500
+
+  # Attach resource attributes to every log record
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "production"
+        action: insert
+      - key: organisation
+        value: "galaxium-travels"
+        action: insert
+
+  # Add memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 256
+
+exporters:
+  # Forward to Data Prepper for parsing and enrichment
+  otlp/data-prepper:
+    endpoint: data-prepper:21890
+    tls:
+      insecure: true
+
+  # Debug exporter — logs to collector stdout (disable in production)
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    logs:
+      receivers:  [otlp, filelog]
+      processors: [memory_limiter, resource, batch]
+      exporters:  [otlp/data-prepper, debug]
