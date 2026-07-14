@@ -91,6 +91,8 @@ services:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
       # Mount app log files so the filelog receiver can read them
       - ../booking_system_backend/jobs/logs:/app/jobs/logs:ro
+      # Mount PowerCenter log directory (relative to this compose file)
+      - ../../powercenter-log-directory:/powercenter/logs:ro
     ports:
       - "4317:4317"   # OTLP gRPC — all SDK-instrumented apps point here
       - "4318:4318"   # OTLP HTTP

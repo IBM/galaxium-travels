@@ -15,7 +15,7 @@ receivers:
         endpoint: 0.0.0.0:4318   # HTTP — for REST-based integrations
 
   # Reads existing log files from disk (e.g. jobs/logs/*.log)
-  filelog:
+  filelog/app:
     include:
       - /var/log/app/*.log
       - /app/jobs/logs/*.log
@@ -28,6 +28,42 @@ receivers:
           layout: "%Y-%m-%d %H:%M:%S"
         severity:
           parse_from: attributes.severity
+
+  # ----------------------------------------------------------------
+  # Informatica PowerCenter log receiver
+  # Log format:
+  #   YYYY-MM-DD HH:MM:SS : SEVERITY : (PID|THREAD) : (IS|SERVICE) : HOSTNAME : ERROR_CODE : message
+  # Source path (Windows host — mounted into container as /powercenter/logs):
+  #   C:\Users\003IC0744\Desktop\IBM Bob\powercenter log directory\
+  # ----------------------------------------------------------------
+  filelog/powercenter:
+    include:
+      - /powercenter/logs/*.txt
+      - /powercenter/logs/*.log
+    start_at: beginning
+    multiline:
+      line_start_pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} :'
+    operators:
+      # Parse PowerCenter log format:
+      # 2026-07-10 17:11:12 : ERROR : (10901 | PRE-SESS) : (IS | ETL_IS_UNICODE) : pwc-00.dev.dwh.bicc.vfziggo.com : CMN_1949 : message
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) : (?P<severity>INFO|ERROR|WARNING|FATAL|DEBUG|WARN) : \((?P<pid>\d+) \| (?P<thread>[^)]+)\) : \([^)]+\) : (?P<hostname>[^\s:]+) : (?P<error_code>[A-Z0-9_]+) : (?P<message>.+)$'
+        timestamp:
+          parse_from: attributes.timestamp
+          layout: "%Y-%m-%d %H:%M:%S"
+        severity:
+          parse_from: attributes.severity
+      # Tag all PowerCenter logs with source metadata
+      - type: add
+        field: attributes.service.name
+        value: "informatica-powercenter"
+      - type: add
+        field: attributes.log.source
+        value: "powercenter"
+      # Extract workflow name from filename (e.g. w0_POPULATE_PIPELINE_HCM_log.txt)
+      - type: move
+        from: attributes["log.file.name"]
+        to: attributes.pwc_log_file
 
 processors:
   # Batch logs before forwarding — reduces network overhead
@@ -64,6 +100,6 @@ exporters:
 service:
   pipelines:
     logs:
-      receivers:  [otlp, filelog]
+      receivers:  [otlp, filelog/app, filelog/powercenter]
       processors: [memory_limiter, resource, batch]
       exporters:  [otlp/data-prepper, debug]
