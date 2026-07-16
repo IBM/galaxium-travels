@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { Booking, Flight } from '../../types';
 import { Card, Button } from '../common';
 import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
+import { exportBookingToIcs } from '../../services/api';
 
 interface BookingCardProps {
   booking: Booking;
@@ -12,6 +14,17 @@ interface BookingCardProps {
 }
 
 export const BookingCard = ({ booking, flight, onCancel, isCancelling }: BookingCardProps) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportBookingToIcs(booking.booking_id);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getSeatClassIcon = () => {
     switch (booking.seat_class) {
       case 'business':
@@ -153,17 +166,29 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExport}
+              isLoading={isExporting}
+              className="w-full"
+            >
+              <Calendar size={16} className="mr-2" />
+              Add to Calendar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

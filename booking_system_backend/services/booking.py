@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,56 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _to_ics_dt(dt_str: str) -> str:
+    """Convert a stored datetime string to RFC 5545 UTC format 'YYYYMMDDTHHMMSSz'.
+
+    Handles two formats found in the database:
+      - 'YYYY-MM-DD HH:MM'   (space-separated, no seconds)
+      - 'YYYY-MM-DDTHH:MM:SSZ' (ISO 8601 with T separator and Z suffix)
+    """
+    s = dt_str.strip().rstrip("Z").replace("T", " ")
+    # Normalise to 'YYYY-MM-DD HH:MM:SS', padding seconds if absent
+    if s.count(":") == 1:
+        s += ":00"
+    dt = datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+    return dt.strftime("%Y%m%dT%H%M%S") + "Z"
+
+
+def generate_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an iCalendar (RFC 5545) string for a booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+
+    uid = f"booking-{booking.booking_id}@galaxium-travels"
+    summary = f"Galaxium Flight: {flight.origin} → {flight.destination}" if flight else f"Galaxium Booking #{booking.booking_id}"
+    location = f"{flight.origin} to {flight.destination}" if flight else ""
+    dtstart = _to_ics_dt(flight.departure_time) if flight else ""
+    dtend = _to_ics_dt(flight.arrival_time) if flight else ""
+    description = f"Seat class: {booking.seat_class}\\nPrice paid: {booking.price_paid} credits"
+    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "Z"
+
+    ics_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking Export//EN",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp}",
+        f"SUMMARY:{summary}",
+        f"LOCATION:{location}",
+        f"DTSTART:{dtstart}",
+        f"DTEND:{dtend}",
+        f"DESCRIPTION:{description}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(ics_lines) + "\r\n"

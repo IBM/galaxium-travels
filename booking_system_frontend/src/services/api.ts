@@ -221,4 +221,25 @@ export const healthCheck = async (): Promise<{ status: string }> => {
 
 export default api;
 
+/**
+ * Export a booking as an .ics calendar file and trigger a browser download.
+ */
+export const exportBookingToIcs = async (bookingId: number): Promise<void> => {
+  // Always use a root-relative path so the request is intercepted by the Vite
+  // proxy. Using VITE_API_URL here produces an absolute URL (e.g.
+  // http://localhost:8001) that bypasses the proxy and is blocked by CORS.
+  const response = await fetch(`/api/bookings/${bookingId}/export.ics`);
+  if (!response.ok) {
+    throw new Error(`Failed to export booking: ${response.status}`);
+  }
+  const text = await response.text();
+  const blob = new Blob([text], { type: 'text/calendar' });
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = `booking-${bookingId}.ics`;
+  anchor.click();
+  URL.revokeObjectURL(objectUrl);
+};
+
 // Made with Bob

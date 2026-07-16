@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 from sqlalchemy.orm import Session
@@ -69,6 +70,20 @@ def cancel_booking(booking_id: int) -> BookingOut:
     db = SessionLocal()
     try:
         result = booking.cancel_booking(db, booking_id)
+        if isinstance(result, ErrorResponse):
+            raise Exception(result.details or result.error)
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def export_booking_ics(booking_id: int) -> str:
+    """Export a booking as an iCalendar (.ics) string (RFC 5545).
+    Returns the iCalendar text for the booking, or raises an error if not found."""
+    db = SessionLocal()
+    try:
+        result = booking.generate_booking_ics(db, booking_id)
         if isinstance(result, ErrorResponse):
             raise Exception(result.details or result.error)
         return result
@@ -248,6 +263,19 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
 def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     """Retrieve all bookings for a specific user by user_id."""
     return booking.get_bookings(db, user_id)
+
+
+@app.get("/bookings/{booking_id}/export.ics", tags=["Bookings"])
+def export_booking_ics_endpoint(booking_id: int, db: Session = Depends(get_db)):
+    """Export a booking as an iCalendar (.ics) file download."""
+    result = booking.generate_booking_ics(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        return JSONResponse(status_code=404, content=result.model_dump())
+    return Response(
+        content=result,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="booking-{booking_id}.ics"'}
+    )
 
 
 @app.post("/cancel/{booking_id}", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
