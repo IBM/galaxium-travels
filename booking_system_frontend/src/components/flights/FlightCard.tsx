@@ -1,18 +1,21 @@
-import type { Flight } from '../../types';
+import type { Flight, SeatClass } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Clock, DollarSign, Users } from 'lucide-react';
+import { Plane, Clock, Users } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
 interface FlightCardProps {
   flight: Flight;
-  onBook: (flight: Flight) => void;
+  onBook: (flight: Flight, seatClass: SeatClass) => void;
 }
 
-export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
-  const isLowSeats = flight.seats_available <= 2;
-  const isSoldOut = flight.seats_available === 0;
+const CLASSES: { key: SeatClass; label: string }[] = [
+  { key: 'economy',  label: 'Economy'  },
+  { key: 'business', label: 'Business' },
+  { key: 'galaxium', label: 'Galaxium' },
+];
 
+export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -70,32 +73,57 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
             </span>
           </div>
 
-          {/* Price */}
-          <div className="flex items-center gap-2">
-            <DollarSign size={16} className="text-alien-green" />
-            <span className="text-2xl font-bold text-star-white">
-              {formatCurrency(flight.price)}
-            </span>
-            <span className="text-sm text-star-white/60">per seat</span>
-          </div>
+          {/* Seat Class Selector */}
+          <div className="space-y-2 pt-1">
+            {CLASSES.map(({ key, label }) => {
+              const price = flight[`${key}_price` as keyof Flight] as number;
+              const seats = flight[`${key}_seats` as keyof Flight] as number;
+              const isSoldOut = seats === 0;
+              const isLow = seats > 0 && seats <= 5;
 
-          {/* Seats Available */}
-          <div className="flex items-center gap-2">
-            <Users size={16} className={isLowSeats ? 'text-solar-orange' : 'text-star-white/70'} />
-            <span className={`text-sm ${isLowSeats ? 'text-solar-orange font-semibold' : 'text-star-white/70'}`}>
-              {isSoldOut ? 'Sold Out' : `${flight.seats_available} seats available`}
-            </span>
+              return (
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-3 p-2 rounded-lg bg-white/5 border border-white/10"
+                >
+                  {/* Class info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-star-white capitalize">{label}</p>
+                    <p className="text-base font-bold text-star-white">
+                      {formatCurrency(price)}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Users
+                        size={12}
+                        className={isLow ? 'text-solar-orange' : 'text-star-white/50'}
+                      />
+                      <span
+                        className={`text-xs ${
+                          isSoldOut
+                            ? 'text-red-400'
+                            : isLow
+                            ? 'text-solar-orange font-semibold'
+                            : 'text-star-white/50'
+                        }`}
+                      >
+                        {isSoldOut ? 'Sold Out' : `${seats} seats`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Book button for this class */}
+                  <Button
+                    onClick={() => onBook(flight, key)}
+                    disabled={isSoldOut}
+                    size="sm"
+                  >
+                    {isSoldOut ? 'Sold Out' : 'Book'}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* Book Button */}
-        <Button
-          onClick={() => onBook(flight)}
-          disabled={isSoldOut}
-          className="w-full"
-        >
-          {isSoldOut ? 'Sold Out' : 'Book Now'}
-        </Button>
       </Card>
     </motion.div>
   );

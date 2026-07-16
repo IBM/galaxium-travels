@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Flight } from '../../types';
+import type { Flight, SeatClass } from '../../types';
 import { Modal, Button } from '../common';
 import { Plane, Calendar, Clock, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
@@ -11,14 +11,23 @@ interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   flight: Flight | null;
+  seatClass: SeatClass;
   onSuccess: () => void;
 }
 
-export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
+const CLASS_LABELS: Record<SeatClass, string> = {
+  economy:  'Economy',
+  business: 'Business',
+  galaxium: 'Galaxium',
+};
+
+export const BookingModal = ({ isOpen, onClose, flight, seatClass, onSuccess }: BookingModalProps) => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
   if (!flight) return null;
+
+  const classPrice = flight[`${seatClass}_price` as keyof Flight] as number;
 
   const handleConfirmBooking = async () => {
     if (!user) {
@@ -33,6 +42,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         user_id: user.user_id,
         name: user.name,
         flight_id: flight.flight_id,
+        seat_class: seatClass,
       });
 
       if (isErrorResponse(result)) {
@@ -110,6 +120,12 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
           </div>
         </div>
 
+        {/* Seat Class */}
+        <div className="glass-card p-4 bg-white/5">
+          <h4 className="text-sm font-semibold text-star-white mb-1">Seat Class</h4>
+          <p className="text-star-white capitalize font-medium">{CLASS_LABELS[seatClass]}</p>
+        </div>
+
         {/* Passenger Info */}
         {user && (
           <div className="glass-card p-4 bg-white/5">
@@ -128,7 +144,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
             <span className="text-white font-semibold">Total Price</span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(flight.price)}
+            {formatCurrency(classPrice)}
           </span>
         </div>
 

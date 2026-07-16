@@ -23,10 +23,13 @@ from db import SessionLocal, init_db
 from models import Booking
 
 # ---------------------------------------------------------------------------
-# Logging setup — writes to both console and a log file
+# Logging setup — writes to both console and a timestamped log file
 # ---------------------------------------------------------------------------
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
+
+_run_ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+_log_file = os.path.join(LOG_DIR, f"expired_bookings_cleanup_{_run_ts}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,7 +37,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(os.path.join(LOG_DIR, "expired_bookings_cleanup.log")),
+        logging.FileHandler(_log_file),
     ],
 )
 logger = logging.getLogger("expired_bookings_cleanup")

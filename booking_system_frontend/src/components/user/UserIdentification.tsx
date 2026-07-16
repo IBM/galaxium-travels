@@ -17,7 +17,6 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
   const [isLoading, setIsLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim() || !email.trim()) {

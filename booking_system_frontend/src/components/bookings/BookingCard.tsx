@@ -61,6 +61,9 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
                 <span className={`text-sm font-semibold capitalize ${getStatusColor()}`}>
                   {booking.status}
                 </span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-star-white/80 capitalize">
+                  {booking.seat_class}
+                </span>
               </div>
             </div>
           </div>
@@ -94,7 +97,7 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
             <div className="flex items-center justify-between pt-3 border-t border-white/10">
               <span className="text-sm text-star-white/60">Price</span>
               <span className="text-lg font-bold text-star-white">
-                {formatCurrency(flight.price)}
+                {formatCurrency(flight[`${booking.seat_class}_price` as keyof Flight] as number)}
               </span>
             </div>
           </div>

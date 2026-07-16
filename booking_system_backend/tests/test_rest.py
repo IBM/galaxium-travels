@@ -7,6 +7,24 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from models import User, Flight, Booking
 
 
+# ---------------------------------------------------------------------------
+# Helper: standard test flight with per-class seats/prices
+# ---------------------------------------------------------------------------
+
+def make_flight(**overrides):
+    defaults = dict(
+        origin="Earth",
+        destination="Mars",
+        departure_time="2099-01-01T09:00:00Z",
+        arrival_time="2099-01-01T17:00:00Z",
+        economy_price=1000000, economy_seats=5,
+        business_price=2000000, business_seats=3,
+        galaxium_price=5000000, galaxium_seats=1,
+    )
+    defaults.update(overrides)
+    return Flight(**defaults)
+
+
 class TestFlightsEndpoint:
     """Test /flights endpoint."""
 
@@ -18,14 +36,7 @@ class TestFlightsEndpoint:
 
     def test_get_flights_with_data(self, client, db_session):
         """Test getting flights with data."""
-        db_session.add(Flight(
-            origin="Earth",
-            destination="Mars",
-            departure_time="2099-01-01T09:00:00Z",
-            arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
-        ))
+        db_session.add(make_flight())
         db_session.commit()
 
         response = client.get("/flights")
@@ -96,14 +107,7 @@ class TestBookEndpoint:
         user_id = user_response.json()["user_id"]
 
         # Create flight
-        db_session.add(Flight(
-            origin="Earth",
-            destination="Mars",
-            departure_time="2099-01-01T09:00:00Z",
-            arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
-        ))
+        db_session.add(make_flight())
         db_session.commit()
         flight = db_session.query(Flight).first()
 
@@ -111,13 +115,15 @@ class TestBookEndpoint:
         response = client.post("/book", json={
             "user_id": user_id,
             "name": sample_user_data["name"],
-            "flight_id": flight.flight_id
+            "flight_id": flight.flight_id,
+            "seat_class": "economy",
         })
 
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "booked"
         assert data["user_id"] == user_id
+        assert data["seat_class"] == "economy"
 
     def test_book_flight_not_found(self, client, db_session, sample_user_data):
         """Test booking non-existent flight."""
@@ -127,7 +133,8 @@ class TestBookEndpoint:
         response = client.post("/book", json={
             "user_id": user_id,
             "name": sample_user_data["name"],
-            "flight_id": 999
+            "flight_id": 999,
+            "seat_class": "economy",
         })
 
         assert response.status_code == 200
@@ -146,14 +153,7 @@ class TestBookingsEndpoint:
         user_id = user_response.json()["user_id"]
 
         # Create flight and booking
-        db_session.add(Flight(
-            origin="Earth",
-            destination="Mars",
-            departure_time="2099-01-01T09:00:00Z",
-            arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=5
-        ))
+        db_session.add(make_flight())
         db_session.commit()
         flight = db_session.query(Flight).first()
 
@@ -161,6 +161,7 @@ class TestBookingsEndpoint:
             user_id=user_id,
             flight_id=flight.flight_id,
             status="booked",
+            seat_class="business",
             booking_time="2099-01-01T10:00:00Z"
         ))
         db_session.commit()
@@ -170,6 +171,7 @@ class TestBookingsEndpoint:
         data = response.json()
         assert len(data) == 1
         assert data[0]["status"] == "booked"
+        assert data[0]["seat_class"] == "business"
 
     def test_get_bookings_empty(self, client, db_session):
         """Test getting bookings when user has none."""
@@ -188,14 +190,7 @@ class TestCancelEndpoint:
         user_id = user_response.json()["user_id"]
 
         # Create flight and booking
-        db_session.add(Flight(
-            origin="Earth",
-            destination="Mars",
-            departure_time="2099-01-01T09:00:00Z",
-            arrival_time="2099-01-01T17:00:00Z",
-            price=1000000,
-            seats_available=4
-        ))
+        db_session.add(make_flight(economy_seats=4))
         db_session.commit()
         flight = db_session.query(Flight).first()
 
@@ -203,6 +198,7 @@ class TestCancelEndpoint:
             user_id=user_id,
             flight_id=flight.flight_id,
             status="booked",
+            seat_class="economy",
             booking_time="2099-01-01T10:00:00Z"
         ))
         db_session.commit()
