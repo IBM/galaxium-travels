@@ -154,6 +154,12 @@ def generate_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
         )
 
     flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight for booking {booking_id} could not be found."
+        )
 
     uid = f"booking-{booking.booking_id}@galaxium-travels"
     summary = f"Galaxium Flight: {flight.origin} → {flight.destination}" if flight else f"Galaxium Booking #{booking.booking_id}"
