@@ -131,10 +131,13 @@ scripts/
 ## Conventions
 
 - **Backend:** snake_case for functions/variables; PascalCase for classes/Pydantic models.
-- **Frontend API errors:** always inspect the `success` field or look for `error` in the body — HTTP status is not reliable for error detection (see [`api.ts`](booking_system_frontend/src/services/api.ts:112)).
-- **Custom Tailwind tokens:** space-themed palette defined in [`tailwind.config.js`](booking_system_frontend/tailwind.config.js) — do not assume standard Tailwind color names.
+- **Frontend API errors:** always inspect the `success` field or look for `error` in the body — HTTP status is not reliable for error detection (see [`api.ts`](booking_system_frontend/src/services/api.ts:22)).
+- **Custom Tailwind tokens:** space-themed palette defined in [`tailwind.config.js`](booking_system_frontend/tailwind.config.js) — do not assume standard Tailwind color names (`space-dark`, `space-blue`, `cosmic-purple`, `nebula-pink`, `alien-green`, `solar-orange`, `star-white`).
 - **Java:** Lombok `@Data`/`@Builder`/`@RequiredArgsConstructor` used throughout; no manual getters/setters. Service methods are `@Transactional`.
 - **New backend endpoints:** add REST handler + matching MCP tool if agent-accessible, following the pattern in `server.py`.
+- **Hold state is per-user localStorage** — [`holdStorage.ts`](booking_system_frontend/src/utils/holdStorage.ts) stores holds under `galaxium_holds_<userId>`. Not a global store; always pass `userId` when reading/writing.
+- **User session is localStorage-backed** — [`useUser.tsx`](booking_system_frontend/src/hooks/useUser.tsx) persists under key `galaxium_user`. Wrap components that need auth in `UserProvider`; access via `useUser()` hook only.
+- **Date formatting uses `date-fns`** — use [`formatters.ts`](booking_system_frontend/src/utils/formatters.ts) (`formatDate`, `formatTime`, `formatCurrency`, `calculateDuration`) rather than raw `Date` or `Intl` calls.
 
 ## Workflow
 
