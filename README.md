@@ -15,23 +15,30 @@ A complete full-stack application for booking interplanetary space travel, featu
 ## 🏗️ Architecture
 
 ```
-galaxium-travels-infrastructure/
+galaxium-travels/
 ├── booking_system_backend/     # FastAPI backend (Python)
 │   ├── server.py              # Main server with REST & MCP
 │   ├── services/              # Business logic layer
+│   │   ├── booking.py
+│   │   ├── flight.py
+│   │   └── user.py
 │   ├── models.py              # SQLAlchemy ORM models
+│   ├── schemas.py             # Pydantic schemas
+│   ├── db.py                  # Database session setup
+│   ├── seed.py                # Demo data seeder
 │   └── tests/                 # Test suite
 │
 ├── booking_system_frontend/    # React frontend (TypeScript)
 │   ├── src/
 │   │   ├── components/        # Reusable UI components
-│   │   ├── pages/            # Route pages
-│   │   ├── services/         # API integration
-│   │   └── types/            # TypeScript definitions
-│   └── dist/                 # Production build
+│   │   ├── pages/             # Route pages
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── services/          # API integration
+│   │   ├── types/             # TypeScript definitions
+│   │   └── utils/             # Utility helpers
+│   └── dist/                  # Production build
 │
-├── start.sh                   # Unix/Mac startup script
-└── start.bat                  # Windows startup script
+└── start.sh                   # Unix/macOS startup script
 ```
 
 ## 🚀 Quick Start
@@ -49,16 +56,10 @@ galaxium-travels-infrastructure/
 ./start.sh
 ```
 
-#### On Windows:
-```bash
-start.bat
-```
-
 This will automatically:
 - ✅ Install all dependencies
 - ✅ Start the backend server on port 8080
 - ✅ Start the frontend dev server on port 5173
-- ✅ Open both in separate terminal windows
 
 ### Option 2: Manual Start
 
@@ -118,7 +119,9 @@ See [booking_system_frontend/README.md](booking_system_frontend/README.md) for:
 The system comes pre-seeded with:
 - **10 Users** - Alice, Bob, Charlie, Diana, Eve, Frank, Grace, Heidi, Ivan, Judy
 - **10 Flights** - Routes between Earth, Mars, Moon, Venus, Jupiter, Europa, Pluto
-- **20 Sample Bookings** - Various booking statuses
+- **20 Sample Bookings** - Various booking statuses (booked, cancelled, completed)
+
+> **Note:** Demo data is wiped and re-seeded on every server restart — do not rely on seeded IDs being stable across restarts.
 
 ## 🛠️ Technology Stack
 
@@ -131,27 +134,33 @@ The system comes pre-seeded with:
 - **Uvicorn** - ASGI server
 
 ### Frontend
-- **React 18** - UI library
+- **React 19** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool
 - **Tailwind CSS** - Styling
 - **Framer Motion** - Animations
-- **React Router** - Routing
+- **React Router v7** - Routing
 - **Axios** - HTTP client
 - **React Hot Toast** - Notifications
+- **Lucide React** - Icons
+- **date-fns** - Date formatting
+- **clsx** - Conditional class names
 
 ## 🧪 Testing
 
 ### Backend Tests
 ```bash
 cd booking_system_backend
-pytest
+pytest                          # Run all tests
+pytest tests/test_rest.py       # Run a single test file
+pytest --cov                    # Tests with coverage
 ```
 
-### Frontend Build Test
+### Frontend Build Check
 ```bash
 cd booking_system_frontend
-npm run build
+npm run build   # Type-check then bundle
+npm run lint    # ESLint on all .ts/.tsx files
 ```
 
 ## 📦 Production Deployment
@@ -163,6 +172,8 @@ pip install -r requirements.txt
 uvicorn server:app --host 0.0.0.0 --port 8080
 ```
 
+The backend includes a `Dockerfile` for containerized deployment.
+
 ### Frontend
 ```bash
 cd booking_system_frontend
@@ -170,26 +181,28 @@ npm run build
 # Deploy the 'dist' folder to your hosting service
 ```
 
-### Docker Support
-Both backend and frontend include Dockerfiles for containerized deployment.
-
 ## 🎨 Customization
 
 ### Change API URL
-Edit `booking_system_frontend/.env`:
+Copy `.env.example` to `.env` and edit `booking_system_frontend/.env`:
 ```env
 VITE_API_URL=https://your-api-url.com
 ```
 
-### Modify Theme Colors
-Edit `booking_system_frontend/tailwind.config.js`:
+### Theme Colors
+All custom colors are defined in `booking_system_frontend/tailwind.config.js`:
 ```js
 colors: {
-  'cosmic-purple': '#6366F1',
-  'nebula-pink': '#EC4899',
-  // Add your colors
+  'space-dark':     '#030712',
+  'space-blue':     '#0A1929',
+  'cosmic-purple':  '#6366F1',
+  'nebula-pink':    '#EC4899',
+  'alien-green':    '#10B981',
+  'solar-orange':   '#F59E0B',
+  'star-white':     '#F9FAFB',
 }
 ```
+Use these tokens in components rather than raw hex values.
 
 ## 🐛 Troubleshooting
 
@@ -206,7 +219,7 @@ colors: {
 ### Connection Issues
 - Verify backend is running on http://localhost:8080
 - Check CORS settings in backend
-- Ensure `.env` file exists in frontend with correct API URL
+- Ensure `.env` file exists in frontend with correct API URL (copy from `.env.example`)
 
 ## 📄 License
 
