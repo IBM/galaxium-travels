@@ -107,10 +107,20 @@ graph LR
         SQ["SQLite"]
     end
 
+    subgraph InventoryHold ["Inventory Hold Service"]
+        J21["Java 21"]
+        SB["Spring Boot 3.3"]
+        JPA["Spring Data JPA"]
+        H2["H2 (dev) / RDBMS (prod)"]
+        ACT["Spring Actuator"]
+        MVN["Maven"]
+    end
+
     subgraph Tooling
         PT["pytest + pytest-cov"]
         ESL["ESLint v9 flat config"]
         NPM["npm / Vite build"]
+        JT["JUnit 5 (spring-boot-starter-test)"]
     end
 ```
 
@@ -131,6 +141,22 @@ graph LR
 | **Test DB** | In-memory SQLite — `conftest.py` patches both `server.SessionLocal` and `db.SessionLocal`; each test gets a fresh schema |
 | **Container** | `Dockerfile` present (single-stage, Python 3.11-slim) |
 | **Key dependencies** | `fastapi`, `fastmcp`, `uvicorn`, `sqlalchemy`, `pydantic[email]`, `python-dotenv`, `pytest`, `pytest-asyncio`, `pytest-cov`, `httpx` |
+
+### Inventory Hold Service
+
+| Dimension | Detail |
+|---|---|
+| **Language** | Java 21 (current LTS; minimum required by Spring Boot 3.x) |
+| **Framework** | Spring Boot 3.3.0 — via `spring-boot-starter-parent` BOM; manages all transitive dependency versions |
+| **Web layer** | `spring-boot-starter-web` — embedded Tomcat, REST controllers; exposes `POST /holds` and `DELETE /holds/{id}` |
+| **Persistence** | `spring-boot-starter-data-jpa` — Hibernate ORM backed by H2 in-memory DB for dev; swap `spring.datasource.*` in a prod profile for PostgreSQL/MySQL |
+| **Dev database** | H2 (`runtime` scope) — zero-config in-memory store; schema auto-created by Hibernate `create-drop` |
+| **Validation** | `spring-boot-starter-validation` — Bean Validation 3.0 (`@NotNull`, `@Positive`) on hold request DTOs |
+| **Ops** | `spring-boot-starter-actuator` — `/actuator/health` for container readiness probes; `/actuator/metrics` |
+| **Build tool** | Maven 3 + `spring-boot-maven-plugin` — produces a single executable fat-jar |
+| **Test framework** | `spring-boot-starter-test` (JUnit 5 + Mockito + AssertJ + MockMvc) — scope `test` |
+| **Artifact coords** | `com.galaxiumtravels:booking-system-inventory-hold-service:0.1.0-SNAPSHOT` |
+| **Purpose** | Short-lived seat-hold microservice — reserves seats for a configurable TTL window so the booking service can complete without a race condition on `seats_available` |
 
 ### Frontend
 
@@ -437,7 +463,81 @@ None of the following currently exists:
 | `start.sh` | Repo root | Local dev launcher (macOS/Linux only) |
 | `booking_system_frontend/.env.example` | Frontend root | Documents `VITE_API_URL` env var |
 
-Everything else referenced in typical deployment documentation — `docker-compose.yml`, `.github/workflows/`, Terraform, `fly.toml`, deployment scripts, a `docs/` folder — **does not exist**. The `.gitignore` contains `fly.toml` (gitignored, not present), indicating Fly.io deployment was planned but never completed.
+Everything else referenced in typical deployment documentation — `docker-compose.yml`, `.github/workflows/`, Terraform, `fly.toml`, deployment scripts — **does not exist**. The `.gitignore` contains `fly.toml` (gitignored, not present), indicating Fly.io deployment was planned but never completed.
+
+### Deployment targets — status
+
+The three cloud deployment targets referenced below (`deployment_scripts/aws/`, `deployment_scripts/ibm/`, `terraform/`) and the CI pipeline (`.github/workflows/`) have **no artifacts in the repository**. The table records their intended scope alongside the only two paths that are actually functional today.
+
+| Target | Directory / Artifacts | Backend | Frontend | Status |
+|---|---|---|---|---|
+| **Local dev** | `start.sh` | `python server.py` (Uvicorn on :8080) | `npm run dev` (Vite on :5173) | ✅ Fully supported; only documented working path |
+| **Docker (manual)** | `booking_system_backend/Dockerfile` | `docker build && docker run -p 8080:8080` | Not containerised (no frontend `Dockerfile`) | ⚠️ Backend only; DB is ephemeral; no compose file |
+| **AWS** | `deployment_scripts/aws/` | ❌ Directory does not exist | ❌ Directory does not exist | ❌ No artifacts — not started |
+| **IBM Cloud** | `deployment_scripts/ibm/` | ❌ Directory does not exist | ❌ Directory does not exist | ❌ No artifacts — not started |
+| **Terraform (IaC)** | `terraform/` | ❌ Directory does not exist | ❌ Directory does not exist | ❌ No artifacts — not started |
+| **CI/CD (GitHub Actions)** | `.github/workflows/` | ❌ Directory does not exist | ❌ Directory does not exist | ❌ No artifacts — not started |
+| **Fly.io** | `fly.toml` (gitignored) | Planned; `fly.toml` absent | — | ⚠️ Planned but never completed |
+| **Static host (Vercel / Netlify / S3)** | `dist/` after `npm run build` | N/A | `VITE_API_URL` must be set at build time (inlined by Vite) | ⚠️ Frontend only; requires a separately deployed backend |
+
+### AWS deployment target (not started)
+
+`deployment_scripts/aws/` does not exist. To deploy to AWS the following would be needed:
+
+| Component | Recommended approach |
+|---|---|
+| Backend container registry | Amazon ECR — push the existing `Dockerfile` image |
+| Backend runtime | ECS Fargate task or App Runner service; map port 8080 |
+| Database | Replace SQLite with RDS (Postgres) or Aurora Serverless; mount nothing — DB is currently inside the container |
+| Frontend hosting | S3 static website + CloudFront distribution; set `VITE_API_URL` to the ALB/App Runner URL at build time |
+| IaC | Terraform or AWS CDK; no scaffolding exists |
+| CI trigger | `.github/workflows/deploy-aws.yml` — does not exist |
+| Secrets | AWS Secrets Manager or SSM Parameter Store for DB credentials |
+| Health check | Add `HEALTHCHECK` to `Dockerfile`; ECS uses it for task readiness |
+
+### IBM Cloud deployment target (not started)
+
+`deployment_scripts/ibm/` does not exist. To deploy to IBM Cloud the following would be needed:
+
+| Component | Recommended approach |
+|---|---|
+| Backend container registry | IBM Container Registry (ICR) — `ibmcloud cr push` |
+| Backend runtime | IBM Code Engine (serverless containers) or IBM Kubernetes Service (IKS) |
+| Database | IBM Db2 on Cloud or PostgreSQL via IBM Cloud Databases; replace SQLite |
+| Frontend hosting | IBM Cloud Object Storage static website or Code Engine serving the `dist/` build |
+| IaC | Terraform IBM Cloud provider (`ibm-cloud/ibm`); no scaffolding exists |
+| CI trigger | `.github/workflows/deploy-ibm.yml` — does not exist |
+| Secrets | IBM Secrets Manager or environment variables via Code Engine config maps |
+| Inventory Hold Service | Java fat-jar (`booking-system-inventory-hold-service`) deployable as a Code Engine job or IKS Deployment; `pom.xml` exists but no `Dockerfile` or IKS manifest |
+
+### Terraform (not started)
+
+`terraform/` does not exist. A minimal module structure for this project would be:
+
+```
+terraform/
+├── main.tf            # Provider config, backend state (S3 or IBM COS)
+├── variables.tf       # Region, image tags, DB credentials (as sensitive vars)
+├── outputs.tf         # Backend URL, frontend CDN URL
+├── modules/
+│   ├── backend/       # Container service + DB + IAM
+│   └── frontend/      # Static hosting + CDN
+└── environments/
+    ├── dev.tfvars
+    └── prod.tfvars
+```
+
+No provider has been chosen; either `hashicorp/aws` or `ibm-cloud/ibm` maps to the two named deployment targets above.
+
+### CI/CD pipeline (not started)
+
+`.github/workflows/` does not exist. A minimum viable pipeline would require three workflow files:
+
+| Workflow file | Trigger | Jobs |
+|---|---|---|
+| `ci.yml` | Push / PR to any branch | `pytest` (backend) · `npm run build` + `npm run lint` (frontend) · Maven `verify` (inventory hold service) |
+| `deploy-aws.yml` | Push to `main` | Build + push ECR image · Terraform apply · Invalidate CloudFront |
+| `deploy-ibm.yml` | Push to `main` | Build + push ICR image · `ibmcloud ce application update` or `kubectl apply` |
 
 ### Backend Dockerfile
 
@@ -479,16 +579,6 @@ npm run build          # produces dist/
 - Waits 2 seconds; installs frontend deps if `node_modules` absent; starts `npm run dev`
 - `SIGINT`/`SIGTERM` trap kills both processes on `Ctrl+C`
 - **macOS/Linux only** — no Windows equivalent
-
-### Supported deployment targets today
-
-| Target | Backend | Frontend | Notes |
-|---|---|---|---|
-| **Local dev** | `python server.py` or `start.sh` | `npm run dev` | Fully supported; only documented path |
-| **Docker (manual)** | `docker build && docker run -p 8080:8080` | Not containerised | DB is ephemeral; no compose file |
-| **Static host (Vercel, Netlify, S3)** | N/A | `npm run build` → deploy `dist/` | `VITE_API_URL` must point at a live backend at build time |
-| **Fly.io** | Planned (gitignored `fly.toml`) | — | Not configured; `fly.toml` is absent |
-| **Kubernetes / ECS / Cloud Run** | Image builds; missing health check, non-root user, volume | No image | Not configured; no manifests exist |
 
 ### What needs to be built for a real pipeline
 

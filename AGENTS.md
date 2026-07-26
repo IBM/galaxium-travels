@@ -39,8 +39,11 @@ npm run preview   # Preview production build
 
 - All imports in backend use **bare module names** (e.g. `from models import ...`, `from db import ...`), not package-relative paths — tests insert the parent directory into `sys.path` to make this work.
 - Pydantic schemas use `class Config: from_attributes = True` for ORM → schema conversion; always use `Model.model_validate(orm_obj)` (not `.from_orm()`).
-- Datetime strings stored as ISO strings in SQLite (no native datetime column type used).
+- Datetime strings stored as ISO strings in SQLite — format is `datetime.utcnow().isoformat() + "Z"` (no native datetime column type).
 - Primary keys follow `{table_singular}_id` naming: `user_id`, `flight_id`, `booking_id`.
+- `ErrorResponse` always has `success=False` (hardcoded default). MCP tools raise using `result.details or result.error` — `details` takes precedence over `error`.
+- `POST /cancel/{booking_id}` — cancellation is a POST, not DELETE. All mutation endpoints are POST.
+- `seats_available` on seeded flights is **not** consistent with the randomly seeded bookings — do not treat it as authoritative in tests.
 
 ## Frontend Patterns
 
@@ -49,9 +52,11 @@ npm run preview   # Preview production build
 - User session persisted in `localStorage` under key `galaxium_user` via the `UserProvider` / `useUser` hook (`src/hooks/useUser.tsx`).
 - Custom Tailwind theme colors (use these, don't invent new ones): `space-dark`, `space-blue`, `cosmic-purple`, `nebula-pink`, `alien-green`, `solar-orange`, `star-white`. Gradients: `space-gradient`, `cosmic-gradient`.
 - TS strict mode + `noUnusedLocals` + `noUnusedParameters` + `verbatimModuleSyntax` — type imports must use `import type`.
+- `erasableSyntaxOnly: true` is set — do not use TypeScript `enum` or `namespace`; use `const` objects or union string types instead.
 
 ## Testing
 
 - Backend tests use an **in-memory SQLite** database (not the file-based `booking.db`). Each test function gets a fresh schema via `db_session` fixture (scope=`function`).
 - The `client` fixture patches both `server.SessionLocal` and `db.SessionLocal` — if new modules import `SessionLocal`, add them to the monkeypatch in `conftest.py`.
+- `pytest.ini` sets `addopts = -v --tb=short` — verbose output and short tracebacks are always on; no need to pass manually.
 - Frontend has no test suite; `npm run build` serves as the integration check.
