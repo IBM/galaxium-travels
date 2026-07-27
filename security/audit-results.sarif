@@ -1,0 +1,464 @@
+{
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ASVS Security Audit",
+          "version": "1.0.0",
+          "informationUri": "https://owasp.org/www-project-application-security-verification-standard/",
+          "rules": [
+            {
+              "id": "V4.1.3",
+              "name": "UserScopedResourceAccess",
+              "shortDescription": {
+                "text": "Users can only access their own resources; other users' data is not accessible."
+              },
+              "fullDescription": {
+                "text": "ASVS V4.1.3: Verify that the principle of least privilege exists — users should only be able to access functions, data files, URLs, controllers, services, and other resources for which they possess specific authorization. This implies protection against spoofing and elevation of privilege."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "authorization"]
+              }
+            },
+            {
+              "id": "V4.1.5",
+              "name": "DefaultDenyAccessControl",
+              "shortDescription": {
+                "text": "Access control denies by default — unauthenticated requests are rejected."
+              },
+              "fullDescription": {
+                "text": "ASVS V4.1.5: Verify that access controls fail securely including when an exception occurs. This includes verifying that all endpoints require authentication unless explicitly marked as public, and that credentials are verified using a secret known only to the legitimate user."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "authentication"]
+              }
+            },
+            {
+              "id": "V4.2.1",
+              "name": "IDORProtection",
+              "shortDescription": {
+                "text": "Sensitive resources cannot be accessed by manipulating a predictable object ID."
+              },
+              "fullDescription": {
+                "text": "ASVS V4.2.1: Verify that all user-accessible data objects have appropriate access control checks in place to prevent unauthorized access to data by guessing or manipulating object identifiers (Insecure Direct Object Reference — IDOR)."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "idor"]
+              }
+            },
+            {
+              "id": "V5.1.1",
+              "name": "StringInputMaxLength",
+              "shortDescription": {
+                "text": "All string inputs have defined maximum length constraints."
+              },
+              "fullDescription": {
+                "text": "ASVS V5.1.1: Verify that the application has defenses against HTTP parameter pollution attacks, particularly if the application framework makes no distinction about the source of request parameters (GET, POST, cookies, headers, or environment variables)."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "input-validation"]
+              }
+            },
+            {
+              "id": "V13.1.3",
+              "name": "NoPIIInURLParameters",
+              "shortDescription": {
+                "text": "API endpoints do not accept credentials or PII in URL query parameters."
+              },
+              "fullDescription": {
+                "text": "ASVS V13.1.3: Verify that API URLs do not expose sensitive information such as API keys, session tokens, or passwords and are not logged in server logs, browser history, proxy logs, or referrer headers."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "api-security", "pii"]
+              }
+            },
+            {
+              "id": "V14.4.1",
+              "name": "HTTPSecurityHeaders",
+              "shortDescription": {
+                "text": "HTTP responses include appropriate security headers such as Content-Security-Policy, X-Frame-Options, and X-Content-Type-Options."
+              },
+              "fullDescription": {
+                "text": "ASVS V14.4.1: Verify that every HTTP response contains a Content-Type header, and that the specified content type is applied. Also verify that security-relevant headers such as X-Content-Type-Options, X-Frame-Options, and Content-Security-Policy are set to reduce the risk of MIME sniffing, clickjacking, and cross-site scripting."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "http-headers", "configuration"]
+              }
+            },
+            {
+              "id": "V14.5.3",
+              "name": "CORSAllowlist",
+              "shortDescription": {
+                "text": "CORS origin is validated against an explicit allowlist — wildcard origins are not permitted."
+              },
+              "fullDescription": {
+                "text": "ASVS V14.5.3: Verify that the Cross-Origin Resource Sharing (CORS) Origin header is validated against an allowlist of trusted origins. When credentials are included, the wildcard origin '*' must not be used."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "cors", "configuration"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "V4.1.5",
+          "level": "error",
+          "rank": 9.0,
+          "message": {
+            "text": "Finding 1 [Critical]: No authentication middleware, token dependency, or session guard is applied to any route; every endpoint is fully accessible to unauthenticated callers. Fix: Introduce a bearer-token or session-cookie auth dependency and apply it via Depends() to all non-public routes."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 133,
+                  "endLine": 178
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V4.1.3",
+          "level": "error",
+          "rank": 9.0,
+          "message": {
+            "text": "Finding 2 [Critical]: Both the bookings-retrieval and booking-cancellation routes accept a resource identifier in the path and return or mutate the resource without verifying that the caller owns it. Fix: After establishing an authenticated session, compare the authenticated user's identity against the resource owner before returning data or performing mutations."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 154,
+                  "endLine": 157
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "POST /cancel/{booking_id} — no ownership check on cancellation"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 160,
+                  "endLine": 166
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V4.2.1",
+          "level": "error",
+          "rank": 9.0,
+          "message": {
+            "text": "Finding 3 [Critical]: Both user_id and booking_id are auto-incremented sequential integers; without an ownership check an attacker can enumerate all users' bookings by incrementing the ID in the path parameter. Fix: Enforce resource ownership checks at the service layer so that a valid session is required and the session's user identity must match the resource owner; optionally use non-sequential opaque identifiers (e.g. UUIDs)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/models.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 8,
+                  "endLine": 8
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "booking_id is also a sequential auto-incremented integer"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/models.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 24,
+                  "endLine": 24
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V4.1.5",
+          "level": "error",
+          "rank": 9.0,
+          "message": {
+            "text": "Finding 4 [Critical]: The User model has no password column; the login flow is a plain database lookup by name and email with no secret credential, meaning anyone who knows or guesses a user's name and email gains full account access. Fix: Add a hashed password field to the User model and verify the submitted password against the stored hash (e.g. using bcrypt) before returning user data."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/services/user.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 23,
+                  "endLine": 25
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "User model definition — no password column present"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/models.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 6,
+                  "endLine": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V4.1.5",
+          "level": "error",
+          "rank": 7.0,
+          "message": {
+            "text": "Finding 5 [High]: The full user object (including user_id, name, and email) is stored unencrypted in localStorage, which is accessible to any JavaScript running on the page; a single XSS vulnerability would allow complete session theft. Fix: Replace localStorage persistence with an HttpOnly session cookie issued by the server after successful authentication; the frontend should never hold the raw user identity in JavaScript-accessible storage."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_frontend/src/hooks/useUser.tsx",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 12,
+                  "endLine": 12
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "localStorage.setItem writes full user object on every session update"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_frontend/src/hooks/useUser.tsx",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 26,
+                  "endLine": 27
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V5.1.1",
+          "level": "warning",
+          "rank": 5.0,
+          "message": {
+            "text": "Finding 6 [Medium]: The UserRegistration schema accepts name and email as unbounded strings; there is no max_length constraint, allowing arbitrarily long values to be written to the database. Fix: Apply Field(max_length=100) to name and Field(max_length=254) to email (per RFC 5321) in the UserRegistration schema."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/schemas.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 36,
+                  "endLine": 37
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V5.1.1",
+          "level": "warning",
+          "rank": 5.0,
+          "message": {
+            "text": "Finding 7 [Medium]: The BookingRequest.name field used for name-matching during booking has no maximum length constraint. Fix: Apply Field(max_length=100) to BookingRequest.name to match any constraint applied to UserRegistration.name."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/schemas.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 19,
+                  "endLine": 19
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V5.1.1",
+          "level": "warning",
+          "rank": 5.0,
+          "message": {
+            "text": "Finding 8 [Medium]: The GET /user endpoint accepts name and email as bare query string parameters with no Pydantic wrapper and no length constraint, bypassing schema-level validation entirely. Fix: Wrap the query parameters in a Pydantic model or apply Query(max_length=...) annotations so FastAPI enforces length limits before the values reach service logic."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 176,
+                  "endLine": 176
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V13.1.3",
+          "level": "error",
+          "rank": 7.0,
+          "message": {
+            "text": "Finding 9 [High]: The GET /user endpoint transmits the user's name and email address as plaintext URL query parameters (?name=...&email=...); these values are recorded in server access logs, browser history, proxy logs, and Referer headers, exposing PII outside the application's control. Fix: Change GET /user to a POST endpoint that accepts name and email in the request body, or use a header-based lookup; remove PII from the URL entirely."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 176,
+                  "endLine": 178
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V14.5.3",
+          "level": "error",
+          "rank": 7.0,
+          "message": {
+            "text": "Finding 10 [High]: CORSMiddleware is configured with allow_origins=[\"*\"] and allow_credentials=True; this allows any origin to make credentialed cross-origin requests to the API, enabling cross-site request forgery from any domain. Fix: Replace allow_origins=[\"*\"] with an explicit list of trusted origins (e.g. [\"http://localhost:5173\", \"https://galaxium.example.com\"]); allow_credentials=True is only safe alongside a specific origin allowlist."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 124,
+                  "endLine": 130
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "V14.4.1",
+          "level": "warning",
+          "rank": 5.0,
+          "message": {
+            "text": "Finding 11 [Medium]: The FastAPI application does not set any HTTP security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security); browsers will apply permissive defaults, enabling clickjacking, MIME-sniffing, and downgrade attacks. Fix: Add a custom middleware (e.g. using starlette.middleware.base.BaseHTTPMiddleware) or integrate a library such as 'secure' to inject the required security headers on every response."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 117,
+                  "endLine": 130
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "booking_system_backend/server.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_backend/models.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_backend/schemas.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_backend/services/user.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_frontend/src/hooks/useUser.tsx",
+            "uriBaseId": "%SRCROOT%"
+          }
+        }
+      ],
+      "columnKind": "utf16CodeUnits"
+    }
+  ]
+}

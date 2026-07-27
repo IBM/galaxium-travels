@@ -1,0 +1,634 @@
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "877772e4-a62c-4261-a935-7104c0eed99c",
+    "metadata": {
+      "title": "Galaxium Travels — ASVS Level 1 Plan of Action and Milestones",
+      "last-modified": "2025-07-14T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "roles": [
+        {
+          "id": "security-auditor",
+          "title": "Security Auditor"
+        },
+        {
+          "id": "system-owner",
+          "title": "System Owner"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "5469507f-49ef-4030-9cba-7c949a215802",
+          "type": "person",
+          "name": "Bob (AI Security Analyst)",
+          "remarks": "Auditor who performed the OWASP ASVS Level 1 review on 2025-07-14."
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "security-auditor",
+          "party-uuids": ["5469507f-49ef-4030-9cba-7c949a215802"]
+        }
+      ]
+    },
+    "import-ssp": {
+      "href": "#",
+      "remarks": "No formal SSP exists for this system. This POA&M is derived directly from the ASVS Level 1 audit recorded in security/audit-findings.md."
+    },
+    "system-id": {
+      "identifier-type": "https://galaxium.example.com",
+      "id": "galaxium-travels-booking-system"
+    },
+    "milestones": [
+      {
+        "uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486",
+        "title": "sprint-1",
+        "description": "Remediation sprint for Critical and High severity findings. These issues expose user data to unauthenticated access and must be resolved before any external network exposure.",
+        "timing": {
+          "within-date-range": {
+            "start": "2025-07-14T00:00:00Z",
+            "end": "2025-08-11T00:00:00Z"
+          }
+        }
+      },
+      {
+        "uuid": "cb40ab35-6371-4812-9c9b-8a63ae50b62e",
+        "title": "sprint-2",
+        "description": "Remediation sprint for Medium severity findings. These are defence-in-depth controls that should follow the critical fixes.",
+        "timing": {
+          "within-date-range": {
+            "start": "2025-08-11T00:00:00Z",
+            "end": "2025-09-08T00:00:00Z"
+          }
+        }
+      }
+    ],
+    "findings": [
+      {
+        "uuid": "21a23463-f765-4daa-a331-1379ddc4d834",
+        "title": "Finding 1 — No default-deny access control on any route",
+        "description": "No authentication middleware, token dependency, or session guard is applied to any route; every endpoint is fully accessible to unauthenticated callers.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V4.1.5",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, lines 133–178."
+      },
+      {
+        "uuid": "308a303c-b085-4aa5-8e73-d535f403f041",
+        "title": "Finding 2 — No resource ownership check on booking retrieval and cancellation",
+        "description": "Both the bookings-retrieval and booking-cancellation routes accept a resource identifier in the path and return or mutate the resource without verifying that the caller owns it.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V4.1.3",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, lines 154–157 (GET /bookings/{user_id}) and 160–166 (POST /cancel/{booking_id})."
+      },
+      {
+        "uuid": "44441077-3369-4614-860f-3c86afd289f6",
+        "title": "Finding 3 — Sequential integer primary keys enable IDOR enumeration",
+        "description": "Both user_id and booking_id are auto-incremented sequential integers; without an ownership check an attacker can enumerate all users' bookings by incrementing the ID in the path parameter.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V4.2.1",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/models.py, line 8 (user_id) and line 24 (booking_id)."
+      },
+      {
+        "uuid": "b1d8e748-628f-414b-ba9c-afb2a4930adc",
+        "title": "Finding 4 — Login is a plain DB lookup with no password or secret credential",
+        "description": "The User model has no password column; the login flow is a plain database lookup by name and email with no secret credential, meaning anyone who knows or guesses a user's name and email gains full account access.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V4.1.5",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "Files: booking_system_backend/services/user.py lines 23–25; booking_system_backend/models.py lines 6–10."
+      },
+      {
+        "uuid": "7acb671c-cf3a-48ea-ada3-ad825da318e7",
+        "title": "Finding 5 — User session stored in localStorage, accessible to JavaScript",
+        "description": "The full user object (including user_id, name, and email) is stored unencrypted in localStorage, which is accessible to any JavaScript running on the page; a single XSS vulnerability would allow complete session theft.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V4.1.5",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_frontend/src/hooks/useUser.tsx, lines 12 and 26–27."
+      },
+      {
+        "uuid": "caa0719f-a150-4a89-a2e2-107678d08605",
+        "title": "Finding 6 — UserRegistration name and email have no max_length constraint",
+        "description": "The UserRegistration schema accepts name and email as unbounded strings; there is no max_length constraint, allowing arbitrarily long values to be written to the database.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V5.1.1",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/schemas.py, lines 36–37."
+      },
+      {
+        "uuid": "56703975-e523-49c6-be3e-6773645f1781",
+        "title": "Finding 7 — BookingRequest.name has no max_length constraint",
+        "description": "The BookingRequest.name field used for name-matching during booking has no maximum length constraint.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V5.1.1",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/schemas.py, line 19."
+      },
+      {
+        "uuid": "b651f764-9fad-479d-9daf-2211394143e3",
+        "title": "Finding 8 — GET /user query parameters bypass Pydantic length validation",
+        "description": "The GET /user endpoint accepts name and email as bare query string parameters with no Pydantic wrapper and no length constraint, bypassing schema-level validation entirely.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V5.1.1",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, line 176."
+      },
+      {
+        "uuid": "7eb5e9d8-5288-47d6-b5c1-a3ab89aa06a1",
+        "title": "Finding 9 — PII (name and email) transmitted as URL query parameters",
+        "description": "The GET /user endpoint transmits the user's name and email address as plaintext URL query parameters; these values appear in server access logs, browser history, proxy logs, and Referer headers.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V13.1.3",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, lines 176–178."
+      },
+      {
+        "uuid": "4c337ec5-c6d4-4330-8814-d2831b04c3dd",
+        "title": "Finding 10 — CORS wildcard origin with credentials enabled",
+        "description": "CORSMiddleware is configured with allow_origins=[\"*\"] and allow_credentials=True, allowing any origin to make credentialed cross-origin requests to the API.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V14.5.3",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, lines 124–130."
+      },
+      {
+        "uuid": "1f952566-be03-4a14-ab73-fa678ebddf9c",
+        "title": "Finding 11 — No HTTP security headers set on any response",
+        "description": "The FastAPI application does not set any HTTP security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security), leaving browsers to apply permissive defaults.",
+        "target": {
+          "type": "objective-id",
+          "target-id": "V14.4.1",
+          "status": {
+            "state": "not-satisfied"
+          }
+        },
+        "related-observations": [],
+        "remarks": "File: booking_system_backend/server.py, lines 117–130."
+      }
+    ],
+    "risks": [
+      {
+        "uuid": "875ed1a5-bb0d-462c-83fb-c9f380b2d043",
+        "title": "Risk F1 — Unauthenticated access to all API endpoints",
+        "description": "Any network-reachable client can invoke any API endpoint — including booking, cancellation, and user lookup — without presenting any credential, allowing full data access and manipulation by anonymous attackers.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "critical"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "ad681401-0f2a-4bb9-8ab1-b780ff8ff204",
+        "title": "Risk F2 — Unauthorized read and mutation of any user's bookings",
+        "description": "Without an ownership check on GET /bookings/{user_id} and POST /cancel/{booking_id}, any caller who knows or guesses a user_id or booking_id can read or cancel that user's bookings.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "critical"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "42e236ee-392b-4c67-817c-05dce08d427f",
+        "title": "Risk F3 — IDOR via sequential integer resource identifiers",
+        "description": "Sequential auto-incremented integers for user_id and booking_id allow an attacker to enumerate all resources without brute-forcing large keyspace, compounding the absence of ownership checks.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "critical"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "7defae95-6d9f-4e8a-bc14-1cb260f7773a",
+        "title": "Risk F4 — Account takeover via name and email guessing",
+        "description": "Because login is a plain database lookup with no password or token, any attacker who obtains a user's name and email (e.g. from the error-message oracle or a data leak) immediately controls that account.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "critical"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "e58fa51a-a0d3-4fa5-8e10-4add6e8f6513",
+        "title": "Risk F5 — Session theft via XSS and localStorage exposure",
+        "description": "Storing the user identity object in localStorage means any JavaScript injected via XSS can silently exfiltrate the user's user_id, name, and email, enabling full account impersonation.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "4062f2cf-c00f-498b-9180-46a2ae2a1b77",
+        "title": "Risk F6 — Unbounded string input allows database and memory exhaustion",
+        "description": "Accepting name and email fields with no maximum length allows a malicious caller to send arbitrarily large payloads that are written to SQLite, potentially exhausting disk space or causing OOM conditions.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "5840902f-823f-4d8e-a14b-b2607373bd1e",
+        "title": "Risk F7 — Unbounded BookingRequest.name enables oversized payload injection",
+        "description": "The name field in BookingRequest has no length cap, allowing an attacker to submit payloads that exceed reasonable bounds and are compared against stored user names during the booking flow.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "low"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "ee34d93a-8ca1-46cd-abbd-56a93748f688",
+        "title": "Risk F8 — Bare query parameters on GET /user bypass schema-level validation",
+        "description": "Because name and email on GET /user are not wrapped in a Pydantic model, FastAPI's validation layer is bypassed and arbitrarily large or malformed strings reach the service layer unchecked.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "d8f72d5f-15ff-4568-a998-0294df561578",
+        "title": "Risk F9 — PII logged in server and proxy access logs via URL query parameters",
+        "description": "Transmitting user name and email as URL query parameters causes them to be written to server access logs, browser history, and referrer headers, where they persist beyond the application's control.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "bbbca768-0eca-4742-bc8d-1da1e8964267",
+        "title": "Risk F10 — Wildcard CORS with credentials enables cross-origin request forgery",
+        "description": "Configuring allow_origins=[\"*\"] with allow_credentials=True permits any website to make authenticated cross-origin API requests on behalf of a logged-in user, enabling CSRF-style attacks from any domain.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "high"}
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "659e4e49-6217-40a2-a704-3be1e1a7f94f",
+        "title": "Risk F11 — Absence of HTTP security headers enables clickjacking and MIME-sniffing",
+        "description": "Without Content-Security-Policy, X-Frame-Options, and X-Content-Type-Options, the application is vulnerable to clickjacking, MIME-type confusion attacks, and XSS escalation that these headers would otherwise mitigate.",
+        "status": "open",
+        "characterizations": [
+          {
+            "origin": [{"type": "tool", "actor-uuid": "5469507f-49ef-4030-9cba-7c949a215802"}],
+            "facets": [
+              {"name": "likelihood", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"},
+              {"name": "impact", "system": "https://csrc.nist.gov/ns/oscal/unknown", "value": "medium"}
+            ]
+          }
+        ]
+      }
+    ],
+    "poam-items": [
+      {
+        "uuid": "8219ad2f-3384-4317-8251-0580ec7055f2",
+        "title": "POAM-1: Add authentication dependency to all non-public REST routes",
+        "description": "Every route in booking_system_backend/server.py is publicly accessible. An auth dependency must be added so unauthenticated requests are rejected with HTTP 401.",
+        "related-findings": [{"finding-uuid": "21a23463-f765-4daa-a331-1379ddc4d834"}],
+        "related-risks": [{"risk-uuid": "875ed1a5-bb0d-462c-83fb-c9f380b2d043"}],
+        "remediations": [
+          {
+            "uuid": "45a8a159-d919-449f-8a58-cd252b3795cf",
+            "lifecycle": "recommendation",
+            "title": "Implement bearer-token auth dependency",
+            "description": "In booking_system_backend/server.py: (1) Create an auth dependency function that extracts and validates a JWT or opaque bearer token from the Authorization header, returning the authenticated user_id or raising HTTPException(status_code=401) if absent or invalid. (2) Add Depends(require_auth) to the route decorators for GET /flights (line 139), POST /book (line 145), GET /bookings/{user_id} (line 154), POST /cancel/{booking_id} (line 160), POST /register (line 169), and GET /user (line 175). Leave GET / (health check) unauthenticated. The auth dependency should be defined in a new file booking_system_backend/auth.py and imported in server.py.",
+            "related-risks": [{"risk-uuid": "875ed1a5-bb0d-462c-83fb-c9f380b2d043"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "critical"},
+          {"name": "asvs-control", "value": "V4.1.5"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "b533b023-d75b-45f5-8636-dc7392236340",
+        "title": "POAM-2: Enforce resource ownership checks on booking retrieval and cancellation",
+        "description": "GET /bookings/{user_id} and POST /cancel/{booking_id} in booking_system_backend/server.py return or mutate resources without verifying the caller is the owner.",
+        "related-findings": [{"finding-uuid": "308a303c-b085-4aa5-8e73-d535f403f041"}],
+        "related-risks": [{"risk-uuid": "ad681401-0f2a-4bb9-8ab1-b780ff8ff204"}],
+        "remediations": [
+          {
+            "uuid": "0e34eb95-c62c-486d-849f-a9b1cd62ace7",
+            "lifecycle": "recommendation",
+            "title": "Add ownership checks in booking service layer",
+            "description": "In booking_system_backend/server.py line 154: after authenticating the caller (POAM-1), compare the authenticated user_id against the user_id path parameter; raise HTTPException(status_code=403) if they do not match. In booking_system_backend/services/booking.py cancel_booking function (line 57): after fetching the booking (line 59), add a check that booking.user_id equals the caller_user_id argument passed from the route; return an ErrorResponse with error_code='FORBIDDEN' if they do not match. Update the cancel_booking function signature to accept caller_user_id: int as a parameter and thread it through from the route handler at server.py line 160.",
+            "related-risks": [{"risk-uuid": "ad681401-0f2a-4bb9-8ab1-b780ff8ff204"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "critical"},
+          {"name": "asvs-control", "value": "V4.1.3"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "6d63c7c9-241e-47ae-8614-c44a9677dc3a",
+        "title": "POAM-3: Replace sequential integer primary keys with UUIDs to mitigate IDOR enumeration",
+        "description": "user_id and booking_id in booking_system_backend/models.py are autoincrement integers, making all resource IDs trivially enumerable.",
+        "related-findings": [{"finding-uuid": "44441077-3369-4614-860f-3c86afd289f6"}],
+        "related-risks": [{"risk-uuid": "42e236ee-392b-4c67-817c-05dce08d427f"}],
+        "remediations": [
+          {
+            "uuid": "a8a923e0-ca80-4055-9a83-7d708bfb4dbf",
+            "lifecycle": "recommendation",
+            "title": "Change user_id and booking_id columns to UUID strings",
+            "description": "In booking_system_backend/models.py: change the user_id column on the User class (line 8) from 'Column(Integer, primary_key=True, index=True, autoincrement=True)' to 'Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))'. Apply the same change to booking_id on the Booking class (line 24). Add 'import uuid' at the top of models.py. Update booking_system_backend/schemas.py to change the type annotation of user_id in UserOut (line 41) and FlightOut (line 6) from 'int' to 'str', and booking_id in BookingOut (line 25) from 'int' to 'str'. Update booking_system_backend/server.py route path parameters user_id: int (line 154) and booking_id: int (line 160) to user_id: str and booking_id: str. Update booking_system_backend/services/booking.py function signatures (lines 7 and 57) and all filter calls that compare against user_id or booking_id to use str types. Update booking_system_frontend/src/types/index.ts to change user_id, booking_id, and flight_id fields from 'number' to 'string' in the User, Booking, BookingRequest, and BookingWithFlight interfaces.",
+            "related-risks": [{"risk-uuid": "42e236ee-392b-4c67-817c-05dce08d427f"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "critical"},
+          {"name": "asvs-control", "value": "V4.2.1"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "a8a923e0-ca80-4055-9a83-7d708bfb4dbf",
+        "title": "POAM-4: Replace name+email login with hashed password authentication",
+        "description": "The User model in booking_system_backend/models.py has no password column. The get_user function in booking_system_backend/services/user.py authenticates by plain DB lookup.",
+        "related-findings": [{"finding-uuid": "b1d8e748-628f-414b-ba9c-afb2a4930adc"}],
+        "related-risks": [{"risk-uuid": "7defae95-6d9f-4e8a-bc14-1cb260f7773a"}],
+        "remediations": [
+          {
+            "uuid": "0874718e-bb09-4125-bb73-192fdfbae24f",
+            "lifecycle": "recommendation",
+            "title": "Add password_hash column and bcrypt verification",
+            "description": "In booking_system_backend/models.py: add 'password_hash = Column(String, nullable=False)' to the User class after the email column (after line 10). In booking_system_backend/schemas.py: add a UserLogin schema with fields name: str and email: EmailStr and password: str (add after line 37). In booking_system_backend/services/user.py: add 'from passlib.context import CryptContext' and 'pwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")' at the top. In the register_user function (line 6), accept a password: str parameter, hash it with pwd_context.hash(password), and store it as new_user.password_hash. In the get_user function (line 23), accept password: str, look up the user by email only, then call pwd_context.verify(password, user.password_hash) and return ErrorResponse(error='Invalid credentials', error_code='AUTH_FAILED') if it fails — do not reveal whether name or email is wrong. Add 'passlib[bcrypt]' to booking_system_backend/requirements.txt.",
+            "related-risks": [{"risk-uuid": "7defae95-6d9f-4e8a-bc14-1cb260f7773a"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "critical"},
+          {"name": "asvs-control", "value": "V4.1.5"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "ca7b9458-e599-4b09-8e58-11ef31ab31ec",
+        "title": "POAM-5: Replace localStorage session storage with HttpOnly cookie",
+        "description": "booking_system_frontend/src/hooks/useUser.tsx persists the full user object to localStorage (line 12, 26–27), making it readable by any JavaScript on the page.",
+        "related-findings": [{"finding-uuid": "7acb671c-cf3a-48ea-ada3-ad825da318e7"}],
+        "related-risks": [{"risk-uuid": "e58fa51a-a0d3-4fa5-8e10-4add6e8f6513"}],
+        "remediations": [
+          {
+            "uuid": "03451851-2120-41cb-b448-01f54c2c37dc",
+            "lifecycle": "recommendation",
+            "title": "Issue HttpOnly session cookie from backend; remove localStorage writes",
+            "description": "Backend changes in booking_system_backend/server.py: on the login/register success response, call response.set_cookie(key='session', value=signed_token, httponly=True, samesite='strict', secure=True) where signed_token is a short-lived JWT or HMAC-signed token containing user_id (implement token creation in booking_system_backend/auth.py). Frontend changes in booking_system_frontend/src/hooks/useUser.tsx: remove the localStorage.getItem call in the useState initializer (line 12), remove localStorage.setItem in setUser (line 26), remove localStorage.removeItem in setUser (line 28), and remove the useEffect that syncs to localStorage (lines 36–41). The frontend should rely solely on the HttpOnly cookie for session persistence; it may store only the non-sensitive display fields (name, email) in React state in memory (not localStorage) for UI rendering.",
+            "related-risks": [{"risk-uuid": "e58fa51a-a0d3-4fa5-8e10-4add6e8f6513"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "high"},
+          {"name": "asvs-control", "value": "V4.1.5"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "03451851-2120-41cb-b448-01f54c2c37dc",
+        "title": "POAM-6: Add max_length constraints to UserRegistration name and email fields",
+        "description": "booking_system_backend/schemas.py UserRegistration fields name (line 36) and email (line 37) have no maximum length, allowing unbounded database writes.",
+        "related-findings": [{"finding-uuid": "caa0719f-a150-4a89-a2e2-107678d08605"}],
+        "related-risks": [{"risk-uuid": "4062f2cf-c00f-498b-9180-46a2ae2a1b77"}],
+        "remediations": [
+          {
+            "uuid": "68371c73-a652-4a1d-9b43-3234fcaf4311",
+            "lifecycle": "recommendation",
+            "title": "Apply Field constraints to UserRegistration schema",
+            "description": "In booking_system_backend/schemas.py: add 'from pydantic import BaseModel, EmailStr, Field' (update line 1). Change the UserRegistration class (lines 35–37) so that name is declared as 'name: str = Field(..., min_length=1, max_length=100)' and email remains EmailStr but wrapped as 'email: Annotated[EmailStr, Field(max_length=254)]'. Add 'from typing import Annotated' to the imports on line 2. The max_length=100 for name and max_length=254 for email (RFC 5321 limit) should be applied consistently.",
+            "related-risks": [{"risk-uuid": "4062f2cf-c00f-498b-9180-46a2ae2a1b77"}]
+          }
+        ],
+        "milestones": [{"uuid": "cb40ab35-6371-4812-9c9b-8a63ae50b62e"}],
+        "props": [
+          {"name": "severity", "value": "medium"},
+          {"name": "asvs-control", "value": "V5.1.1"},
+          {"name": "sprint", "value": "sprint-2"}
+        ]
+      },
+      {
+        "uuid": "68371c73-a652-4a1d-9b43-3234fcaf4311",
+        "title": "POAM-7: Add max_length constraint to BookingRequest.name field",
+        "description": "booking_system_backend/schemas.py BookingRequest.name (line 19) has no maximum length constraint.",
+        "related-findings": [{"finding-uuid": "56703975-e523-49c6-be3e-6773645f1781"}],
+        "related-risks": [{"risk-uuid": "5840902f-823f-4d8e-a14b-b2607373bd1e"}],
+        "remediations": [
+          {
+            "uuid": "21a23463-f765-4daa-a331-1379ddc4d834",
+            "lifecycle": "recommendation",
+            "title": "Apply Field(max_length=100) to BookingRequest.name",
+            "description": "In booking_system_backend/schemas.py: change the name field declaration in the BookingRequest class at line 19 from 'name: str' to 'name: str = Field(..., min_length=1, max_length=100)'. Ensure 'Field' is already imported from pydantic (will be added by POAM-6). This ensures the name value passed to the booking service cannot exceed 100 characters, matching the constraint applied to UserRegistration.name.",
+            "related-risks": [{"risk-uuid": "5840902f-823f-4d8e-a14b-b2607373bd1e"}]
+          }
+        ],
+        "milestones": [{"uuid": "cb40ab35-6371-4812-9c9b-8a63ae50b62e"}],
+        "props": [
+          {"name": "severity", "value": "medium"},
+          {"name": "asvs-control", "value": "V5.1.1"},
+          {"name": "sprint", "value": "sprint-2"}
+        ]
+      },
+      {
+        "uuid": "308a303c-b085-4aa5-8e73-d535f403f041",
+        "title": "POAM-8: Apply Query(max_length=...) to GET /user query parameters",
+        "description": "booking_system_backend/server.py GET /user (line 176) accepts name and email as bare str parameters, bypassing Pydantic length validation.",
+        "related-findings": [{"finding-uuid": "b651f764-9fad-479d-9daf-2211394143e3"}],
+        "related-risks": [{"risk-uuid": "ee34d93a-8ca1-46cd-abbd-56a93748f688"}],
+        "remediations": [
+          {
+            "uuid": "44441077-3369-4614-860f-3c86afd289f6",
+            "lifecycle": "recommendation",
+            "title": "Annotate GET /user query parameters with Query constraints",
+            "description": "In booking_system_backend/server.py: update the get_user_endpoint function signature at line 176. Add 'from fastapi import FastAPI, Depends, Query' to the import at line 2 (add Query). Change the function signature from 'def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db))' to 'def get_user_endpoint(name: str = Query(..., min_length=1, max_length=100), email: str = Query(..., min_length=3, max_length=254), db: Session = Depends(get_db))'. This ensures FastAPI validates length at the HTTP layer before the values reach service logic, consistent with the Pydantic schema constraints added in POAM-6.",
+            "related-risks": [{"risk-uuid": "ee34d93a-8ca1-46cd-abbd-56a93748f688"}]
+          }
+        ],
+        "milestones": [{"uuid": "cb40ab35-6371-4812-9c9b-8a63ae50b62e"}],
+        "props": [
+          {"name": "severity", "value": "medium"},
+          {"name": "asvs-control", "value": "V5.1.1"},
+          {"name": "sprint", "value": "sprint-2"}
+        ]
+      },
+      {
+        "uuid": "b1d8e748-628f-414b-ba9c-afb2a4930adc",
+        "title": "POAM-9: Move GET /user PII from URL query parameters to request body",
+        "description": "booking_system_backend/server.py GET /user (lines 176–178) transmits name and email as URL query parameters, exposing PII in server logs and browser history.",
+        "related-findings": [{"finding-uuid": "7eb5e9d8-5288-47d6-b5c1-a3ab89aa06a1"}],
+        "related-risks": [{"risk-uuid": "d8f72d5f-15ff-4568-a998-0294df561578"}],
+        "remediations": [
+          {
+            "uuid": "b1d8e748-628f-414b-ba9c-afb2a4930adc",
+            "lifecycle": "recommendation",
+            "title": "Convert GET /user to POST /user with JSON body",
+            "description": "In booking_system_backend/server.py: change the decorator at line 175 from '@app.get(\"/user\", ...)' to '@app.post(\"/user\", ...)'. Change the function signature at line 176 to accept a Pydantic body parameter 'request: UserCredentials' instead of query parameters. Add a new Pydantic model 'UserCredentials' to booking_system_backend/schemas.py with fields 'name: str = Field(..., max_length=100)' and 'email: EmailStr'. Update the handler body to call 'user.get_user(db, request.name, request.email)'. In booking_system_frontend/src/services/api.ts: change the getUserByCredentials function (line 62) from an axios GET with params to an axios POST with a JSON body: 'const response = await api.post<User | ErrorResponse>(\"/user\", { name, email });', removing the 'params' option.",
+            "related-risks": [{"risk-uuid": "d8f72d5f-15ff-4568-a998-0294df561578"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "high"},
+          {"name": "asvs-control", "value": "V13.1.3"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "7acb671c-cf3a-48ea-ada3-ad825da318e7",
+        "title": "POAM-10: Replace CORS wildcard origin with explicit allowlist",
+        "description": "booking_system_backend/server.py CORSMiddleware (lines 124–130) uses allow_origins=[\"*\"] with allow_credentials=True, permitting credentialed requests from any origin.",
+        "related-findings": [{"finding-uuid": "4c337ec5-c6d4-4330-8814-d2831b04c3dd"}],
+        "related-risks": [{"risk-uuid": "bbbca768-0eca-4742-bc8d-1da1e8964267"}],
+        "remediations": [
+          {
+            "uuid": "caa0719f-a150-4a89-a2e2-107678d08605",
+            "lifecycle": "recommendation",
+            "title": "Set explicit CORS origin allowlist from environment variable",
+            "description": "In booking_system_backend/server.py: replace lines 124–130 with a CORSMiddleware call that reads allowed origins from an environment variable. Add 'import os' to the imports. Define 'ALLOWED_ORIGINS = os.getenv(\"CORS_ALLOWED_ORIGINS\", \"http://localhost:5173\").split(\",\")' before the middleware registration. Change 'allow_origins=[\"*\"]' to 'allow_origins=ALLOWED_ORIGINS'. Keep 'allow_credentials=True' only if the origins are explicitly set (it is now safe with a non-wildcard list). Add 'CORS_ALLOWED_ORIGINS=http://localhost:5173' to booking_system_frontend/.env.example and document it in booking_system_backend/README.md.",
+            "related-risks": [{"risk-uuid": "bbbca768-0eca-4742-bc8d-1da1e8964267"}]
+          }
+        ],
+        "milestones": [{"uuid": "d1105158-79e5-4a41-9b6a-5beb9f447486"}],
+        "props": [
+          {"name": "severity", "value": "high"},
+          {"name": "asvs-control", "value": "V14.5.3"},
+          {"name": "sprint", "value": "sprint-1"}
+        ]
+      },
+      {
+        "uuid": "caa0719f-a150-4a89-a2e2-107678d08605",
+        "title": "POAM-11: Add HTTP security response headers middleware",
+        "description": "booking_system_backend/server.py does not set Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, or Strict-Transport-Security on any response.",
+        "related-findings": [{"finding-uuid": "1f952566-be03-4a14-ab73-fa678ebddf9c"}],
+        "related-risks": [{"risk-uuid": "659e4e49-6217-40a2-a704-3be1e1a7f94f"}],
+        "remediations": [
+          {
+            "uuid": "56703975-e523-49c6-be3e-6773645f1781",
+            "lifecycle": "recommendation",
+            "title": "Add SecurityHeadersMiddleware using starlette BaseHTTPMiddleware",
+            "description": "In booking_system_backend/server.py: add 'from starlette.middleware.base import BaseHTTPMiddleware' and 'from starlette.requests import Request' to the imports. Define a new middleware class before the app instantiation: 'class SecurityHeadersMiddleware(BaseHTTPMiddleware): async def dispatch(self, request: Request, call_next): response = await call_next(request); response.headers[\"X-Content-Type-Options\"] = \"nosniff\"; response.headers[\"X-Frame-Options\"] = \"DENY\"; response.headers[\"Strict-Transport-Security\"] = \"max-age=31536000; includeSubDomains\"; response.headers[\"Content-Security-Policy\"] = \"default-src \\'self\\'\"; return response'. Register it with 'app.add_middleware(SecurityHeadersMiddleware)' immediately after the CORSMiddleware registration (after line 130). Ensure the SecurityHeadersMiddleware is added after CORSMiddleware so headers are set on all responses including CORS preflight responses.",
+            "related-risks": [{"risk-uuid": "659e4e49-6217-40a2-a704-3be1e1a7f94f"}]
+          }
+        ],
+        "milestones": [{"uuid": "cb40ab35-6371-4812-9c9b-8a63ae50b62e"}],
+        "props": [
+          {"name": "severity", "value": "medium"},
+          {"name": "asvs-control", "value": "V14.4.1"},
+          {"name": "sprint", "value": "sprint-2"}
+        ]
+      }
+    ]
+  }
+}

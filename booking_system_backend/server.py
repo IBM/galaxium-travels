@@ -8,6 +8,7 @@ from db import SessionLocal, init_db, get_db
 from seed import seed
 from services import flight, user, booking
 from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from routers import booking_detail as booking_detail_router
 
 
 # ==================== MCP SERVER (for AI agents) ====================
@@ -176,6 +177,11 @@ def register_user_endpoint(request: UserRegistration, db: Session = Depends(get_
 def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
     """Retrieve a user's information by providing both name and email."""
     return user.get_user(db, name, email)
+
+
+# ==================== ROUTERS ====================
+
+app.include_router(booking_detail_router.router)
 
 
 # ==================== MOUNT MCP INTO FASTAPI ====================
