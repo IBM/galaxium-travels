@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, Flight, Booking
 from schemas import BookingOut, ErrorResponse, SeatClass
 
@@ -126,3 +126,51 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _parse_datetime(dt_str: str) -> datetime:
+    """Parse a datetime string in either 'YYYY-MM-DD HH:MM' or 'YYYY-MM-DDTHH:MM:SSZ' format."""
+    for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(dt_str, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognised datetime format: {dt_str!r}")
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Return a valid RFC 5545 iCalendar string for the given booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+
+    departure_dt = _parse_datetime(flight.departure_time)
+    arrival_dt = _parse_datetime(flight.arrival_time)
+    dtstamp = datetime.now(tz=timezone.utc)
+
+    def fmt(dt: datetime) -> str:
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//Booking Export//EN",
+        "BEGIN:VEVENT",
+        f"UID:booking-{booking_id}@galaxium-travels",
+        f"DTSTAMP:{fmt(dtstamp)}",
+        f"DTSTART:{fmt(departure_dt)}",
+        f"DTEND:{fmt(arrival_dt)}",
+        f"SUMMARY:Galaxium Travels: {flight.origin} \u2192 {flight.destination}",
+        f"LOCATION:{flight.origin} \u2192 {flight.destination}",
+        f"DESCRIPTION:Booking #{booking_id} | {booking.seat_class} class | {booking.status}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+        "",
+    ]
+    return "\r\n".join(lines)

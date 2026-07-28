@@ -973,3 +973,92 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestBookingIcsService:
+    """Test get_booking_ics service function."""
+
+    def test_ics_success(self, db_session):
+        """Test successful ICS generation for an existing booking."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "BEGIN:VEVENT" in result
+        assert "END:VEVENT" in result
+        assert "END:VCALENDAR" in result
+        assert "SUMMARY:Galaxium Travels" in result
+        assert "LOCATION:" in result
+        assert "DTSTART:" in result
+        assert "DTEND:" in result
+        assert f"UID:booking-{booking_obj.booking_id}@galaxium-travels" in result
+        # RFC 5545 requires CRLF line endings
+        assert "\r\n" in result
+
+    def test_ics_success_iso_format(self, db_session):
+        """Test ICS generation with ISO 8601 datetime format in the DB."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Luna",
+            destination="Jupiter",
+            departure_time="2099-06-15T08:30:00Z",
+            arrival_time="2099-06-15T22:00:00Z",
+            base_price=2000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-06-15 09:00",
+            seat_class="business",
+            price_paid=5000000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "20990615T083000Z" in result
+        assert "20990615T220000Z" in result
+
+    def test_ics_not_found(self, db_session):
+        """Test ICS generation for a non-existent booking returns ErrorResponse."""
+        result = booking.get_booking_ics(db_session, 99999)
+
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
