@@ -5,7 +5,7 @@ import { Zap, Plane, Crown, Rocket, Timer, CheckCircle, XCircle } from 'lucide-r
 import { formatCurrency } from '../../utils/formatters';
 import { confirmHold, releaseHold } from '../../services/api';
 import { removeHold } from '../../utils/holdStorage';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useUserContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 

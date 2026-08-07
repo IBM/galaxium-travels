@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import type { Flight } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import type { Flight, ErrorResponse } from '../types';
 import { LoadingSpinner } from '../components/common';
 import { FlightCard } from '../components/flights/FlightCard';
 import { FlightFilters } from '../components/flights/FlightFilters';
@@ -7,7 +7,7 @@ import { UserIdentification } from '../components/user/UserIdentification';
 import { BookingModal } from '../components/bookings/BookingModal';
 import { getFlights } from '../services/api';
 import type { FlightFilters as FlightFiltersType } from '../services/api';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../hooks/useUserContext';
 import { Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -22,12 +22,7 @@ export const Flights = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
-  // Fetch flights when filters change
-  useEffect(() => {
-    loadFlights();
-  }, [filters]);
-
-  const loadFlights = async (retryCount = 0) => {
+  const loadFlights = useCallback(async (retryCount = 0) => {
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 1000; // 1 second
 
@@ -35,7 +30,8 @@ export const Flights = () => {
     try {
       const data = await getFlights(filters);
       setFlights(data);
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ErrorResponse;
       if (retryCount < MAX_RETRIES) {
         toast.error(`Failed to load flights. Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
         console.warn(`Retry attempt ${retryCount + 1} after error:`, error);
@@ -52,7 +48,12 @@ export const Flights = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Fetch flights when filters change
+  useEffect(() => {
+    loadFlights();
+  }, [loadFlights]);
 
   const handleBookFlight = (flight: Flight) => {
     setSelectedFlight(flight);

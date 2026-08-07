@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold } from '../types';
+import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
 import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../hooks/useUserContext';
 import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -21,14 +21,6 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      navigate('/flights');
-      return;
-    }
-    loadData();
-  }, [user, navigate]);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -81,13 +73,21 @@ export const MyBookings = () => {
       setBookings(bookingsData);
       setFlights(flightsData);
       await loadHolds();
-    } catch (error: any) {
+    } catch (err) {
       toast.error('Failed to load bookings');
-      console.error(error);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   }, [user, loadHolds]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/flights');
+      return;
+    }
+    loadData();
+  }, [user, navigate, loadData]);
 
   const handleCancelClick = (bookingId: number) => {
     setBookingToCancel(bookingId);
@@ -110,7 +110,8 @@ export const MyBookings = () => {
 
       toast.success('Booking cancelled successfully');
       loadData();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ErrorResponse;
       toast.error(error.details || error.error || 'Failed to cancel booking');
     } finally {
       setCancellingId(null);
