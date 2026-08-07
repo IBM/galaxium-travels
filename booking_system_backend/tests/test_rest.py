@@ -236,8 +236,8 @@ class TestRegisterEndpoint:
         client.post("/register", json=sample_user_data)
         response = client.post("/register", json=sample_user_data)
 
-        assert response.status_code == 200
-        data = response.json()
+        assert response.status_code == 409
+        data = response.json()["detail"]
         assert data["success"] == False
         assert data["error_code"] == "EMAIL_EXISTS"
 
@@ -263,8 +263,8 @@ class TestUserEndpoint:
             "/user",
             params={"name": "NonExistent", "email": "none@example.com"}
         )
-        assert response.status_code == 200
-        data = response.json()
+        assert response.status_code == 404
+        data = response.json()["detail"]
         assert data["success"] == False
         assert data["error_code"] == "USER_NOT_FOUND"
 
@@ -315,8 +315,8 @@ class TestBookEndpoint:
             "flight_id": 999
         })
 
-        assert response.status_code == 200
-        data = response.json()
+        assert response.status_code == 404
+        data = response.json()["detail"]
         assert data["success"] == False
         assert data["error_code"] == "FLIGHT_NOT_FOUND"
 
@@ -409,8 +409,8 @@ class TestCancelEndpoint:
     def test_cancel_booking_not_found(self, client, db_session):
         """Test cancelling non-existent booking."""
         response = client.post("/cancel/999")
-        assert response.status_code == 200
-        data = response.json()
+        assert response.status_code == 404
+        data = response.json()["detail"]
         assert data["success"] == False
         assert data["error_code"] == "BOOKING_NOT_FOUND"
 

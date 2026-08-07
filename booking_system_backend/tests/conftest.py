@@ -38,16 +38,8 @@ def db_session():
 @pytest.fixture(scope="function")
 def client(db_session, monkeypatch):
     """Create a test client with a fresh database."""
-    # Import server module and patch SessionLocal
     import server
     import db as db_module
-
-    # Patch SessionLocal to use test session factory
-    def get_test_session():
-        return db_session
-
-    monkeypatch.setattr(db_module, "SessionLocal", lambda: db_session)
-    monkeypatch.setattr(server, "SessionLocal", lambda: db_session)
 
     # Don't run seed during tests
     monkeypatch.setattr(server, "seed", lambda: None)
