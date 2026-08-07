@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from models import Flight
-from schemas import ErrorResponse, FlightOut
 from sqlalchemy import Integer, and_, func, or_
 from sqlalchemy.orm import Session
+
+from models import Flight
+from schemas import ErrorResponse, FlightOut
 
 
 def _flight_to_out(f: Flight) -> FlightOut:
@@ -183,8 +184,8 @@ def list_flights(
     for f in flights:
         # Calculate duration in hours
         try:
-            dep = datetime.strptime(f.departure_time, "%Y-%m-%d %H:%M")
-            arr = datetime.strptime(f.arrival_time, "%Y-%m-%d %H:%M")
+            dep = datetime.strptime(f.departure_time, "%Y-%m-%d %H:%M")  # noqa: DTZ007
+            arr = datetime.strptime(f.arrival_time, "%Y-%m-%d %H:%M")  # noqa: DTZ007
             duration_hours = (arr - dep).total_seconds() / 3600
         except (ValueError, AttributeError):
             duration_hours = 0

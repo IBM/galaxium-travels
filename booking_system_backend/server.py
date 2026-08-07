@@ -2,11 +2,13 @@ import os
 from contextlib import asynccontextmanager
 
 import httpx
-from db import get_db, init_db
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
+from sqlalchemy.orm import Session
+
+from db import get_db, init_db
 from schemas import (
     BookingOut,
     BookingRequest,
@@ -17,7 +19,6 @@ from schemas import (
 )
 from seed import seed
 from services import booking, flight, user
-from sqlalchemy.orm import Session
 
 # Load environment variables from .env file
 load_dotenv()

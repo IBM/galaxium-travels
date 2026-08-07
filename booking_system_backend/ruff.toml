@@ -1,0 +1,3 @@
+[lint]
+# B008: FastAPI's Depends() in function signatures is intentional DI, not a bug.
+ignore = ["B008"]

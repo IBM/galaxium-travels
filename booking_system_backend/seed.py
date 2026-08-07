@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from db import SessionLocal, engine
 from models import Base, Booking, Flight, User
@@ -83,7 +83,7 @@ def seed():
     seat_class_weights = [0.6, 0.3, 0.1]  # 60% economy, 30% business, 10% galaxium
     
     bookings = []
-    now = datetime.utcnow()
+    now = datetime.now(tz=timezone.utc)
     for i in range(20):
         user_id = random.choice(user_ids)
         flight_id = random.choice(flight_ids)
