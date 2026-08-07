@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 # Load environment variables BEFORE importing db and models
 load_dotenv()
 
-from models import Base, User, Flight, Booking
-from db import engine, SessionLocal
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
+
+from db import SessionLocal, engine
+from models import Base, Booking, Flight, User
+
 
 def seed():
     Base.metadata.create_all(bind=engine)

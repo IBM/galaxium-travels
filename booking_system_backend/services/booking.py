@@ -1,8 +1,8 @@
-from sqlalchemy.orm import Session
 from datetime import datetime
-from models import User, Flight, Booking
-from schemas import BookingOut, ErrorResponse, SeatClass
 
+from models import Booking, Flight, User
+from schemas import BookingOut, ErrorResponse, SeatClass
+from sqlalchemy.orm import Session
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {

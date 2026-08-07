@@ -1,9 +1,9 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, func, cast, Integer
-from models import Flight
-from schemas import FlightOut, ErrorResponse
 from datetime import datetime
-from typing import Optional
+
+from models import Flight
+from schemas import ErrorResponse, FlightOut
+from sqlalchemy import Integer, and_, func, or_
+from sqlalchemy.orm import Session
 
 
 def _flight_to_out(f: Flight) -> FlightOut:
@@ -34,28 +34,28 @@ ROUTE_CATEGORIES = {
 def list_flights(
     db: Session,
     # Basic filters from main branch
-    origin: Optional[str] = None,
-    destination: Optional[str] = None,
-    departure_date_from: Optional[str] = None,
-    departure_date_to: Optional[str] = None,
-    min_price: Optional[int] = None,
-    max_price: Optional[int] = None,
-    has_economy: Optional[bool] = None,
-    has_business: Optional[bool] = None,
-    has_galaxium: Optional[bool] = None,
-    sort: Optional[str] = None,
-    order: Optional[str] = 'asc',
+    origin: str | None = None,
+    destination: str | None = None,
+    departure_date_from: str | None = None,
+    departure_date_to: str | None = None,
+    min_price: int | None = None,
+    max_price: int | None = None,
+    has_economy: bool | None = None,
+    has_business: bool | None = None,
+    has_galaxium: bool | None = None,
+    sort: str | None = None,
+    order: str | None = 'asc',
     # Phase 1: Core Filters from feature branch
-    sort_by: Optional[str] = None,
-    sort_order: Optional[str] = None,
-    seat_class: Optional[str] = None,
+    sort_by: str | None = None,
+    sort_order: str | None = None,
+    seat_class: str | None = None,
     # Phase 2: Additional Filters from feature branch
-    departure_time_period: Optional[str] = None,
-    min_duration: Optional[int] = None,
-    max_duration: Optional[int] = None,
-    min_seats_available: Optional[int] = None,
+    departure_time_period: str | None = None,
+    min_duration: int | None = None,
+    max_duration: int | None = None,
+    min_seats_available: int | None = None,
     # Phase 3: Popular Routes from feature branch
-    route_category: Optional[str] = None
+    route_category: str | None = None
 ) -> list[FlightOut] | ErrorResponse:
     """List flights with optional filtering and sorting.
     

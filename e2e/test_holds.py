@@ -9,8 +9,13 @@ the real booking. We assert the invariants that span that boundary.
 import os
 
 import pytest
-
-from helpers import create_hold, create_quote, poll, seats_available, find_flight_with_seats
+from helpers import (
+    create_hold,
+    create_quote,
+    find_flight_with_seats,
+    poll,
+    seats_available,
+)
 
 
 def test_confirm_creates_booking_and_decrements_seat(client, traveler):

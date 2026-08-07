@@ -1,7 +1,8 @@
 import os
+
+from models import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base
 
 # Get database URL from environment, fallback to SQLite for local dev
 SQLALCHEMY_DATABASE_URL = os.getenv(

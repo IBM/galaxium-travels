@@ -1,16 +1,23 @@
+import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
+
+import httpx
+from db import get_db, init_db
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
-from sqlalchemy.orm import Session
-from typing import Optional
-from dotenv import load_dotenv
-import os
-import httpx
-from db import init_db, get_db
+from schemas import (
+    BookingOut,
+    BookingRequest,
+    ErrorResponse,
+    FlightOut,
+    UserOut,
+    UserRegistration,
+)
 from seed import seed
-from services import flight, user, booking
-from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from services import booking, flight, user
+from sqlalchemy.orm import Session
 
 # Load environment variables from .env file
 load_dotenv()
@@ -62,28 +69,28 @@ def health_check():
 @app.get("/flights", response_model=list[FlightOut], tags=["Flights"])
 def get_flights(
     # Basic filters from main branch
-    origin: Optional[str] = None,
-    destination: Optional[str] = None,
-    departure_date_from: Optional[str] = None,
-    departure_date_to: Optional[str] = None,
-    min_price: Optional[int] = None,
-    max_price: Optional[int] = None,
-    has_economy: Optional[bool] = None,
-    has_business: Optional[bool] = None,
-    has_galaxium: Optional[bool] = None,
-    sort: Optional[str] = None,
-    order: Optional[str] = 'asc',
+    origin: str | None = None,
+    destination: str | None = None,
+    departure_date_from: str | None = None,
+    departure_date_to: str | None = None,
+    min_price: int | None = None,
+    max_price: int | None = None,
+    has_economy: bool | None = None,
+    has_business: bool | None = None,
+    has_galaxium: bool | None = None,
+    sort: str | None = None,
+    order: str | None = 'asc',
     # Phase 1: Core Filters from feature branch
-    sort_by: Optional[str] = None,
-    sort_order: Optional[str] = None,
-    seat_class: Optional[str] = None,
+    sort_by: str | None = None,
+    sort_order: str | None = None,
+    seat_class: str | None = None,
     # Phase 2: Additional Filters from feature branch
-    departure_time_period: Optional[str] = None,
-    min_duration: Optional[int] = None,
-    max_duration: Optional[int] = None,
-    min_seats_available: Optional[int] = None,
+    departure_time_period: str | None = None,
+    min_duration: int | None = None,
+    max_duration: int | None = None,
+    min_seats_available: int | None = None,
     # Phase 3: Popular Routes from feature branch
-    route_category: Optional[str] = None,
+    route_category: str | None = None,
     db: Session = Depends(get_db)
 ):
     """List all available flights with optional filtering and sorting.
@@ -244,7 +251,7 @@ async def create_quote(quote_data: dict):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to create quote: {str(e)}"}
+            return {"error": f"Failed to create quote: {e!s}"}
 
 
 @app.get("/quotes/{quote_id}", tags=["Quotes"])
@@ -259,7 +266,7 @@ async def get_quote(quote_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to get quote: {str(e)}"}
+            return {"error": f"Failed to get quote: {e!s}"}
 
 
 @app.post("/quotes/{quote_id}/holds", tags=["Holds"])
@@ -274,7 +281,7 @@ async def create_hold(quote_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to create hold: {str(e)}"}
+            return {"error": f"Failed to create hold: {e!s}"}
 
 
 @app.get("/holds/{hold_id}", tags=["Holds"])
@@ -289,7 +296,7 @@ async def get_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to get hold: {str(e)}"}
+            return {"error": f"Failed to get hold: {e!s}"}
 
 
 @app.post("/holds/{hold_id}/confirm", tags=["Holds"])
@@ -304,7 +311,7 @@ async def confirm_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to confirm hold: {str(e)}"}
+            return {"error": f"Failed to confirm hold: {e!s}"}
 
 
 @app.post("/holds/{hold_id}/release", tags=["Holds"])
@@ -319,7 +326,7 @@ async def release_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to release hold: {str(e)}"}
+            return {"error": f"Failed to release hold: {e!s}"}
 
 
 # ==================== MCP SERVER (for AI agents) ====================

@@ -1,6 +1,7 @@
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,7 +11,6 @@ from sqlalchemy.pool import StaticPool
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from models import Base
-from db import SessionLocal
 
 # Create in-memory SQLite database for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -38,8 +38,8 @@ def db_session():
 @pytest.fixture(scope="function")
 def client(db_session, monkeypatch):
     """Create a test client with a fresh database."""
-    import server
     import db as db_module
+    import server
 
     # Don't run seed during tests
     monkeypatch.setattr(server, "seed", lambda: None)

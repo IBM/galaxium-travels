@@ -1,12 +1,11 @@
-import pytest
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models import User, Flight, Booking
+from models import Booking, Flight, User
 from schemas import ErrorResponse
-from services import flight, user, booking
+from services import booking, flight, user
 
 
 class TestFlightService:
@@ -489,7 +488,6 @@ class TestFlightFiltering:
 
     def setup_method(self):
         """Setup test flights with various attributes."""
-        pass
 
     def test_filter_by_origin(self, db_session):
         """Test filtering flights by origin (case-insensitive partial match)."""
