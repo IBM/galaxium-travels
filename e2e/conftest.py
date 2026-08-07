@@ -46,7 +46,7 @@ def _wait_for(url, timeout, predicate=None):
             if predicate(r):
                 return
             last = f"HTTP {r.status_code}"
-        except Exception as e:  # connection refused while still starting, etc.
+        except Exception as e:  # noqa: BLE001  # connection refused while still starting, etc.
             last = repr(e)
         time.sleep(2)
     raise RuntimeError(f"Timed out after {timeout}s waiting for {url} (last: {last})")
