@@ -100,9 +100,9 @@ jobs:
           python3 -c "
           import re, sys
           text = open('bob_output.txt').read()
-          m = re.search(r'<<<BOB_REVIEW_BEGIN>>>(.*?)<<<BOB_REVIEW_END>>>', text, re.DOTALL)
-          if m:
-              print(m.group(1).strip())
+          matches = re.findall(r'<<<BOB_REVIEW_BEGIN>>>(.*?)<<<BOB_REVIEW_END>>>', text, re.DOTALL)
+          if matches:
+              print(matches[-1].strip())
           else:
               print('_Bob did not produce a structured review. Raw output below._\n')
               print(text)
