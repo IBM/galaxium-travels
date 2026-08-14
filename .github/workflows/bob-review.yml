@@ -93,7 +93,7 @@ jobs:
 
           Do not modify any source files. Do not run the test suite. Do not write any files.
           PROMPT
-          cat prompt.txt | bob --accept-license --auth-method api-key --hide-intermediary-output 2>&1 | tee bob_output.txt
+          cat prompt.txt | bob --accept-license --hide-intermediary-output 2>&1 | tee bob_output.txt
 
       - name: Extract review from Bob's stdout
         run: |
