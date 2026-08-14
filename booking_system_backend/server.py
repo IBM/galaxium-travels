@@ -1,111 +1,27 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastmcp import FastMCP
-from sqlalchemy.orm import Session
-from typing import Union, Optional
-from dotenv import load_dotenv
 import os
+from contextlib import asynccontextmanager
+
 import httpx
-from db import SessionLocal, init_db, get_db
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_mcp import FastApiMCP
+from sqlalchemy.orm import Session
+
+from db import get_db, init_db
+from schemas import (
+    BookingOut,
+    BookingRequest,
+    ErrorResponse,
+    FlightOut,
+    UserOut,
+    UserRegistration,
+)
 from seed import seed
-from services import flight, user, booking
-from schemas import FlightOut, BookingOut, UserOut, ErrorResponse, BookingRequest, UserRegistration
+from services import booking, flight, user
 
 # Load environment variables from .env file
 load_dotenv()
-
-
-# ==================== MCP SERVER (for AI agents) ====================
-# NOTE: MCP server must be created before FastAPI app to properly combine lifespans
-
-mcp = FastMCP("Galaxium Booking System")
-
-
-@mcp.tool()
-def list_flights() -> list[FlightOut]:
-    """List all available flights.
-    Returns a list of flights with origin, destination, times, price, and seats available."""
-    db = SessionLocal()
-    try:
-        return flight.list_flights(db)
-    finally:
-        db.close()
-
-
-@mcp.tool()
-def book_flight(user_id: int, name: str, flight_id: int, seat_class: str = "economy") -> BookingOut:
-    """Book a seat on a specific flight for a user in the specified seat class.
-    Requires user_id, name, and flight_id.
-    Optional seat_class: 'economy' (default), 'business', or 'galaxium'.
-    Decrements available seats for the selected class if successful.
-    Returns booking details or raises an error if booking is not possible."""
-    db = SessionLocal()
-    try:
-        result = booking.book_flight(db, user_id, name, flight_id, seat_class)
-        if isinstance(result, ErrorResponse):
-            raise Exception(result.details or result.error)
-        return result
-    finally:
-        db.close()
-
-
-@mcp.tool()
-def get_bookings(user_id: int) -> list[BookingOut]:
-    """Retrieve all bookings for a specific user by user_id.
-    Returns a list of booking details for the user."""
-    db = SessionLocal()
-    try:
-        return booking.get_bookings(db, user_id)
-    finally:
-        db.close()
-
-
-@mcp.tool()
-def cancel_booking(booking_id: int) -> BookingOut:
-    """Cancel an existing booking by its booking_id.
-    Increments available seats for the flight if successful.
-    Returns updated booking details or raises an error if already cancelled or not found."""
-    db = SessionLocal()
-    try:
-        result = booking.cancel_booking(db, booking_id)
-        if isinstance(result, ErrorResponse):
-            raise Exception(result.details or result.error)
-        return result
-    finally:
-        db.close()
-
-
-@mcp.tool()
-def register_user(name: str, email: str) -> UserOut:
-    """Register a new user with a name and unique email.
-    Returns the created user's details or raises an error if the email is already registered."""
-    db = SessionLocal()
-    try:
-        result = user.register_user(db, name, email)
-        if isinstance(result, ErrorResponse):
-            raise Exception(result.details or result.error)
-        return result
-    finally:
-        db.close()
-
-
-@mcp.tool()
-def get_user_id(name: str, email: str) -> UserOut:
-    """Retrieve a user's information, including user_id, by providing both name and email.
-    Returns user details or raises an error if not found."""
-    db = SessionLocal()
-    try:
-        result = user.get_user(db, name, email)
-        if isinstance(result, ErrorResponse):
-            raise Exception(result.details or result.error)
-        return result
-    finally:
-        db.close()
-
-
-# Create the MCP HTTP app for mounting
-mcp_app = mcp.http_app()
 
 
 # ==================== LIFESPAN ====================
@@ -154,28 +70,28 @@ def health_check():
 @app.get("/flights", response_model=list[FlightOut], tags=["Flights"])
 def get_flights(
     # Basic filters from main branch
-    origin: Optional[str] = None,
-    destination: Optional[str] = None,
-    departure_date_from: Optional[str] = None,
-    departure_date_to: Optional[str] = None,
-    min_price: Optional[int] = None,
-    max_price: Optional[int] = None,
-    has_economy: Optional[bool] = None,
-    has_business: Optional[bool] = None,
-    has_galaxium: Optional[bool] = None,
-    sort: Optional[str] = None,
-    order: Optional[str] = 'asc',
+    origin: str | None = None,
+    destination: str | None = None,
+    departure_date_from: str | None = None,
+    departure_date_to: str | None = None,
+    min_price: int | None = None,
+    max_price: int | None = None,
+    has_economy: bool | None = None,
+    has_business: bool | None = None,
+    has_galaxium: bool | None = None,
+    sort: str | None = None,
+    order: str | None = 'asc',
     # Phase 1: Core Filters from feature branch
-    sort_by: Optional[str] = None,
-    sort_order: Optional[str] = None,
-    seat_class: Optional[str] = None,
+    sort_by: str | None = None,
+    sort_order: str | None = None,
+    seat_class: str | None = None,
     # Phase 2: Additional Filters from feature branch
-    departure_time_period: Optional[str] = None,
-    min_duration: Optional[int] = None,
-    max_duration: Optional[int] = None,
-    min_seats_available: Optional[int] = None,
+    departure_time_period: str | None = None,
+    min_duration: int | None = None,
+    max_duration: int | None = None,
+    min_seats_available: int | None = None,
     # Phase 3: Popular Routes from feature branch
-    route_category: Optional[str] = None,
+    route_category: str | None = None,
     db: Session = Depends(get_db)
 ):
     """List all available flights with optional filtering and sorting.
@@ -233,15 +149,21 @@ def get_flights(
     )
 
 
-@app.post("/book", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
+@app.post("/book", response_model=BookingOut, tags=["Bookings"])
 def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
     """Book a seat on a specific flight for a user in the specified seat class.
 
     Requires user_id, name, and flight_id.
     Optional seat_class: 'economy' (default), 'business', or 'galaxium'.
     Decrements available seats for the selected class if successful.
+    Returns booking details. Raises 404 if the flight or user is not found,
+    409 if there is a name mismatch or no seats available.
     """
-    return booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
+    result = booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code in ("FLIGHT_NOT_FOUND", "USER_NOT_FOUND") else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
 
 
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])
@@ -250,25 +172,45 @@ def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     return booking.get_bookings(db, user_id)
 
 
-@app.post("/cancel/{booking_id}", response_model=Union[BookingOut, ErrorResponse], tags=["Bookings"])
+@app.post("/cancel/{booking_id}", response_model=BookingOut, tags=["Bookings"])
 def cancel_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
     """Cancel an existing booking by its booking_id.
 
     Increments available seats for the flight if successful.
+    Raises 404 if the booking is not found, 409 if already cancelled.
     """
-    return booking.cancel_booking(db, booking_id)
+    result = booking.cancel_booking(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code == "BOOKING_NOT_FOUND" else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
 
 
-@app.post("/register", response_model=Union[UserOut, ErrorResponse], tags=["Users"])
+@app.post("/register", response_model=UserOut, tags=["Users"])
 def register_user_endpoint(request: UserRegistration, db: Session = Depends(get_db)):
-    """Register a new user with a name and unique email."""
-    return user.register_user(db, request.name, request.email)
+    """Register a new user with a name and unique email.
+
+    Raises 409 if the email is already registered, 422 if the email format is invalid.
+    """
+    result = user.register_user(db, request.name, request.email)
+    if isinstance(result, ErrorResponse):
+        status = 409 if result.error_code == "EMAIL_EXISTS" else 422
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
 
 
-@app.get("/user", response_model=Union[UserOut, ErrorResponse], tags=["Users"])
+@app.get("/user", response_model=UserOut, tags=["Users"])
 def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
-    """Get user by name and email."""
-    return user.get_user(db, name, email)
+    """Get user by name and email.
+
+    Raises 404 if no user matches the provided name and email,
+    422 if the email format is invalid.
+    """
+    result = user.get_user(db, name, email)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code == "USER_NOT_FOUND" else 422
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
 
 
 # ==================== JAVA SERVICE INTEGRATION ====================
@@ -310,7 +252,7 @@ async def create_quote(quote_data: dict):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to create quote: {str(e)}"}
+            return {"error": f"Failed to create quote: {e!s}"}
 
 
 @app.get("/quotes/{quote_id}", tags=["Quotes"])
@@ -325,7 +267,7 @@ async def get_quote(quote_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to get quote: {str(e)}"}
+            return {"error": f"Failed to get quote: {e!s}"}
 
 
 @app.post("/quotes/{quote_id}/holds", tags=["Holds"])
@@ -340,7 +282,7 @@ async def create_hold(quote_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to create hold: {str(e)}"}
+            return {"error": f"Failed to create hold: {e!s}"}
 
 
 @app.get("/holds/{hold_id}", tags=["Holds"])
@@ -355,7 +297,7 @@ async def get_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to get hold: {str(e)}"}
+            return {"error": f"Failed to get hold: {e!s}"}
 
 
 @app.post("/holds/{hold_id}/confirm", tags=["Holds"])
@@ -370,7 +312,7 @@ async def confirm_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to confirm hold: {str(e)}"}
+            return {"error": f"Failed to confirm hold: {e!s}"}
 
 
 @app.post("/holds/{hold_id}/release", tags=["Holds"])
@@ -385,15 +327,14 @@ async def release_hold(hold_id: str):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return {"error": f"Failed to release hold: {str(e)}"}
-
-    """Retrieve a user's information by providing both name and email."""
-    return user.get_user(db, name, email)
+            return {"error": f"Failed to release hold: {e!s}"}
 
 
-# ==================== MOUNT MCP INTO FASTAPI ====================
+# ==================== MCP SERVER (for AI agents) ====================
+# Auto-generates MCP tools from all FastAPI routes above — no duplication needed.
 
-app.mount("/mcp", mcp_app)
+mcp = FastApiMCP(app)
+mcp.mount_http()
 
 
 # ==================== MAIN ====================

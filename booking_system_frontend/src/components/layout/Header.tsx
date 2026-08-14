@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Rocket, User, LogOut } from 'lucide-react';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useUserContext';
 import { Button } from '../common';
 import { UserIdentification } from '../user/UserIdentification';
 import { motion } from 'framer-motion';

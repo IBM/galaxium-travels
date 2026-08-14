@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional, Literal
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict
 
 # Seat class type definition
 SeatClass = Literal['economy', 'business', 'galaxium']
@@ -8,25 +9,25 @@ SeatClass = Literal['economy', 'business', 'galaxium']
 class FlightQueryParams(BaseModel):
     """Query parameters for filtering and sorting flights."""
     # Location filters (case-insensitive partial match)
-    origin: Optional[str] = None
-    destination: Optional[str] = None
+    origin: str | None = None
+    destination: str | None = None
     
     # Date range filters (format: YYYY-MM-DD)
-    departure_date_from: Optional[str] = None
-    departure_date_to: Optional[str] = None
+    departure_date_from: str | None = None
+    departure_date_to: str | None = None
     
     # Price range filters
-    min_price: Optional[int] = None
-    max_price: Optional[int] = None
+    min_price: int | None = None
+    max_price: int | None = None
     
     # Seat availability filters (at least 1 seat available)
-    has_economy: Optional[bool] = None
-    has_business: Optional[bool] = None
-    has_galaxium: Optional[bool] = None
+    has_economy: bool | None = None
+    has_business: bool | None = None
+    has_galaxium: bool | None = None
     
     # Sorting
-    sort: Optional[Literal['price', 'departure_time', 'duration']] = None
-    order: Optional[Literal['asc', 'desc']] = 'asc'
+    sort: Literal['price', 'departure_time', 'duration'] | None = None
+    order: Literal['asc', 'desc'] | None = 'asc'
 
 
 class FlightOut(BaseModel):
@@ -83,4 +84,4 @@ class ErrorResponse(BaseModel):
     success: bool = False
     error: str
     error_code: str
-    details: Optional[str] = None
+    details: str | None = None

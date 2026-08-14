@@ -1,5 +1,6 @@
 from enum import Enum
-from sqlalchemy import Column, Integer, String, ForeignKey
+
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -7,7 +8,7 @@ Base = declarative_base()
 class BookingStatus(str, Enum):
     BOOKED = "booked"
     CANCELLED = "cancelled"
-    CANCELED = "cancelled"  # American spelling alias
+    CANCELED = "cancelled"  # American spelling alias  # noqa: PIE796
     COMPLETED = "completed"
 
 class User(Base):

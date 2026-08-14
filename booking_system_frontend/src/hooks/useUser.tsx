@@ -1,8 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { User, UserContextType } from '../types';
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+import type { User } from '../types';
+import { UserContext } from './useUserContext';
 
 const USER_STORAGE_KEY = 'galaxium_user';
 
@@ -45,14 +44,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </UserContext.Provider>
   );
-};
-
-export const useUser = (): UserContextType => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
 };
 
 // Made with Bob

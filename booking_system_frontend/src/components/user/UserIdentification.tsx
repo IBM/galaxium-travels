@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Modal, Input, Button } from '../common';
+import type { ErrorResponse } from '../../types';
 import { getUserByCredentials, registerUser, isErrorResponse } from '../../services/api';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useUserContext';
 import toast from 'react-hot-toast';
 
 interface UserIdentificationProps {
@@ -68,7 +69,8 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
         onSuccess();
         onClose();
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ErrorResponse;
       toast.error(error.details || error.error || 'An error occurred');
     } finally {
       setIsLoading(false);

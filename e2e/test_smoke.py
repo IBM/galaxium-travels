@@ -43,7 +43,8 @@ def test_booking_name_mismatch_rejected(client, traveler):
         "flight_id": flight_id,
         "seat_class": "economy",
     })
-    body = r.json()
+    assert r.status_code == 409
+    body = r.json()["detail"]
     assert body.get("success") is False
     assert body.get("error_code") == "NAME_MISMATCH", body
 
@@ -55,6 +56,7 @@ def test_booking_unknown_flight_rejected(client, traveler):
         "flight_id": 999999,
         "seat_class": "economy",
     })
-    body = r.json()
+    assert r.status_code == 404
+    body = r.json()["detail"]
     assert body.get("success") is False
     assert body.get("error_code") == "FLIGHT_NOT_FOUND", body

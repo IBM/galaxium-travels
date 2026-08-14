@@ -66,7 +66,7 @@ export const getRelativeTime = (dateString: string): string => {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return formatDateShort(dateString);
-  } catch (error) {
+  } catch {
     return dateString;
   }
 };
@@ -95,7 +95,7 @@ export const calculateDuration = (
     }
     
     return `${hours}h ${minutes}m`;
-  } catch (error) {
+  } catch {
     return 'N/A';
   }
 };

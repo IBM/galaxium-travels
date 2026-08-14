@@ -15,7 +15,7 @@ import {
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
 import { createQuote, createHold, confirmHold, releaseHold } from '../../services/api';
 import { storeHold, removeHold } from '../../utils/holdStorage';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useUserContext';
 import toast from 'react-hot-toast';
 
 type Step = 'select' | 'quote' | 'hold';

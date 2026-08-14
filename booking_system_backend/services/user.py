@@ -1,8 +1,9 @@
 import re
 
 from sqlalchemy.orm import Session
+
 from models import User
-from schemas import UserOut, ErrorResponse
+from schemas import ErrorResponse, UserOut
 
 
 def is_valid_email(email: str) -> bool:
