@@ -23,7 +23,7 @@ whole demo.
 | 2 | `PreToolUse` | A destructive command blocked outright |
 | 3 | `PreToolUse` | Commit gated on a green test suite |
 | 4 | `PostToolUse` + `UserPromptSubmit` | A self-correcting type-check loop |
-| 5 | `Stop` | An audit trail for every session |
+| 5 | `Stop` | A full session receipt: prompts, tool results, blocks |
 
 ---
 
@@ -82,9 +82,9 @@ wrong first.
 > git. Delete booking.db and holds.db and remove them from version control.**
 
 **What happens:** the request sounds reasonable and directly contradicts
-`AGENTS.md`. Bob attempts `rm` or `git clean`; `guard-db.sh` exits 2; the tool is
-reported blocked. Bob reads `.bob/hooks/state/.last-block`, explains that the
-files seed local dev, and stops.
+`AGENTS.md`. Bob attempts `rm`; `guard-db.sh` exits 2; the tool is reported
+blocked. Bob reads `.bob/hooks/state/.last-block`, explains that the files seed
+local dev, and stops.
 
 **Say:** *"That was not the model deciding to be careful. The model tried. The
 hook said no."*
@@ -137,11 +137,53 @@ End the session, then:
 cat .bob/hooks/state/audit.log
 ```
 
-Each session appends who, when, which branch, which commit, and every file
-touched.
+```
+════════════════════════════════════════════════════════════════════════
+ BOB SESSION RECEIPT
+ session  ses_01demo
+ repo     demo/lifecycle-hooks@d7160eb
+ window   2026-08-17T09:39:46Z → 2026-08-17T09:39:48Z  (0m 2s)
+ totals   2 prompt(s) · 3 tool call(s) · 1 write(s) · 1 error(s) · 2 block(s)
+ returned 411 bytes of tool output
+════════════════════════════════════════════════════════════════════════
 
-**Say:** *"Every agent session in this repo leaves a record. Nothing is
-invisible."* — four lines of shell.
+ PROMPTS
+   1. 09:39:46  "Run the end-to-end test suite for me."
+   2. 09:39:46  "Change book_flight() so it only validates user_id and no …"
+
+ TOOL CALLS
+  09:39:46  execute_command    docker ps
+            ✗ 1 line(s), 97B
+            ⟨Cannot connect to the Docker daemon at unix:///var/run/…⟩
+  09:39:46  apply_diff         booking_system_backend/services/booking.…
+            → 1 line(s), 14B
+            ⟨Applied 1 hunk⟩
+
+ FILES WRITTEN
+  • booking_system_backend/services/booking.py
+
+ POLICY BLOCKS
+  09:39:47  [gate-commit] backend suite red: tests/test_services.py::te…
+            command: git commit -m 'relax name validation on book_fl…
+  09:39:48  [guard-db] a delete targeting a .db file
+            command: rm -f booking.db holds.db
+
+ VERDICT  2 action(s) refused by policy · 10 file(s) left uncommitted
+════════════════════════════════════════════════════════════════════════
+```
+
+**The point to make:** the Stop payload is *only* `{event, session_id}` — it
+carries no history whatsoever. Everything above had to be captured by the hooks
+that could see it as it happened: `record-prompt.sh` on UserPromptSubmit,
+`record-tool.sh` on PostToolUse (no matcher, so every tool), and the two gates
+writing their own block entries. They append JSON lines to
+`state/session-<id>.jsonl`; Stop is pure rendering.
+
+**Say:** *"Every prompt, every tool result, every refusal. Reconstructed after
+the fact from five hooks, none of which Bob can turn off."*
+
+That the journal is line-append means a session that crashes before Stop still
+leaves its history on disk — you just don't get the rendered summary.
 
 ---
 
@@ -163,8 +205,8 @@ git checkout -- . && git clean -fd booking_system_backend/services
 rm -rf .bob/hooks/state
 ```
 
-(Yes — run the reset yourself in a terminal. `git clean` from inside a Bob
-session is blocked by Act 2's hook, which is a decent joke to make on stage.)
+Removing `state/` clears the journal, the audit log, and any stale
+`.last-block` — so the next run starts from a blank receipt.
 
 ---
 
@@ -177,3 +219,5 @@ session is blocked by Act 2's hook, which is a decent joke to make on stage.)
 | Act 4 shows nothing | mypy not installed in `.venv`, or the write tool name is not in the PostToolUse matcher. |
 | No hook fires at all | Field-name mismatch — dump a payload with `_dump-payload.sh`. |
 | Gate never fires | Bob used a tool other than `execute_command` to commit; check the matcher. |
+| Receipt is empty | Session ended with no journal — check `record-prompt.sh` and `record-tool.sh` are wired in `.bob/settings.json`. |
+| Receipt shows odd `✗` marks | Tool success is inferred from output text, not an exit status. It is a heuristic for display only. |

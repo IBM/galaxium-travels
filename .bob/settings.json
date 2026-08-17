@@ -10,7 +10,8 @@
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "sh .bob/hooks/inject-pending.sh", "timeout": 10 }
+          { "type": "command", "command": "sh .bob/hooks/inject-pending.sh", "timeout": 10 },
+          { "type": "command", "command": "sh .bob/hooks/record-prompt.sh", "timeout": 10 }
         ]
       }
     ],
@@ -24,6 +25,11 @@
       }
     ],
     "PostToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh .bob/hooks/record-tool.sh", "timeout": 10 }
+        ]
+      },
       {
         "matcher": "write_file|apply_diff|search_and_replace|insert_content",
         "hooks": [

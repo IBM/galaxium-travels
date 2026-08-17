@@ -8,21 +8,20 @@
 #
 # Exit 2 blocks the tool. Bob reports it as blocked and the session continues.
 
+. "$(dirname "$0")/lib-journal.sh"
+
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.input.command // .tool_input.command // empty')
+sid=$(printf '%s' "$input" | jq -r '.session_id // "unknown"')
 
 [ -z "$cmd" ] && exit 0
 
-root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-state="${root}/.bob/hooks/state"
-mkdir -p "$state"
+state="$hook_state"
 
 blocked=""
 case "$cmd" in
   *rm*.db*|*rm*booking.db*|*rm*holds.db*)
     blocked="a delete targeting a .db file" ;;
-  *"git clean"*)
-    blocked="git clean, which would remove the committed .db artefacts" ;;
 esac
 
 [ -z "$blocked" ] && exit 0
@@ -35,6 +34,11 @@ esac
   echo "They are regenerated on startup via ddl-auto=update and SEED_DEMO_DATA=true."
   echo "If you need a clean database, restart the stack instead of deleting files."
 } > "${state}/.last-block"
+
+journal_add "$sid" "$(jq -nc \
+  --arg t "$hook_ts" --argjson epoch "$hook_epoch" \
+  --arg subject "$(trunc "$cmd" 68)" --arg reason "$blocked" \
+  '{kind:"blocked", t:$t, epoch:$epoch, by:"guard-db", reason:$reason, subject:$subject}')"
 
 echo "Blocked: refuses to delete committed .db artefacts. See .bob/hooks/state/.last-block" >&2
 exit 2

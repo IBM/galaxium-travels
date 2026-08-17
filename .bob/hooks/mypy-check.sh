@@ -7,20 +7,18 @@
 # stdout IS injected. Two hooks, one feedback loop: the agent sees its own type
 # errors and fixes them without being asked.
 #
-# Also records touched files for the Stop-hook session receipt.
+# Touched files are recorded separately by record-tool.sh, which sees every
+# tool call -- this hook only concerns itself with type checking.
+
+. "$(dirname "$0")/lib-journal.sh"
 
 input=$(cat)
 path=$(printf '%s' "$input" | jq -r '.input.path // .tool_input.path // empty')
-sid=$(printf '%s' "$input" | jq -r '.session_id // "unknown"')
 
 [ -z "$path" ] && exit 0
 
-root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-state="${root}/.bob/hooks/state"
-mkdir -p "$state"
-
-# Audit trail: every file this session wrote to.
-printf '%s\n' "$path" >> "${state}/session-${sid}.files"
+root="$hook_root"
+state="$hook_state"
 
 case "$path" in
   *.py) ;;
