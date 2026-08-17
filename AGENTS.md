@@ -15,6 +15,7 @@ A demo interplanetary flight-booking app that mimics a real enterprise system. I
 - **`docker-compose.yml` Java service is behind a profile** — it uses `profiles: [hold-service]`. Run `docker compose --profile hold-service up` to include it, or use `e2e/docker-compose.e2e.yml` which enables it unconditionally.
 - **Python proxy swallows Java 404s** — proxy endpoints in `server.py` catch `httpx.HTTPError` and return `{"error": "..."}` with HTTP 200. Callers must check the response body, not just the status code (see [`test_holds.py` line 82](e2e/test_holds.py:82)).
 - **`holds.db` and `booking.db` are committed artefacts** — do not delete; they seed local dev. They are regenerated on startup via `spring.jpa.hibernate.ddl-auto=update` and `SEED_DEMO_DATA=true`.
+- **Some of the rules above are enforced by lifecycle hooks, not just documented** — see [`.bob/settings.json`](.bob/settings.json). Deleting a `.db` file and committing while the backend suite is red are both blocked outright. **If a tool call is reported as blocked, read `.bob/hooks/state/.last-block` for the reason** — the hook writes the full explanation there.
 
 ## Prerequisites
 
