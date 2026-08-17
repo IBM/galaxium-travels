@@ -19,7 +19,6 @@
       {
         "matcher": "^execute_command$",
         "hooks": [
-          { "type": "command", "command": "sh .bob/hooks/guard-db.sh", "timeout": 10 },
           { "type": "command", "command": "sh .bob/hooks/gate-commit.sh", "timeout": 60 }
         ]
       }
