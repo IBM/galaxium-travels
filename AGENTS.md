@@ -53,13 +53,10 @@ If `docker ps` errors with "cannot connect to the Docker daemon", `colima start`
 
 - **Install:** `cd booking_system_backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 - **Run:** `.venv/bin/python server.py` (listens on `:8001`)
-- **Test:** `cd booking_system_backend && pytest` (must run from this directory)
-- **Single test:** `cd booking_system_backend && pytest tests/test_services.py::test_name -v`
 
 ### Java Hold Service (Spring Boot / Maven)
 
 - **Build & run:** `cd booking_system_inventory_hold_service && mvn spring-boot:run` (requires Java 17 or 21 + Maven)
-- **Test (Spring):** `cd booking_system_inventory_hold_service && mvn test`
 - **Config:** `PYTHON_BACKEND_URL` env var overrides the Python backend address (default `http://localhost:8001`)
 
 ### Frontend (React / Vite)
@@ -67,18 +64,12 @@ If `docker ps` errors with "cannot connect to the Docker daemon", `colima start`
 - **Install:** `cd booking_system_frontend && npm install`
 - **Dev:** `cd booking_system_frontend && npm run dev` (listens on `:5173`)
 - **Build:** `cd booking_system_frontend && npm run build`
-- **Lint:** `cd booking_system_frontend && npm run lint`
 
 ### Full stack
 
 - **Start all locally:** `./start.sh` (wraps `scripts/local/start_locally.sh`)
 - **Docker Compose (backend + frontend):** `docker compose up`
 - **Docker Compose (+ Java hold service):** `docker compose --profile hold-service up`
-- **E2E tests:** `./test.sh` (builds full stack in Docker, waits for health, runs pytest)
-  - Requires Docker — start Colima first if not already running (`colima start`)
-  - `E2E_BASE_URL=http://host:port` — skip compose, run against an already-running stack (fast iteration)
-  - `E2E_KEEP_STACK=1` — leave stack up after tests (for debugging)
-  - `E2E_RUN_SLOW=1` — include the ~90 s auto-expiry test
 
 ### Deploy
 
@@ -140,8 +131,7 @@ scripts/
 ## Workflow
 
 - Branch naming: no enforced convention observed; recent branches use `restore/`, `feature/` prefixes.
-- Before a PR: run `cd booking_system_backend && pytest` (all must pass).
-- E2E tests require Docker; run with `./test.sh` before merging hold-service changes.
+- **Verification:** use the `verify` skill — it knows which checks are cheap vs. expensive and when e2e is needed.
 ## Notes for the agent
 
 - `booking_system_inventory_hold_service/target/` is Maven output — never edit files inside it.
