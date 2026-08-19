@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreviewOut, ErrorResponse, SeatClass
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +127,99 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _parse_departure_time(departure_time: str) -> datetime:
+    """Parse a departure_time string that may be ISO 8601 or space-separated.
+
+    Handles:
+    - "2099-01-01 09:00"  (space-separated, no timezone)
+    - "2099-01-01T09:00:00Z"  (ISO 8601 with Z)
+    - "2099-01-01T09:00:00+00:00"  (ISO 8601 with offset)
+    """
+    # Normalise the Z suffix so fromisoformat accepts it (Python < 3.11 compat)
+    normalised = departure_time.replace("Z", "+00:00")
+    # Replace space separator with T for fromisoformat
+    normalised = normalised.replace(" ", "T")
+    dt = datetime.fromisoformat(normalised)
+    # If naive, treat as UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def compute_cancellation_policy(price_paid: int, days_until_departure: int) -> dict:
+    """Return refund/fee/credit breakdown for the given days-until-departure.
+
+    Policy tiers:
+    - >= 30 days : FULL_REFUND    — 100% refund, 0 fee, 0 credit
+    - 7–29 days  : PARTIAL_REFUND — 50% refund, 0 fee, 0 credit
+    - 1–6 days   : TRAVEL_CREDIT  — 0 refund, 0 fee, 25% credit
+    - 0 days     : NO_REFUND      — 0 refund, 10% cancellation fee, 0 credit
+    """
+    if days_until_departure >= 30:
+        return {
+            "policy_tier": "FULL_REFUND",
+            "refund_amount": price_paid,
+            "cancellation_fee": 0,
+            "travel_credit": 0,
+        }
+    elif days_until_departure >= 7:
+        return {
+            "policy_tier": "PARTIAL_REFUND",
+            "refund_amount": price_paid // 2,
+            "cancellation_fee": 0,
+            "travel_credit": 0,
+        }
+    elif days_until_departure >= 1:
+        return {
+            "policy_tier": "TRAVEL_CREDIT",
+            "refund_amount": 0,
+            "cancellation_fee": 0,
+            "travel_credit": int(price_paid * 0.25),
+        }
+    else:
+        return {
+            "policy_tier": "NO_REFUND",
+            "refund_amount": 0,
+            "cancellation_fee": int(price_paid * 0.10),
+            "travel_credit": 0,
+        }
+
+
+def get_cancellation_preview(db: Session, booking_id: int) -> CancellationPreviewOut | ErrorResponse:
+    """Return a cancellation policy preview for a booking without modifying it."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+
+    if booking.status == "cancelled":
+        return ErrorResponse(
+            error="Booking already cancelled",
+            error_code="ALREADY_CANCELLED",
+            details=f"Booking {booking_id} is already cancelled.",
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if flight:
+        departure_dt = _parse_departure_time(flight.departure_time)
+        now = datetime.now(tz=timezone.utc)
+        delta_days = (departure_dt.date() - now.date()).days
+        # Treat past departures as same-day (0)
+        days_until_departure = max(0, delta_days)
+    else:
+        # No flight record — treat as same-day to be conservative
+        days_until_departure = 0
+
+    policy = compute_cancellation_policy(booking.price_paid, days_until_departure)
+
+    return CancellationPreviewOut(
+        booking_id=booking_id,
+        price_paid=booking.price_paid,
+        days_until_departure=days_until_departure,
+        **policy,
+    )

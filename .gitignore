@@ -93,6 +93,9 @@ poetry.lock
 .mypy_cache/
 .dmypy.json
 
+# Playwright MCP test artefacts
+.playwright-mcp/
+
 # Pyre type checker
 .pyre/
 

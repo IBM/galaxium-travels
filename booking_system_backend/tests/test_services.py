@@ -971,3 +971,129 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestCancellationPreview:
+    """Test get_cancellation_preview and compute_cancellation_policy service functions."""
+
+    # ---- helpers ----------------------------------------------------------
+
+    def _make_booking(self, db_session, departure_time: str, price_paid: int = 1_000_000) -> Booking:
+        db_session.add(User(name="Traveler", email="traveler@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time=departure_time,
+            arrival_time=departure_time,  # same for simplicity
+            base_price=price_paid,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2025-01-01T00:00:00+00:00",
+            seat_class="economy",
+            price_paid=price_paid,
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    # ---- policy tier tests (pure function) --------------------------------
+
+    def test_policy_full_refund(self):
+        """>= 30 days → FULL_REFUND."""
+        result = booking.compute_cancellation_policy(1_000_000, 30)
+        assert result["policy_tier"] == "FULL_REFUND"
+        assert result["refund_amount"] == 1_000_000
+        assert result["cancellation_fee"] == 0
+        assert result["travel_credit"] == 0
+
+    def test_policy_full_refund_far_future(self):
+        """60 days → still FULL_REFUND."""
+        result = booking.compute_cancellation_policy(500_000, 60)
+        assert result["policy_tier"] == "FULL_REFUND"
+        assert result["refund_amount"] == 500_000
+
+    def test_policy_partial_refund_lower_bound(self):
+        """7 days → PARTIAL_REFUND (50%)."""
+        result = booking.compute_cancellation_policy(1_000_000, 7)
+        assert result["policy_tier"] == "PARTIAL_REFUND"
+        assert result["refund_amount"] == 500_000
+        assert result["cancellation_fee"] == 0
+        assert result["travel_credit"] == 0
+
+    def test_policy_partial_refund_upper_bound(self):
+        """29 days → PARTIAL_REFUND."""
+        result = booking.compute_cancellation_policy(1_000_000, 29)
+        assert result["policy_tier"] == "PARTIAL_REFUND"
+
+    def test_policy_travel_credit(self):
+        """3 days → TRAVEL_CREDIT (25%)."""
+        result = booking.compute_cancellation_policy(1_000_000, 3)
+        assert result["policy_tier"] == "TRAVEL_CREDIT"
+        assert result["refund_amount"] == 0
+        assert result["cancellation_fee"] == 0
+        assert result["travel_credit"] == 250_000
+
+    def test_policy_travel_credit_boundary(self):
+        """1 day → TRAVEL_CREDIT."""
+        result = booking.compute_cancellation_policy(1_000_000, 1)
+        assert result["policy_tier"] == "TRAVEL_CREDIT"
+
+    def test_policy_no_refund(self):
+        """0 days → NO_REFUND (10% fee)."""
+        result = booking.compute_cancellation_policy(1_000_000, 0)
+        assert result["policy_tier"] == "NO_REFUND"
+        assert result["refund_amount"] == 0
+        assert result["cancellation_fee"] == 100_000
+        assert result["travel_credit"] == 0
+
+    # ---- service function tests -------------------------------------------
+
+    def test_preview_full_refund_tier(self, db_session):
+        """Booking with far-future departure returns FULL_REFUND preview."""
+        b = self._make_booking(db_session, "2099-12-31 09:00")
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert result.policy_tier == "FULL_REFUND"
+        assert result.refund_amount == b.price_paid
+        assert result.booking_id == b.booking_id
+
+    def test_preview_iso8601_with_z(self, db_session):
+        """departure_time in ISO 8601 with Z suffix is parsed correctly."""
+        b = self._make_booking(db_session, "2099-06-15T10:00:00Z")
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert result.policy_tier == "FULL_REFUND"
+
+    def test_preview_iso8601_with_offset(self, db_session):
+        """departure_time in ISO 8601 with UTC offset is parsed correctly."""
+        b = self._make_booking(db_session, "2099-06-15T10:00:00+00:00")
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert result.policy_tier == "FULL_REFUND"
+
+    def test_preview_past_departure_no_refund(self, db_session):
+        """Past departure → treated as day 0 → NO_REFUND."""
+        b = self._make_booking(db_session, "2000-01-01 09:00")
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert result.days_until_departure == 0
+        assert result.policy_tier == "NO_REFUND"
+
+    def test_preview_unknown_booking_id(self, db_session):
+        """Non-existent booking_id returns ErrorResponse."""
+        result = booking.get_cancellation_preview(db_session, 99999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
+    def test_preview_already_cancelled(self, db_session):
+        """Already-cancelled booking returns ALREADY_CANCELLED error."""
+        b = self._make_booking(db_session, "2099-12-31 09:00")
+        b.status = "cancelled"
+        db_session.commit()
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "ALREADY_CANCELLED"

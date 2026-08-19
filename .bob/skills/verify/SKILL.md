@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Run verification checks for the galaxium-travels repo. Use when the user asks to verify, validate, run tests, check lint, or confirm that changes are correct. Knows which checks are cheap (ruff, pytest, frontend lint) vs expensive (e2e). Runs cheap checks by default; only runs e2e when explicitly asked or when changes touch cross-service boundaries.
+description: Run verification checks for the galaxium-travels repo. Use after every implementation. Use when the user asks to verify, validate, run tests, check lint, or confirm that changes are correct. Knows which checks are cheap (ruff, pytest, frontend lint) vs expensive (e2e). Runs cheap checks by default; only runs e2e when explicitly asked or when changes touch cross-service boundaries.
 ---
 
 # Verify Skill

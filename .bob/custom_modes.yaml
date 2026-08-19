@@ -20,8 +20,8 @@
 #       - read
 #       - execute
 #       - skill
-#   - slug: deploy-engineer
-#     name: Deploy Engineer
+#   - slug: deployment-engineer
+#     name: Deployment Engineer
 #     roleDefinition: >-
 #       You are a Deploy Engineer. Your sole responsibility is making sure this
 #       project deploys correctly and reliably. You are an expert in the deployment
