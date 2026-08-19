@@ -12,6 +12,7 @@ from db import get_db, init_db
 from schemas import (
     BookingOut,
     BookingRequest,
+    CancellationPreviewOut,
     ErrorResponse,
     FlightOut,
     UserOut,
@@ -213,6 +214,24 @@ def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
     return result
 
 
+@app.get("/bookings/{booking_id}/cancellation-preview", response_model=CancellationPreviewOut, tags=["Bookings"])
+def get_cancellation_preview_endpoint(booking_id: int, db: Session = Depends(get_db)):
+    """Return a refund/fee/travel-credit preview for cancelling a booking.
+
+    Does not cancel the booking. Raises 404 if not found, 409 if already cancelled.
+    Policy tiers based on days until departure:
+    - >= 30 days: FULL_REFUND (100% back)
+    - 7–29 days: PARTIAL_REFUND (50% back)
+    - 1–6 days: TRAVEL_CREDIT (25% as credit)
+    - 0 days / past: NO_REFUND (10% cancellation fee)
+    """
+    result = booking.get_cancellation_preview(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code == "BOOKING_NOT_FOUND" else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
+
+
 # ==================== JAVA SERVICE INTEGRATION ====================
 
 JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL", "http://localhost:8080")
@@ -332,6 +351,7 @@ async def release_hold(hold_id: str):
 
 # ==================== MCP SERVER (for AI agents) ====================
 # Auto-generates MCP tools from all FastAPI routes above — no duplication needed.
+# The GET /bookings/{booking_id}/cancellation-preview endpoint is picked up automatically.
 
 mcp = FastApiMCP(app)
 mcp.mount_http()

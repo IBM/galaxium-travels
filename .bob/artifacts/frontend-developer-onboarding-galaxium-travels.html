@@ -1,0 +1,503 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Frontend Onboarding — Galaxium Travels</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #1f2328;
+    background: #ffffff;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 18px; font-weight: 700; margin: 40px 0 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; color: #1f2328; }
+  h3 { font-size: 14px; font-weight: 700; margin: 20px 0 6px; color: #3b82d4; }
+  p { margin-bottom: 10px; color: #1f2328; }
+  a { color: #3b82d4; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .subtitle { color: #57606a; font-size: 13px; margin-bottom: 32px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .badge-react { background: #e0f2fe; color: #0369a1; }
+  .badge-ts    { background: #ede9fe; color: #5b21b6; }
+  .badge-tw    { background: #d1fae5; color: #065f46; }
+  .badge-vite  { background: #fef3c7; color: #92400e; }
+  .badge-note  { background: #fef3c7; color: #92400e; }
+  .badge-warn  { background: #fee2e2; color: #991b1b; }
+
+  .hero-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+
+  /* Angular mapping table */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  th { background: #f7f8fa; text-align: left; padding: 8px 10px; border: 1px solid #e5e7eb; color: #57606a; font-weight: 600; }
+  td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12.5px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: #1f2328;
+  }
+  pre {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 10px 0 18px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  .callout {
+    border-left: 3px solid #3b82d4;
+    background: #eff6ff;
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0 18px;
+    font-size: 13px;
+  }
+  .callout.warn {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .callout.danger {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+  .callout strong { display: block; margin-bottom: 3px; }
+
+  .file-tree {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    margin: 10px 0 18px;
+  }
+  .file-tree .dir  { color: #1f2328; font-weight: 600; }
+  .file-tree .file { color: #57606a; }
+  .file-tree .note { color: #3b82d4; font-style: italic; }
+
+  .flow-box {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0 18px;
+    font-size: 12px;
+  }
+  .flow-step {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: 600;
+    color: #1f2328;
+  }
+  .flow-arrow { color: #57606a; font-size: 16px; font-weight: 700; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0 20px; }
+  .box {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px;
+    font-size: 13px;
+  }
+  .box h4 { font-size: 12px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .box ul { padding-left: 16px; }
+  .box li { margin-bottom: 4px; }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Galaxium Travels — Frontend Onboarding</h1>
+  <p class="subtitle">Welcome to the team! This guide is written for Angular developers stepping into the React/Vite codebase for the first time.</p>
+
+  <div class="hero-badges">
+    <span class="badge badge-react">React 19</span>
+    <span class="badge badge-ts">TypeScript 5.9</span>
+    <span class="badge badge-tw">Tailwind CSS 3</span>
+    <span class="badge badge-vite">Vite 7</span>
+  </div>
+
+  
+  <h2>1. Angular concepts you already know → React equivalents</h2>
+  <p>The mental models are close. Here is the direct mapping:</p>
+  <table>
+    <tr>
+      <th>Angular</th>
+      <th>React equivalent in this project</th>
+      <th>Where to look</th>
+    </tr>
+    <tr>
+      <td><code>NgModule</code> / <code>bootstrapApplication()</code></td>
+      <td><code>createRoot()</code> in <code>main.tsx</code> — mounts the <code>&lt;App /&gt;</code> tree into <code>#root</code></td>
+      <td><code>src/main.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>RouterModule</code> / <code>Routes</code></td>
+      <td><code>react-router-dom v7</code> — <code>&lt;BrowserRouter&gt;</code>, <code>&lt;Routes&gt;</code>, <code>&lt;Route&gt;</code></td>
+      <td><code>src/App.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>@Component</code> decorator</td>
+      <td>Plain TypeScript function that returns JSX — <code>export const MyComponent = () =&gt; &lt;div /&gt;</code></td>
+      <td>Every file in <code>src/components/</code> and <code>src/pages/</code></td>
+    </tr>
+    <tr>
+      <td><code>@Input()</code></td>
+      <td>Props — typed interface passed as the function argument: <code>({ flight, onBook }: FlightCardProps)</code></td>
+      <td><code>src/components/flights/FlightCard.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>@Output() EventEmitter</code></td>
+      <td>Callback prop — e.g. <code>onBook: (flight: Flight) =&gt; void</code></td>
+      <td><code>src/components/flights/FlightCard.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>ngOnInit()</code></td>
+      <td><code>useEffect(() =&gt; { ... }, [])</code> — runs once after mount</td>
+      <td><code>src/pages/Flights.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>ngOnChanges()</code></td>
+      <td><code>useEffect(() =&gt; { ... }, [dep])</code> — dependency array drives re-runs</td>
+      <td><code>src/pages/Flights.tsx</code> (re-fetches when <code>filters</code> changes)</td>
+    </tr>
+    <tr>
+      <td><code>BehaviorSubject</code> / service singleton</td>
+      <td>React Context + custom hook — <code>UserContext</code> + <code>useUser()</code></td>
+      <td><code>src/hooks/useUserContext.ts</code>, <code>src/hooks/useUser.tsx</code></td>
+    </tr>
+    <tr>
+      <td><code>HttpClient</code> service</td>
+      <td>Axios instance in <code>src/services/api.ts</code> — thin wrapper functions per endpoint</td>
+      <td><code>src/services/api.ts</code></td>
+    </tr>
+    <tr>
+      <td>Angular template syntax <code>*ngFor</code></td>
+      <td><code>array.map(item =&gt; &lt;Component key={item.id} ... /&gt;)</code></td>
+      <td>Throughout pages</td>
+    </tr>
+    <tr>
+      <td><code>*ngIf</code></td>
+      <td>Conditional expression: <code>{condition &amp;&amp; &lt;JSX /&gt;}</code> or ternary</td>
+      <td>Throughout pages</td>
+    </tr>
+    <tr>
+      <td>Two-way binding <code>[(ngModel)]</code></td>
+      <td>Controlled input: <code>value={state} onChange={e =&gt; setState(e.target.value)}</code></td>
+      <td><code>src/pages/Flights.tsx</code> search bar</td>
+    </tr>
+    <tr>
+      <td>Pipe (e.g. <code>date</code>, <code>currency</code>)</td>
+      <td>Plain utility functions in <code>src/utils/formatters.ts</code></td>
+      <td><code>src/utils/formatters.ts</code></td>
+    </tr>
+    <tr>
+      <td><code>ng-content</code> / transclusion</td>
+      <td><code>children</code> prop — <code>({ children }: { children: ReactNode })</code></td>
+      <td><code>src/components/layout/Layout.tsx</code></td>
+    </tr>
+    <tr>
+      <td>Lazy-loaded module</td>
+      <td>Vite code-splitting is automatic; <code>vendor</code> chunk is manually split in <code>vite.config.ts</code></td>
+      <td><code>vite.config.ts</code></td>
+    </tr>
+  </table>
+
+  
+  <h2>2. Project structure</h2>
+  <div class="file-tree">
+    <span class="dir">booking_system_frontend/</span><br />
+      <span class="file">index.html</span>   <span class="note">← Vite entry; contains &lt;div id="root"&gt;</span><br />
+      <span class="file">vite.config.ts</span>   <span class="note">← dev proxy /api → localhost:8001</span><br />
+      <span class="file">tailwind.config.js</span>   <span class="note">← custom space-themed color tokens</span><br />
+      <span class="dir">src/</span><br />
+        <span class="file">main.tsx</span>   <span class="note">← bootstraps React into #root</span><br />
+        <span class="file">App.tsx</span>   <span class="note">← router + UserProvider wrapper</span><br />
+        <span class="dir">pages/</span>   <span class="note">← route-level components (Angular "routed components")</span><br />
+          <span class="file">Home.tsx</span>   <span class="note">← / — static landing with destination grid</span><br />
+          <span class="file">Flights.tsx</span>   <span class="note">← /flights — flight list + booking trigger</span><br />
+          <span class="file">MyBookings.tsx</span>   <span class="note">← /bookings — user's bookings + active holds</span><br />
+          <span class="file">DestinationDetail.tsx</span>   <span class="note">← /destinations/:slug</span><br />
+        <span class="dir">components/</span><br />
+          <span class="dir">layout/</span>   <span class="note">← Header, Footer, Layout (shell)</span><br />
+          <span class="dir">common/</span>   <span class="note">← Button, Card, Input, Modal, LoadingSpinner, Starfield</span><br />
+          <span class="dir">flights/</span>   <span class="note">← FlightCard, FlightFilters</span><br />
+          <span class="dir">bookings/</span>   <span class="note">← BookingCard, BookingModal, HoldCard</span><br />
+          <span class="dir">user/</span>   <span class="note">← UserIdentification (login/register modal)</span><br />
+        <span class="dir">services/</span><br />
+          <span class="file">api.ts</span>   <span class="note">← ALL backend calls (Axios). Think: Angular HttpClient service</span><br />
+        <span class="dir">hooks/</span><br />
+          <span class="file">useUserContext.ts</span>   <span class="note">← creates UserContext + useUser() hook</span><br />
+          <span class="file">useUser.tsx</span>   <span class="note">← UserProvider component (state + localStorage sync)</span><br />
+        <span class="dir">types/</span><br />
+          <span class="file">index.ts</span>   <span class="note">← all shared TypeScript interfaces (Flight, Booking, User, Hold…)</span><br />
+        <span class="dir">utils/</span><br />
+          <span class="file">formatters.ts</span>   <span class="note">← formatDate, formatCurrency, calculateDuration (replaces Angular pipes)</span><br />
+          <span class="file">holdStorage.ts</span>   <span class="note">← read/write active holds in localStorage</span><br />
+        <span class="dir">data/</span><br />
+          <span class="file">destinations.ts</span>   <span class="note">← static planet data for the destinations pages</span><br />
+  </div>
+
+  
+  <h2>3. How the app boots (equivalent to Angular's bootstrap)</h2>
+  <p>The startup chain is short:</p>
+  <div class="flow-box">
+    <span class="flow-step">index.html (#root)</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">main.tsx — createRoot()</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">App.tsx — BrowserRouter + UserProvider + Layout</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Routes → Page component</span>
+  </div>
+  <p><code>App.tsx</code> is the entire "AppModule". It sets up three things in one go: the router, the global user context, and the persistent shell layout.</p>
+
+  
+  <h2>4. Routing — react-router-dom v7</h2>
+  <table>
+    <tr><th>URL</th><th>Component</th><th>Notes</th></tr>
+    <tr><td><code>/</code></td><td><code>Home</code></td><td>Static — no API calls</td></tr>
+    <tr><td><code>/flights</code></td><td><code>Flights</code></td><td>Fetches flight list on load and on filter change</td></tr>
+    <tr><td><code>/bookings</code></td><td><code>MyBookings</code></td><td>Redirects to <code>/flights</code> if no user is logged in</td></tr>
+    <tr><td><code>/destinations/:slug</code></td><td><code>DestinationDetail</code></td><td>Slug matched to static <code>destinations.ts</code> data</td></tr>
+    <tr><td><code>*</code></td><td><code>Home</code></td><td>Catch-all fallback</td></tr>
+  </table>
+  <p>Use <code>useNavigate()</code> instead of Angular's <code>Router.navigate()</code>, and <code>&lt;Link to="..."&gt;</code> instead of <code>routerLink</code>. Active route detection uses <code>useLocation()</code> — see how <code>Header.tsx</code> highlights the active nav link.</p>
+
+  
+  <h2>5. State management — no NgRx, just Context + useState</h2>
+  <p>There is no Redux or Zustand. State lives in two places:</p>
+
+  <h3>5a. Global user state — UserContext</h3>
+  <p><code>UserProvider</code> (in <code>src/hooks/useUser.tsx</code>) wraps the whole app. It holds the logged-in <code>User</code> object, persists it to <code>localStorage</code> under the key <code>galaxium_user</code>, and exposes <code>setUser</code> / <code>logout</code>.</p>
+  <p>Consume it anywhere with the <code>useUser()</code> hook — equivalent to injecting a singleton Angular service:</p>
+  <pre>const { user, setUser, logout } = useUser();</pre>
+  <p>Calling <code>useUser()</code> outside of <code>UserProvider</code> throws — the same pattern as an Angular service injected without its provider.</p>
+
+  <h3>5b. Page-local state — useState + useEffect</h3>
+  <p>Each page manages its own loading state, data arrays, and modal visibility with <code>useState</code>. Data fetching is triggered by <code>useEffect</code>. Example from <code>Flights.tsx</code>:</p>
+  <pre>const [flights, setFlights] = useState&lt;Flight[]&gt;([]);
+const [filters, setFilters] = useState&lt;FlightFiltersType&gt;({});
+
+// Re-runs whenever `filters` changes — equivalent to ngOnChanges
+useEffect(() =&gt; {
+  loadFlights();
+}, [loadFlights]); // loadFlights is memoised with useCallback([filters])</pre>
+  <p>The <code>useCallback</code> around <code>loadFlights</code> prevents an infinite re-render loop — it memoises the function so the <code>useEffect</code> dependency only changes when <code>filters</code> actually changes.</p>
+
+  
+  <h2>6. API layer — src/services/api.ts</h2>
+  <p>A single Axios instance with the base URL defaulting to <code>/api</code> (proxied to <code>http://localhost:8001</code> by Vite in development). In production, Nginx handles the proxy — see <code>nginx.conf</code>.</p>
+  <div class="callout warn">
+    <strong>⚠ Critical: HTTP status is not a reliable error indicator</strong>
+    The Python backend proxy returns <code>{"error": "..."}</code> with HTTP <strong>200</strong> when the Java inventory service is unavailable. Always check the response body, not just the status code. The helper <code>assertNotProxyError(data)</code> does this for hold-related calls, and <code>isErrorResponse(result)</code> does it for booking calls.
+  </div>
+
+  <p>The two error-checking patterns used in the codebase:</p>
+  <pre>// Pattern 1 — union return type (booking/user endpoints)
+const result = await bookFlight(data);
+if (isErrorResponse(result)) {
+  toast.error(result.error);
+  return;
+}
+// result is Booking here
+
+// Pattern 2 — thrown error (hold endpoints)
+// assertNotProxyError() throws if data has an "error" field
+// so you can use try/catch directly
+try {
+  const quote = await createQuote(payload);
+  // quote is Quote here
+} catch (err) {
+  toast.error('Something went wrong');
+}</pre>
+
+  <h3>Endpoint groups</h3>
+  <table>
+    <tr><th>Group</th><th>Endpoints</th><th>Backend service</th></tr>
+    <tr><td>Flights</td><td><code>getFlights(filters?)</code></td><td>Python / FastAPI on :8001</td></tr>
+    <tr><td>Users</td><td><code>registerUser</code>, <code>getUserByCredentials</code></td><td>Python / FastAPI</td></tr>
+    <tr><td>Bookings</td><td><code>bookFlight</code>, <code>getUserBookings</code>, <code>cancelBooking</code></td><td>Python / FastAPI</td></tr>
+    <tr><td>Quotes &amp; Holds</td><td><code>createQuote</code>, <code>getQuote</code>, <code>createHold</code>, <code>getHold</code>, <code>confirmHold</code>, <code>releaseHold</code></td><td>Java / Spring Boot on :8080 <em>(proxied through Python)</em></td></tr>
+  </table>
+
+  
+  <h2>7. The booking flow — BookingModal.tsx</h2>
+  <p>This is the most complex component in the frontend. It is a 3-step modal with internal state that drives UI transitions — no separate routes.</p>
+
+  <div class="flow-box">
+    <span class="flow-step">Step 1: select</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Step 2: quote</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Step 3: hold</span>
+  </div>
+
+  <table>
+    <tr><th>Step</th><th>What the user sees</th><th>API call(s)</th><th>Side effect</th></tr>
+    <tr>
+      <td><strong>select</strong></td>
+      <td>Seat class picker (Economy / Business / Galaxium), passenger info</td>
+      <td>—</td>
+      <td>Sets <code>selectedClass</code></td>
+    </tr>
+    <tr>
+      <td><strong>quote</strong></td>
+      <td>Price breakdown from the inventory service — Quote ID, per-seat price, total</td>
+      <td><code>createQuote()</code> → Java service</td>
+      <td>Sets <code>quote</code> state</td>
+    </tr>
+    <tr>
+      <td><strong>hold</strong></td>
+      <td>Countdown timer (15 min), Confirm / Release buttons</td>
+      <td><code>createHold(quoteId)</code>, then either <code>confirmHold(holdId)</code> or <code>releaseHold(holdId)</code></td>
+      <td><code>storeHold()</code> writes to localStorage; <code>removeHold()</code> cleans up on confirm/release</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <strong>ℹ Hold persistence in localStorage</strong>
+    When the user places a hold and closes the modal without confirming, the hold is intentionally kept alive. It is stored in <code>localStorage</code> under <code>galaxium_holds_{userId}</code> and surfaces in <strong>My Bookings</strong> as a "Pending Hold" card. The <code>holdStorage.ts</code> utilities manage this.
+  </div>
+
+  
+  <h2>8. Styling — Tailwind CSS + custom tokens</h2>
+  <p>There is no Angular Material or component library. Styles are pure Tailwind utility classes. The project defines a custom space-themed palette on top of standard Tailwind in <code>tailwind.config.js</code>:</p>
+  <table>
+    <tr><th>Custom token</th><th>Hex value</th><th>Used for</th></tr>
+    <tr><td><code>space-dark</code></td><td>#030712</td><td>Page background</td></tr>
+    <tr><td><code>space-blue</code></td><td>#0A1929</td><td>Card/panel background</td></tr>
+    <tr><td><code>cosmic-purple</code></td><td>#6366F1</td><td>Primary accent — active states, highlights</td></tr>
+    <tr><td><code>nebula-pink</code></td><td>#EC4899</td><td>Secondary accent — gradient end</td></tr>
+    <tr><td><code>alien-green</code></td><td>#10B981</td><td>Success, Galaxium class tier</td></tr>
+    <tr><td><code>solar-orange</code></td><td>#F59E0B</td><td>Warnings, hold countdown, Economy low seats</td></tr>
+    <tr><td><code>star-white</code></td><td>#F9FAFB</td><td>Body text on dark backgrounds</td></tr>
+    <tr><td><code>cosmic-gradient</code></td><td>135° #6366F1→#EC4899</td><td>Header buttons, card accent bars</td></tr>
+  </table>
+  <p>You will see utility classes like <code>text-star-white/70</code> throughout — that is Tailwind's opacity modifier syntax (<code>/70</code> = 70% opacity). The <code>glass-card</code> class is a global CSS utility defined in <code>src/index.css</code> that produces the semi-transparent glassmorphism card style used everywhere.</p>
+  <div class="callout warn">
+    <strong>⚠ Do not use standard Tailwind color names for brand colors.</strong>
+    Use the custom tokens above. <code>text-purple-500</code> is not the same as <code>text-cosmic-purple</code>.
+  </div>
+
+  
+  <h2>9. Animations — Framer Motion</h2>
+  <p>Angular has built-in <code>@angular/animations</code>. Here the equivalent is <strong>Framer Motion</strong>. The pattern you will see everywhere:</p>
+  <pre>&lt;motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.3 }}
+&gt;
+  ...
+&lt;/motion.div&gt;</pre>
+  <p><code>whileInView</code> + <code>viewport={{ once: true }}</code> is the equivalent of an Angular intersection-observer animation that fires once on scroll. <code>whileHover</code> replaces CSS hover transitions for interactive lift effects on cards.</p>
+
+  
+  <h2>10. Notifications — react-hot-toast</h2>
+  <p>The Angular equivalent would be a snackbar service. Here it is <code>react-hot-toast</code>. The <code>&lt;Toaster /&gt;</code> is mounted once in <code>Layout.tsx</code>. Call from anywhere:</p>
+  <pre>import toast from 'react-hot-toast';
+toast.success('Booking confirmed!');
+toast.error('Something went wrong');
+toast.error('Failed to load flights. Retrying...');</pre>
+
+  
+  <h2>11. User "auth" — no JWT, just name + email</h2>
+  <p>This app uses a simplified identification model — there is no password, JWT, or session token. The user provides their name and email, and the backend looks up or creates a <code>User</code> record. The returned <code>{ user_id, name, email }</code> object is stored in <code>localStorage</code> and held in React context.</p>
+  <p>The <code>Header</code> shows a <strong>Login</strong> button when no user is in context, and a user name + logout button when one is present. The <strong>My Bookings</strong> nav link only appears when a user is logged in. If you navigate to <code>/bookings</code> without a user, <code>useEffect</code> calls <code>navigate('/flights')</code>.</p>
+
+  
+  <h2>12. Running the frontend locally</h2>
+  <pre>cd booking_system_frontend
+npm install
+npm run dev        # starts Vite dev server on :5173
+
+npm run build      # TypeScript typecheck + Vite production build → dist/
+npm run lint       # ESLint check</pre>
+  <p>The Vite dev server proxies all requests to <code>/api/*</code> to <code>http://localhost:8001</code> (the Python backend). You need the Python backend running for any API calls to work. You do not need the Java service unless you are testing the quote/hold flow.</p>
+
+  <div class="two-col">
+    <div class="box">
+      <h4>You need running for…</h4>
+      <ul>
+        <li>Basic browsing: <strong>nothing</strong> (Home, DestinationDetail are static)</li>
+        <li>Flights list, booking, cancel: <strong>Python backend</strong> (<code>:8001</code>)</li>
+        <li>Quote &amp; Hold flow: <strong>Python + Java</strong> (<code>:8001</code> + <code>:8080</code>)</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>Key npm scripts</h4>
+      <ul>
+        <li><code>npm run dev</code> — hot-reload dev server</li>
+        <li><code>npm run build</code> — production build</li>
+        <li><code>npm run lint</code> — ESLint</li>
+        <li><code>npm run preview</code> — preview the <code>dist/</code> build locally</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <h2>13. Things that will surprise you</h2>
+
+  <div class="callout danger">
+    <strong>🚨 HTTP status ≠ success for holds</strong>
+    The proxy returns <code>200 OK</code> with <code>{"error": "…"}</code> when the Java service is down. Always call <code>assertNotProxyError(data)</code> or check <code>isErrorResponse(result)</code> after every API call.
+  </div>
+
+  <div class="callout warn">
+    <strong>⚠ React 19 StrictMode double-invokes effects in development</strong>
+    <code>StrictMode</code> in <code>main.tsx</code> mounts, unmounts, then remounts every component in dev to surface side-effect bugs. If you see API calls firing twice in the browser DevTools — that is intentional in dev and does not happen in production.
+  </div>
+
+  <div class="callout">
+    <strong>ℹ useCallback and the loadFlights dependency loop</strong>
+    <code>loadFlights</code> in <code>Flights.tsx</code> is wrapped in <code>useCallback([filters])</code>. This is necessary because it is listed as a dependency of <code>useEffect</code>. Without the memoisation the effect would re-run on every render, triggering an infinite loop. This is a common React pattern with no direct Angular equivalent.
+  </div>
+
+  <div class="callout">
+    <strong>ℹ No global loading/error state</strong>
+    Unlike Angular apps that often use an HTTP interceptor for global loading spinners, each page manages its own <code>isLoading</code> state locally. There is no shared loading service.
+  </div>
+
+</div>
+
+<footer>Made with IBM Bob</footer>
+
+
+</body>
+</html>

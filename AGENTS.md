@@ -2,6 +2,10 @@
 
 A demo interplanetary flight-booking app that mimics a real enterprise system. Its purpose is to **showcase challenges agents face in a multi-service codebase** — not to run in production.
 
+When you are asked to create a plan while in agent mode, do other things you need to do, like gathering data from a CLI and then explicitly switch to plan mode. 
+
+When creating planning documents, put them on the root level in all caps. 
+ 
 ## Footguns
 
 - **MCP server MUST be created before FastAPI app** — [`server.py` line 22](booking_system_backend/server.py:22) instantiates `FastMCP` before `FastAPI`. Swapping the order breaks lifespan composition.
