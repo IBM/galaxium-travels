@@ -22,7 +22,7 @@ gh api --method DELETE /repos/IBM/galaxium-travels/issues/comments/<id>
 
 ## Step 2 — Create Demo Branch
 
-Create a fresh branch from `main` and push it. The branch name must follow the convention `dev-day-demo-q3-2026-xx` where `xx` is replaced with today's two-letter initials or a short identifier (e.g. `mj`).
+Create a fresh branch from `main` and push it. The branch name must follow the convention `dev-day-demo-q3-2026-xx` where `xx` is replaced with today's two-letter initials or a short identifier (e.g. `mj`).  If the branch already exists at a 01, for example. 
 
 ```bash
 git checkout main
