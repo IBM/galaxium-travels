@@ -182,3 +182,4 @@ application-*.local.properties
 .factorypath
 # Bob lifecycle-hook runtime state (stashes, audit log, payload dumps)
 .bob/hooks/state/
+.playwright-mcp
