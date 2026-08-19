@@ -1,0 +1,317 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Implementation Plan — Issue #43</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 40px 24px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+  .issue-tag { display: inline-block; font-size: 11px; font-weight: 600; color: #3b82d4; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 8px; margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 700; color: #1f2328; margin-bottom: 6px; }
+  .subtitle { color: #57606a; font-size: 13px; }
+  .meta { display: flex; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
+  .meta-item { font-size: 12px; color: #57606a; }
+  .meta-item strong { color: #1f2328; }
+
+  /* Section */
+  section { margin-bottom: 32px; }
+  h2 { font-size: 15px; font-weight: 700; color: #1f2328; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+  h3 { font-size: 13px; font-weight: 600; color: #1f2328; margin: 14px 0 6px; }
+
+  /* Steps */
+  .step { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f0f1f3; }
+  .step:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: #3b82d4; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 13px; color: #1f2328; margin-bottom: 4px; }
+  .step-file { font-size: 11px; font-family: "SF Mono", "Cascadia Code", monospace; color: #57606a; background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 3px; padding: 1px 5px; margin-bottom: 6px; display: inline-block; }
+  .step-desc { font-size: 13px; color: #444d56; }
+  .step-desc ul { padding-left: 18px; margin-top: 4px; }
+  .step-desc li { margin-bottom: 3px; }
+
+  /* Policy table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; font-weight: 600; color: #1f2328; }
+  td { border: 1px solid #e5e7eb; padding: 6px 10px; color: #444d56; }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  /* Code block */
+  pre { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 5px; padding: 12px 14px; font-size: 12px; font-family: "SF Mono", "Cascadia Code", monospace; overflow-x: auto; color: #1f2328; margin: 6px 0; }
+
+  /* Schema box */
+  .schema { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 5px; padding: 12px 14px; font-size: 12px; font-family: "SF Mono", "Cascadia Code", monospace; color: #1f2328; margin: 6px 0; }
+
+  /* Label */
+  .label { display: inline-block; font-size: 10px; font-weight: 600; border-radius: 3px; padding: 1px 6px; margin-right: 4px; }
+  .label-backend { background: #fff3cd; color: #856404; border: 1px solid #ffd07b; }
+  .label-frontend { background: #d4edda; color: #155724; border: 1px solid #9fdcae; }
+  .label-test { background: #e2d9f3; color: #491e8e; border: 1px solid #c3b1e1; }
+
+  /* AC list */
+  .ac-list { list-style: none; padding: 0; }
+  .ac-list li { padding: 5px 0 5px 22px; position: relative; font-size: 13px; color: #444d56; border-bottom: 1px solid #f0f1f3; }
+  .ac-list li:last-child { border-bottom: none; }
+  .ac-list li::before { content: "☐"; position: absolute; left: 0; color: #57606a; }
+
+  /* Note */
+  .note { background: #fff8e6; border: 1px solid #ffd07b; border-radius: 5px; padding: 10px 14px; font-size: 12px; color: #6b4c00; margin-top: 8px; }
+  .note strong { color: #4a3400; }
+
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="issue-tag">Issue #43 · tier-3 · enhancement</div>
+    <h1>Refund Preview on Cancel</h1>
+    <p class="subtitle">Show "$X refund / $Y fee / $Z kept as credit" breakdown before confirming cancellation</p>
+    <div class="meta">
+      <span class="meta-item"><strong>Estimate:</strong> ~1 hour</span>
+      <span class="meta-item"><strong>Labels:</strong> area/frontend, enhancement, roadmap</span>
+      <span class="meta-item"><strong>Out of scope:</strong> actual refund processing (payment stub)</span>
+    </div>
+  </div>
+
+  
+  <section>
+    <h2>1 · Cancellation Policy Design</h2>
+    <p style="font-size:13px;color:#444d56;margin-bottom:10px">
+      The policy helper is pure logic — no I/O — keyed off days-to-departure calculated from the booking's
+      associated flight <code>departure_time</code>. Three tiers cover all realistic cases.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Days to departure</th><th>Refund %</th><th>Fee %</th><th>Travel credit %</th><th>Wording</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>&gt; 30 days</td><td>90%</td><td>10%</td><td>0%</td><td>Full refund less cancellation fee</td></tr>
+        <tr><td>8–30 days</td><td>50%</td><td>20%</td><td>30%</td><td>Partial refund; remainder as travel credit</td></tr>
+        <tr><td>0–7 days</td><td>0%</td><td>25%</td><td>75%</td><td>No refund; fare kept as travel credit less fee</td></tr>
+        <tr><td>Past / already departed</td><td>0%</td><td>100%</td><td>0%</td><td>Non-refundable — flight has departed</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>Note:</strong> Policy wording must be stored with the preview response — the frontend renders it verbatim,
+      no business logic in the UI.
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>2 · Backend Changes</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-backend">backend</span> Add <code>CancellationPreview</code> schema — <span class="step-file">schemas.py</span></div>
+        <div class="step-desc">
+          Append a new Pydantic model after <code>BookingOut</code>:
+          <div class="schema">class CancellationPreview(BaseModel):
+    booking_id: int
+    price_paid: int
+    refund_amount: int
+    cancellation_fee: int
+    travel_credit: int
+    policy_wording: str
+    days_to_departure: int</div>
+          No changes to any existing schema.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-backend">backend</span> Add <code>get_cancellation_preview()</code> service function — <span class="step-file">services/booking.py</span></div>
+        <div class="step-desc">
+          Add a new function <em>below</em> <code>cancel_booking()</code>. It:
+          <ul>
+            <li>Looks up the booking and its associated flight</li>
+            <li>Returns <code>ErrorResponse</code> if booking not found or already cancelled</li>
+            <li>Computes <code>days_to_departure</code> from <code>flight.departure_time</code> vs <code>datetime.now(utc)</code></li>
+            <li>Selects the policy tier and computes integer amounts from <code>booking.price_paid</code></li>
+            <li>Returns a <code>CancellationPreview</code> — no writes to the DB</li>
+          </ul>
+          This is a pure read — no seat or booking mutation happens here.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-backend">backend</span> Add REST endpoint + import — <span class="step-file">server.py</span></div>
+        <div class="step-desc">
+          Add the import for <code>CancellationPreview</code> to the <code>from schemas import …</code> block, then add the
+          endpoint between the existing <code>/bookings/{user_id}</code> and <code>/cancel/{booking_id}</code> endpoints:
+          <pre>@app.get("/bookings/{booking_id}/cancellation-preview",
+         response_model=CancellationPreview, tags=["Bookings"])
+def get_cancellation_preview_endpoint(booking_id: int,
+                                      db: Session = Depends(get_db)):
+    """Return refund/fee/credit breakdown without cancelling the booking."""
+    result = booking.get_cancellation_preview(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code == "BOOKING_NOT_FOUND" else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result</pre>
+          <strong>FastApiMCP auto-picks this up</strong> — no manual MCP tool registration needed (<code>mcp = FastApiMCP(app)</code> is already present and wraps all routes).
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-test">test</span> Unit-test the policy helper — <span class="step-file">tests/test_services.py</span></div>
+        <div class="step-desc">
+          Add a <code>TestCancellationPreview</code> class with four test cases — one per policy tier. Each test seeds one <code>User</code>, one <code>Flight</code>, and one <code>Booking</code>, then calls <code>booking.get_cancellation_preview(db, booking_id)</code> and asserts on:
+          <ul>
+            <li><code>refund_amount + cancellation_fee + travel_credit == price_paid</code></li>
+            <li>Correct integer amounts per tier</li>
+            <li><code>policy_wording</code> is a non-empty string</li>
+            <li>Error path: not found returns <code>ErrorResponse</code> with <code>error_code == "BOOKING_NOT_FOUND"</code></li>
+            <li>Error path: already-cancelled booking returns <code>ErrorResponse</code> with <code>error_code == "ALREADY_CANCELLED"</code></li>
+          </ul>
+          Uses the existing <code>db_session</code> fixture from <code>conftest.py</code> — no new fixtures needed.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>3 · Frontend Changes</h2>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-frontend">frontend</span> Add <code>CancellationPreview</code> type — <span class="step-file">src/types/index.ts</span></div>
+        <div class="step-desc">
+          Append after the <code>ErrorResponse</code> interface:
+          <div class="schema">export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  refund_amount: number;
+  cancellation_fee: number;
+  travel_credit: number;
+  policy_wording: string;
+  days_to_departure: number;
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-frontend">frontend</span> Add <code>getCancellationPreview()</code> call — <span class="step-file">src/services/api.ts</span></div>
+        <div class="step-desc">
+          Import <code>CancellationPreview</code> in the existing import block, then add after <code>cancelBooking</code>:
+          <pre>export const getCancellationPreview = async (
+  bookingId: number
+): Promise&lt;CancellationPreview | ErrorResponse&gt; =&gt; {
+  const response = await api.get&lt;CancellationPreview | ErrorResponse&gt;(
+    `/bookings/${bookingId}/cancellation-preview`
+  );
+  return response.data;
+};</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-title"><span class="label label-frontend">frontend</span> Wire preview into cancel modal — <span class="step-file">src/pages/MyBookings.tsx</span></div>
+        <div class="step-desc">
+          This is the only non-trivial UI change. The current modal renders a static "are you sure?" string.
+          Changes needed:
+          <ul>
+            <li>Add state: <code>preview: CancellationPreview | null</code> and <code>isLoadingPreview: boolean</code></li>
+            <li>Update <code>handleCancelClick</code> — call <code>getCancellationPreview(bookingId)</code> before opening the modal; set <code>preview</code> and <code>isLoadingPreview</code> accordingly</li>
+            <li>Modal body: replace the static paragraph with a breakdown table that renders when <code>preview</code> is available, or a spinner while loading. Show error text if the preview fetch fails (still allow confirm)</li>
+            <li>Display: <code>policy_wording</code> line, then three rows — Refund / Cancellation fee / Travel credit — each formatted as a currency amount (e.g. <code>$1,200,000</code>)</li>
+            <li>Clear <code>preview</code> on modal close or after confirm</li>
+          </ul>
+          <strong>Important:</strong> the confirm button must remain enabled even if the preview fetch fails — the user can still proceed to cancel.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section>
+    <h2>4 · File Change Summary</h2>
+    <table>
+      <thead><tr><th>File</th><th>Change type</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td><code>booking_system_backend/schemas.py</code></td><td>Add</td><td>New <code>CancellationPreview</code> Pydantic model</td></tr>
+        <tr><td><code>booking_system_backend/services/booking.py</code></td><td>Add</td><td>New <code>get_cancellation_preview()</code> function</td></tr>
+        <tr><td><code>booking_system_backend/server.py</code></td><td>Add</td><td>New <code>GET /bookings/{id}/cancellation-preview</code> endpoint + import</td></tr>
+        <tr><td><code>booking_system_backend/tests/test_services.py</code></td><td>Add</td><td><code>TestCancellationPreview</code> class — 6 test cases</td></tr>
+        <tr><td><code>booking_system_frontend/src/types/index.ts</code></td><td>Add</td><td>New <code>CancellationPreview</code> interface</td></tr>
+        <tr><td><code>booking_system_frontend/src/services/api.ts</code></td><td>Add</td><td>New <code>getCancellationPreview()</code> function + import</td></tr>
+        <tr><td><code>booking_system_frontend/src/pages/MyBookings.tsx</code></td><td>Modify</td><td>Preview fetch on cancel click; breakdown in modal body</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#57606a;margin-top:8px">
+      No changes to <code>models.py</code>, <code>db.py</code>, <code>seed.py</code>, <code>conftest.py</code>, or any Java service files.
+      <code>FastApiMCP</code> auto-wraps the new endpoint — no manual MCP tool needed.
+    </p>
+  </section>
+
+  
+  <section>
+    <h2>5 · Acceptance Criteria Traceability</h2>
+    <ul class="ac-list">
+      <li>Cancel modal shows refund / fee / credit breakdown before confirm → Step 7 (modal body rewrite)</li>
+      <li>Breakdown varies by days-to-departure per documented policy → Steps 2 + 4 (policy tiers + unit tests)</li>
+      <li>Wording is clear and product-appropriate → <code>policy_wording</code> field returned from backend, rendered verbatim in UI</li>
+      <li>Policy helper is unit-tested in the backend → Step 4 (<code>TestCancellationPreview</code> — 6 cases)</li>
+    </ul>
+  </section>
+
+  
+  <section>
+    <h2>6 · Project Footguns to Watch</h2>
+    <table>
+      <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>GET /bookings/{booking_id}/cancellation-preview</code> conflicts with <code>GET /bookings/{user_id}</code> route ordering</td>
+          <td>FastAPI resolves static path segments before dynamic ones — place the new endpoint <em>before</em> the catch-all <code>/bookings/{user_id}</code> handler in <code>server.py</code>, or use a distinct path segment (<code>/cancellation-preview</code> is a string so FastAPI will prefer it over a bare int param). Confirm with a quick test.</td>
+        </tr>
+        <tr>
+          <td>Departure time stored as a string <code>"YYYY-MM-DD HH:MM"</code>, not a datetime column</td>
+          <td>Parse with <code>datetime.strptime(flight.departure_time, "%Y-%m-%d %H:%M")</code> before computing <code>days_to_departure</code>. Use <code>timezone.utc</code> consistently to match <code>cancel_booking()</code>.</td>
+        </tr>
+        <tr>
+          <td>Frontend must inspect <code>success: false</code> / <code>error</code>, not HTTP status</td>
+          <td>Use the existing <code>isErrorResponse()</code> helper from <code>api.ts</code> when handling the preview response — same pattern as <code>cancelBooking()</code>.</td>
+        </tr>
+        <tr>
+          <td>Currency display — <code>price_paid</code> is an integer (credits, not dollars)</td>
+          <td>Use the same formatting already in use on <code>BookingCard</code> / flight list pages for consistency.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

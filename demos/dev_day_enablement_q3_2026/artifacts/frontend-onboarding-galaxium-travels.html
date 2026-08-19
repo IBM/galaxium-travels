@@ -1,0 +1,765 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Frontend Onboarding — Galaxium Travels</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+  }
+  .doc-header .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    background: #3b82d4;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 12px;
+  }
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2328;
+    margin-bottom: 8px;
+  }
+  .doc-header p {
+    color: #57606a;
+    font-size: 14px;
+  }
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #57606a;
+  }
+  .meta-row span { display: flex; align-items: center; gap: 4px; }
+
+  /* ── TOC ── */
+  .toc {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+  }
+  .toc h2 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #57606a;
+    margin-bottom: 12px;
+  }
+  .toc ol {
+    padding-left: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 24px;
+    font-size: 13px;
+  }
+  .toc ol li { color: #3b82d4; }
+
+  /* ── Sections ── */
+  section { margin-bottom: 44px; }
+
+  h2.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2328;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2328;
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #1f2328; }
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .callout.info    { background: #eff6ff; border-color: #3b82d4; }
+  .callout.warn    { background: #fffbeb; border-color: #f59e0b; }
+  .callout.danger  { background: #fef2f2; border-color: #ef4444; }
+  .callout .label  { font-weight: 700; margin-bottom: 4px; }
+
+  /* ── Code ── */
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: #7c5cd8;
+  }
+  pre {
+    background: #1f2328;
+    color: #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .kw  { color: #7c5cd8; }
+  .str { color: #52b788; }
+  .cm  { color: #8b949e; }
+  .fn  { color: #79c0ff; }
+  .ty  { color: #ffa657; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  th {
+    text-align: left;
+    font-weight: 600;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    color: #57606a;
+  }
+  td {
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f7f8fa; }
+
+  /* ── File tree ── */
+  .file-tree {
+    background: #1f2328;
+    color: #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    line-height: 1.9;
+    margin-bottom: 16px;
+  }
+  .file-tree .dir  { color: #79c0ff; font-weight: 600; }
+  .file-tree .file { color: #e5e7eb; }
+  .file-tree .note { color: #8b949e; }
+
+  /* ── Flow diagram ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 16px;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .flow-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 28px;
+    flex-shrink: 0;
+  }
+  .flow-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .flow-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 12px;
+    background: #e5e7eb;
+    margin: 2px 0;
+  }
+  .flow-content {
+    padding-bottom: 16px;
+    flex: 1;
+  }
+  .flow-content strong { display: block; font-size: 13px; }
+  .flow-content span   { font-size: 12px; color: #57606a; }
+
+  /* ── Angular vs React comparison ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #e5e7eb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .compare-grid .hdr {
+    background: #f7f8fa;
+    font-weight: 700;
+    padding: 8px 12px;
+    color: #57606a;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .compare-grid .cell {
+    background: #fff;
+    padding: 10px 12px;
+  }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+  .badge.green  { background: #d1fae5; color: #065f46; }
+  .badge.purple { background: #ede9fe; color: #5b21b6; }
+  .badge.blue   { background: #dbeafe; color: #1e40af; }
+  .badge.orange { background: #fef3c7; color: #92400e; }
+
+  /* ── Footer ── */
+  .doc-footer {
+    margin-top: 56px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 11px;
+    color: #8b949e;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="doc-header">
+    <div class="tag">Onboarding Guide</div>
+    <h1>Galaxium Travels — Frontend</h1>
+    <p>A practical guide for new frontend developers. Covers architecture, data flow, key conventions, and how the code maps to what you see in the browser.</p>
+    <div class="meta-row">
+      <span>Stack: React 19 · TypeScript · Vite · Tailwind CSS</span>
+      <span>Audience: Angular developer, first week</span>
+    </div>
+  </div>
+
+  
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li>Angular → React mental model</li>
+      <li>Project structure</li>
+      <li>Routing &amp; pages</li>
+      <li>Components</li>
+      <li>State management</li>
+      <li>API layer</li>
+      <li>Types</li>
+      <li>Styling system</li>
+      <li>User booking flow end-to-end</li>
+      <li>Critical gotchas</li>
+      <li>Getting started</li>
+    </ol>
+  </div>
+
+
+  
+  <section>
+    <h2 class="section-title">1 — Angular → React mental model</h2>
+    <p>Most of your Angular knowledge transfers directly. The table below maps the Angular concept you know to its React equivalent used in this repo.</p>
+
+    <div class="compare-grid">
+      <div class="hdr">Angular concept</div>
+      <div class="hdr">React equivalent here</div>
+      <div class="cell"><code>@NgModule</code> / <code>AppModule</code></div>
+      <div class="cell"><code>main.tsx</code> renders <code>&lt;App /&gt;</code> — no modules</div>
+      <div class="cell"><code>@Component</code> with template file</div>
+      <div class="cell">Single <code>.tsx</code> file: logic + JSX markup in one place</div>
+      <div class="cell"><code>RouterModule</code> with <code>routes[]</code></div>
+      <div class="cell"><code>react-router-dom v7</code> — <code>&lt;Routes&gt;</code> / <code>&lt;Route&gt;</code> in <code>App.tsx</code></div>
+      <div class="cell"><code>@Injectable</code> service</div>
+      <div class="cell">Plain <code>api.ts</code> module — exported async functions, no DI</div>
+      <div class="cell"><code>@Input()</code> / <code>@Output()</code></div>
+      <div class="cell">Props (passed down) + callback props (passed down as functions)</div>
+      <div class="cell"><code>NgIf</code> / <code>NgFor</code></div>
+      <div class="cell">Inline JS: <code>{condition &amp;&amp; &lt;Foo /&gt;}</code> and <code>{items.map(…)}</code></div>
+      <div class="cell"><code>NgClass</code> / <code>NgStyle</code></div>
+      <div class="cell"><code>clsx()</code> utility for conditional class names</div>
+      <div class="cell"><code>ChangeDetectionStrategy.OnPush</code></div>
+      <div class="cell">React re-renders on state/props change by default — no extra config needed</div>
+      <div class="cell">RxJS <code>Observable</code> / <code>Subject</code></div>
+      <div class="cell">Plain <code>async/await</code> — no observables in this codebase</div>
+      <div class="cell"><code>BehaviorSubject</code> for shared state</div>
+      <div class="cell">React Context + <code>useState</code> — see <code>useUser.tsx</code></div>
+      <div class="cell"><code>OnInit</code> lifecycle hook</div>
+      <div class="cell"><code>useEffect(() =&gt; { … }, [])</code></div>
+      <div class="cell">Angular forms (<code>FormGroup</code>)</div>
+      <div class="cell">Uncontrolled inputs + <code>useState</code> — no form library used</div>
+      <div class="cell">Lazy-loaded modules</div>
+      <div class="cell">Vite handles code-splitting; no manual lazy routes needed</div>
+      <div class="cell">Pipes (<code>| date</code>, <code>| currency</code>)</div>
+      <div class="cell">Util functions in <code>src/utils/formatters.ts</code></div>
+    </div>
+
+    <div class="callout info">
+      <div class="label">Key mindset shift</div>
+      In Angular, you configure the framework (modules, DI providers, decorators). In React, you <em>compose</em> — components are just functions that return JSX. There is no magic injection; everything is an explicit import or prop.
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">2 — Project structure</h2>
+    <p>Everything lives under <code>booking_system_frontend/src/</code>. The layout is feature-grouped, not type-grouped.</p>
+
+    <div class="file-tree">
+<span class="dir">src/</span>
+├── <span class="dir">pages/</span>          <span class="note">← one file per route/page</span>
+│   ├── <span class="file">Home.tsx</span>
+│   ├── <span class="file">Flights.tsx</span>
+│   ├── <span class="file">MyBookings.tsx</span>
+│   └── <span class="file">DestinationDetail.tsx</span>
+├── <span class="dir">components/</span>     <span class="note">← reusable UI pieces</span>
+│   ├── <span class="dir">common/</span>      <span class="note">Button, Card, Input, Modal, LoadingSpinner, Starfield</span>
+│   ├── <span class="dir">flights/</span>     <span class="note">FlightCard, FlightFilters</span>
+│   ├── <span class="dir">bookings/</span>    <span class="note">BookingModal, BookingCard, HoldCard</span>
+│   ├── <span class="dir">layout/</span>      <span class="note">Layout, Header, Footer</span>
+│   └── <span class="dir">user/</span>        <span class="note">UserIdentification (login/register modal)</span>
+├── <span class="dir">services/</span>
+│   └── <span class="file">api.ts</span>       <span class="note">← ALL backend communication lives here</span>
+├── <span class="dir">types/</span>
+│   └── <span class="file">index.ts</span>     <span class="note">← shared TypeScript types/interfaces</span>
+├── <span class="dir">hooks/</span>
+│   ├── <span class="file">useUser.tsx</span>        <span class="note">UserContext provider</span>
+│   └── <span class="file">useUserContext.ts</span>  <span class="note">useUser() hook</span>
+├── <span class="dir">utils/</span>
+│   ├── <span class="file">formatters.ts</span>   <span class="note">date, currency, duration helpers</span>
+│   └── <span class="file">holdStorage.ts</span>  <span class="note">localStorage R/W for holds</span>
+├── <span class="dir">data/</span>
+│   └── <span class="file">destinations.ts</span> <span class="note">static destination data (no API)</span>
+├── <span class="file">App.tsx</span>         <span class="note">← routing config</span>
+└── <span class="file">main.tsx</span>        <span class="note">← React entry point (≈ main.ts in Angular)</span>
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">3 — Routing &amp; pages</h2>
+    <p>Routes are declared in <code>App.tsx</code> using <code>react-router-dom</code>. There are exactly four routes:</p>
+
+    <table>
+      <thead><tr><th>URL</th><th>Page component</th><th>What the user sees</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>/</code></td>
+          <td><code>Home.tsx</code></td>
+          <td>Hero, feature cards, destination grid</td>
+        </tr>
+        <tr>
+          <td><code>/flights</code></td>
+          <td><code>Flights.tsx</code></td>
+          <td>Flight list with search, filters, booking modal</td>
+        </tr>
+        <tr>
+          <td><code>/bookings</code></td>
+          <td><code>MyBookings.tsx</code></td>
+          <td>User's confirmed bookings + pending holds</td>
+        </tr>
+        <tr>
+          <td><code>/destinations/:slug</code></td>
+          <td><code>DestinationDetail.tsx</code></td>
+          <td>Planet info page, facts, hazards, live departures</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Every page is wrapped by <code>Layout.tsx</code>, which injects the Starfield background, the fixed <code>Header</code>, and the global toast notification system (<code>react-hot-toast</code>).</p>
+
+    <pre><code><span class="cm">// App.tsx — the router lives here, not in a module</span>
+<span class="kw">function</span> <span class="fn">App</span>() {
+  <span class="kw">return</span> (
+    &lt;<span class="ty">BrowserRouter</span>&gt;
+      &lt;<span class="ty">UserProvider</span>&gt;      <span class="cm">// ← provides user state to the whole app</span>
+        &lt;<span class="ty">Layout</span>&gt;          <span class="cm">// ← header + footer + starfield + toasts</span>
+          &lt;<span class="ty">Routes</span>&gt;
+            &lt;<span class="ty">Route</span> path=<span class="str">"/"</span>                    element={&lt;<span class="ty">Home</span> /&gt;} /&gt;
+            &lt;<span class="ty">Route</span> path=<span class="str">"/flights"</span>             element={&lt;<span class="ty">Flights</span> /&gt;} /&gt;
+            &lt;<span class="ty">Route</span> path=<span class="str">"/bookings"</span>            element={&lt;<span class="ty">MyBookings</span> /&gt;} /&gt;
+            &lt;<span class="ty">Route</span> path=<span class="str">"/destinations/:slug"</span>  element={&lt;<span class="ty">DestinationDetail</span> /&gt;} /&gt;
+          &lt;/<span class="ty">Routes</span>&gt;
+        &lt;/<span class="ty">Layout</span>&gt;
+      &lt;/<span class="ty">UserProvider</span>&gt;
+    &lt;/<span class="ty">BrowserRouter</span>&gt;
+  );
+}</code></pre>
+
+    <div class="callout info">
+      <div class="label">Angular equivalent</div>
+      Think of this as your <code>AppRoutingModule</code> but without a separate file — routes are declared inline. <code>UserProvider</code> is equivalent to providing a singleton service at the root module level.
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">4 — Components</h2>
+    <p>All components are plain TypeScript functions that accept typed props and return JSX. No decorators, no lifecycle classes.</p>
+
+    <h3>Common components <span class="badge blue">src/components/common/</span></h3>
+    <table>
+      <thead><tr><th>Component</th><th>Purpose</th><th>Key props</th></tr></thead>
+      <tbody>
+        <tr><td><code>Button</code></td><td>Primary CTA and action buttons throughout the app</td><td><code>variant</code>: primary | secondary | danger; <code>size</code>; <code>isLoading</code></td></tr>
+        <tr><td><code>Card</code></td><td>Frosted-glass container surface</td><td>Optional <code>onClick</code> makes it interactive</td></tr>
+        <tr><td><code>Modal</code></td><td>Animated overlay for all dialogs</td><td><code>isOpen</code>, <code>onClose</code>, <code>title</code></td></tr>
+        <tr><td><code>Input</code></td><td>Styled text input with label &amp; error state</td><td><code>label</code>, <code>error</code>, all native input attrs</td></tr>
+        <tr><td><code>LoadingSpinner</code></td><td>Spinner for async states</td><td><code>size</code>: sm | md | lg; optional <code>text</code></td></tr>
+        <tr><td><code>Starfield</code></td><td>Canvas animated background</td><td>None — purely decorative, fixed z-0</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Flight components <span class="badge purple">src/components/flights/</span></h3>
+    <p><code>FlightCard</code> renders one flight row including all three seat-class options (Economy / Business / Galaxium). <code>FlightFilters</code> is a collapsible panel that builds a filter object consumed by <code>getFlights()</code>.</p>
+
+    <h3>Booking components <span class="badge green">src/components/bookings/</span></h3>
+    <p><code>BookingModal</code> is the core 3-step booking wizard (select → quote → hold). <code>BookingCard</code> and <code>HoldCard</code> are display-only cards used on the My Bookings page.</p>
+
+    <h3>Layout components <span class="badge orange">src/components/layout/</span></h3>
+    <p><code>Layout.tsx</code> is the shell that wraps every page. <code>Header.tsx</code> is the fixed navigation bar that shows user state (logged in / out) and triggers <code>UserIdentification</code> when needed.</p>
+
+    <pre><code><span class="cm">// Typical component shape — Angular @Component → a plain function</span>
+<span class="kw">interface</span> <span class="ty">ButtonProps</span> {
+  variant?: <span class="str">'primary'</span> | <span class="str">'secondary'</span> | <span class="str">'danger'</span>;
+  isLoading?: <span class="ty">boolean</span>;
+  onClick?: () =&gt; <span class="ty">void</span>;
+  children: <span class="ty">React.ReactNode</span>;
+}
+
+<span class="kw">export function</span> <span class="fn">Button</span>({ variant = <span class="str">'primary'</span>, isLoading, onClick, children }: <span class="ty">ButtonProps</span>) {
+  <span class="kw">return</span> (
+    &lt;motion.button
+      onClick={onClick}
+      className={<span class="fn">clsx</span>(<span class="str">'...'</span>, { <span class="str">'opacity-50'</span>: isLoading })}
+    &gt;
+      {isLoading ? &lt;<span class="ty">LoadingSpinner</span> size=<span class="str">"sm"</span> /&gt; : children}
+    &lt;/motion.button&gt;
+  );
+}</code></pre>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">5 — State management</h2>
+    <p>There is no Redux or Zustand. State is handled at two levels:</p>
+
+    <table>
+      <thead><tr><th>Scope</th><th>How</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Global user identity</strong></td>
+          <td>React Context + <code>useState</code>, persisted to <code>localStorage</code></td>
+          <td><code>hooks/useUser.tsx</code></td>
+        </tr>
+        <tr>
+          <td><strong>Page / component state</strong></td>
+          <td><code>useState</code> — flights list, modal open/closed, loading flags</td>
+          <td>Inside each page component</td>
+        </tr>
+        <tr>
+          <td><strong>Pending holds</strong></td>
+          <td><code>localStorage</code> keyed by user ID</td>
+          <td><code>utils/holdStorage.ts</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Using the user context</h3>
+    <pre><code><span class="cm">// Any component that needs the logged-in user:</span>
+<span class="kw">import</span> { useUser } <span class="kw">from</span> <span class="str">'../../hooks/useUserContext'</span>;
+
+<span class="kw">function</span> <span class="fn">MyComponent</span>() {
+  <span class="kw">const</span> { user, setUser, logout } = <span class="fn">useUser</span>();
+
+  <span class="kw">if</span> (!user) <span class="kw">return</span> &lt;<span class="ty">p</span>&gt;Not logged in&lt;/<span class="ty">p</span>&gt;;
+  <span class="kw">return</span> &lt;<span class="ty">p</span>&gt;Welcome, {user.name}&lt;/<span class="ty">p</span>&gt;;
+}</code></pre>
+
+    <div class="callout info">
+      <div class="label">Angular equivalent</div>
+      <code>useUser()</code> is your singleton <code>UserService</code> injected via constructor DI. The difference: you call the hook at the top of the function body instead of injecting in a constructor.
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">6 — API layer (<code>services/api.ts</code>)</h2>
+    <p>All HTTP calls go through a single <code>axios</code> instance. Think of it as a flat collection of async service methods — no class, no DI token needed.</p>
+
+    <table>
+      <thead><tr><th>Function</th><th>Method + path</th><th>Used in</th></tr></thead>
+      <tbody>
+        <tr><td><code>getFlights(filters?)</code></td><td>GET <code>/flights</code></td><td><code>Flights.tsx</code></td></tr>
+        <tr><td><code>registerUser(data)</code></td><td>POST <code>/register</code></td><td><code>UserIdentification.tsx</code></td></tr>
+        <tr><td><code>getUserByCredentials(name, email)</code></td><td>GET <code>/user</code></td><td><code>UserIdentification.tsx</code></td></tr>
+        <tr><td><code>bookFlight(data)</code></td><td>POST <code>/book</code></td><td><code>BookingModal.tsx</code></td></tr>
+        <tr><td><code>getUserBookings(userId)</code></td><td>GET <code>/bookings/:userId</code></td><td><code>MyBookings.tsx</code></td></tr>
+        <tr><td><code>cancelBooking(bookingId)</code></td><td>POST <code>/cancel/:bookingId</code></td><td><code>BookingCard.tsx</code></td></tr>
+        <tr><td><code>createQuote(data)</code></td><td>POST <code>/quotes</code></td><td><code>BookingModal.tsx</code> step 2</td></tr>
+        <tr><td><code>createHold(quoteId)</code></td><td>POST <code>/quotes/:id/holds</code></td><td><code>BookingModal.tsx</code> step 3</td></tr>
+        <tr><td><code>confirmHold(holdId)</code></td><td>POST <code>/holds/:id/confirm</code></td><td><code>HoldCard.tsx</code></td></tr>
+        <tr><td><code>releaseHold(holdId)</code></td><td>POST <code>/holds/:id/release</code></td><td><code>HoldCard.tsx</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout danger">
+      <div class="label">⚠ Critical gotcha: HTTP 200 ≠ success</div>
+      The Python backend proxies the Java hold service and catches errors, returning them as HTTP 200 with a JSON body containing <code>{ error: "…" }</code>. Always check the response body, not the status code. Use the <code>isErrorResponse()</code> type guard from <code>api.ts</code>.
+    </div>
+
+    <pre><code><span class="cm">// The axios instance base URL resolves to /api in production,</span>
+<span class="cm">// or VITE_API_URL from .env in local dev</span>
+<span class="kw">const</span> api = <span class="fn">axios.create</span>({ baseURL: import.meta.env.VITE_API_URL || <span class="str">'/api'</span> });
+
+<span class="cm">// Correct error checking:</span>
+<span class="kw">const</span> result = <span class="kw">await</span> <span class="fn">createQuote</span>(quoteData);
+<span class="kw">if</span> (<span class="fn">isErrorResponse</span>(result)) {
+  <span class="cm">// handle error — result.error has the message</span>
+} <span class="kw">else</span> {
+  <span class="cm">// result is a Quote — safe to use result.quoteId etc.</span>
+}</code></pre>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">7 — Types (<code>types/index.ts</code>)</h2>
+    <p>All shared TypeScript interfaces live in one file. The key domain types to know:</p>
+
+    <table>
+      <thead><tr><th>Type</th><th>Purpose</th><th>Notable fields</th></tr></thead>
+      <tbody>
+        <tr><td><code>Flight</code></td><td>One flight option</td><td><code>flight_id</code>, <code>origin</code>, <code>destination</code>, <code>economy_price</code> / <code>business_price</code> / <code>galaxium_price</code>, seat counts</td></tr>
+        <tr><td><code>Booking</code></td><td>Confirmed booking</td><td><code>booking_id</code>, <code>status</code>: <code>'booked' | 'cancelled' | 'completed'</code>, <code>price_paid</code></td></tr>
+        <tr><td><code>User</code></td><td>Logged-in identity</td><td><code>user_id</code>, <code>name</code>, <code>email</code></td></tr>
+        <tr><td><code>Quote</code></td><td>Inventory price quote (from Java service)</td><td><code>quoteId</code>, <code>status</code>, <code>expiresAt</code>, price breakdown</td></tr>
+        <tr><td><code>Hold</code></td><td>15-min inventory reservation</td><td><code>holdId</code>, <code>status</code>, <code>reservedUntil</code>, <code>externalBookingReference</code></td></tr>
+        <tr><td><code>ErrorResponse</code></td><td>API error shape</td><td><code>success: false</code>, <code>error</code>, <code>error_code</code></td></tr>
+        <tr><td><code>SeatClass</code></td><td>Union type</td><td><code>'economy' | 'business' | 'galaxium'</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">8 — Styling system</h2>
+    <p>The project uses <strong>Tailwind CSS v3</strong> with a custom space-themed palette. There is no SCSS, no CSS modules, and no styled-components.</p>
+
+    <table>
+      <thead><tr><th>Custom token</th><th>Hex value</th><th>Semantic usage</th></tr></thead>
+      <tbody>
+        <tr><td><code>space-dark</code></td><td>#030712</td><td>App background</td></tr>
+        <tr><td><code>space-blue</code></td><td>#0A1929</td><td>Card/panel surface</td></tr>
+        <tr><td><code>cosmic-purple</code></td><td>#6366F1</td><td>Primary actions, links</td></tr>
+        <tr><td><code>nebula-pink</code></td><td>#EC4899</td><td>Accent highlights</td></tr>
+        <tr><td><code>alien-green</code></td><td>#10B981</td><td>Success / confirmed status</td></tr>
+        <tr><td><code>solar-orange</code></td><td>#F59E0B</td><td>Warning / hold expiry</td></tr>
+        <tr><td><code>star-white</code></td><td>#F9FAFB</td><td>Primary text on dark bg</td></tr>
+      </tbody>
+    </table>
+
+    <p>The global stylesheet (<code>index.css</code>) defines two reusable utility classes you will see everywhere:</p>
+    <ul>
+      <li><code>.glass-card</code> — frosted-glass panel with backdrop blur, used by <code>Card.tsx</code></li>
+      <li><code>.input-field</code> — dark-themed input with focus ring</li>
+    </ul>
+
+    <div class="callout warn">
+      <div class="label">Do not assume standard Tailwind colours</div>
+      Classes like <code>bg-cosmic-purple</code> or <code>text-star-white</code> are custom tokens — you will not find them in the standard Tailwind docs. Always reference <code>tailwind.config.js</code> for the full palette.
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">9 — User booking flow, end-to-end</h2>
+    <p>This is the most important flow in the app. Tracing it connects the frontend to both backend services.</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">1</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Browse flights — <code>Flights.tsx</code></strong>
+          <span>Calls <code>getFlights(filters)</code> on mount and on filter change. Displays <code>FlightCard</code> for each result. Retries up to 3× with backoff if the API is slow.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">2</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Authenticate — <code>UserIdentification.tsx</code></strong>
+          <span>If no user in context, a modal prompts login or registration. On success, <code>setUser()</code> writes the user to React Context and <code>localStorage</code>.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">3</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Select seat class — <code>BookingModal.tsx</code> step 1</strong>
+          <span>User picks Economy, Business, or Galaxium. Each class has a feature list and price shown from the <code>Flight</code> object.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">4</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Get a quote — <code>BookingModal.tsx</code> step 2</strong>
+          <span>Calls <code>createQuote()</code> → Python proxy → Java inventory service. Returns a <code>Quote</code> with a confirmed price and <code>quoteId</code>.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">5</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Place a hold — <code>BookingModal.tsx</code> step 3</strong>
+          <span>Calls <code>createHold(quoteId)</code>. Java service reserves the seat for 15 minutes. Hold is saved to <code>localStorage</code> via <code>storeHold()</code>. A countdown timer is shown.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">6</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>Confirm the hold — <code>HoldCard.tsx</code> on My Bookings</strong>
+          <span>Calls <code>confirmHold(holdId)</code> → Java service calls Python <code>/internal/bookings/from-hold</code> → booking record created in SQLite. The hold is removed from <code>localStorage</code>.</span>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">7</div><div class="flow-connector"></div></div>
+        <div class="flow-content">
+          <strong>View booking — <code>MyBookings.tsx</code></strong>
+          <span>Calls <code>getUserBookings(userId)</code>. Confirmed bookings appear in the "Active Bookings" section as <code>BookingCard</code> components.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">10 — Critical gotchas</h2>
+
+    <div class="callout danger">
+      <div class="label">1. HTTP 200 can still be an error</div>
+      The backend wraps Java service errors as HTTP 200 with <code>{ error: "…" }</code> in the body. Never trust the status code alone. Always use <code>isErrorResponse(result)</code> after any quote/hold API call.
+    </div>
+
+    <div class="callout danger">
+      <div class="label">2. User context is not persistent across tabs by default</div>
+      <code>UserProvider</code> reads from <code>localStorage</code> on mount. If you open a new tab the state loads correctly, but in-memory state changes won't sync live between tabs. Not a bug — just be aware when testing.
+    </div>
+
+    <div class="callout warn">
+      <div class="label">3. Hold expiry is enforced by the Java service (15 minutes)</div>
+      The frontend shows a countdown from <code>reservedUntil</code>, but the actual expiry is server-side. If the timer reaches zero, the confirm button is disabled — but it would be rejected server-side even if you bypassed the UI.
+    </div>
+
+    <div class="callout warn">
+      <div class="label">4. Destinations are static data, not API calls</div>
+      <code>src/data/destinations.ts</code> is a hardcoded list. The destination detail page and the destination names on flight cards come from this file, not from a backend endpoint. Adding a destination means editing this file.
+    </div>
+
+    <div class="callout info">
+      <div class="label">5. <code>VITE_API_URL</code> controls which backend you hit</div>
+      In local dev, create <code>booking_system_frontend/.env.local</code> and set <code>VITE_API_URL=http://localhost:8001</code>. Without it, Vite's proxy or the bundled default <code>/api</code> prefix is used.
+    </div>
+  </section>
+
+
+  
+  <section>
+    <h2 class="section-title">11 — Getting started</h2>
+
+    <h3>Install and run</h3>
+    <pre><code><span class="cm"># From the repo root:</span>
+cd booking_system_frontend
+npm install
+npm run dev          <span class="cm"># Vite dev server on http://localhost:5173</span></code></pre>
+
+    <h3>Run the backend too (optional but useful)</h3>
+    <pre><code><span class="cm"># In a separate terminal, from the repo root:</span>
+cd booking_system_backend
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+SEED_DEMO_DATA=true .venv/bin/python server.py
+<span class="cm"># Backend listens on :8001. Frontend proxies /api → :8001 via Vite.</span></code></pre>
+
+    <h3>Lint</h3>
+    <pre><code>cd booking_system_frontend &amp;&amp; npm run lint</code></pre>
+
+    <h3>Build for production</h3>
+    <pre><code>cd booking_system_frontend &amp;&amp; npm run build
+<span class="cm"># Output in dist/ — never edit this directory</span></code></pre>
+
+    <h3>Key files to read first (recommended order)</h3>
+    <ol>
+      <li><code>src/types/index.ts</code> — understand the domain model</li>
+      <li><code>src/App.tsx</code> — understand routing and context setup</li>
+      <li><code>src/services/api.ts</code> — understand all backend endpoints</li>
+      <li><code>src/pages/Flights.tsx</code> — most complex page, covers filters + modal flow</li>
+      <li><code>src/components/bookings/BookingModal.tsx</code> — the core user journey</li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>
