@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
+import type { Booking, CancellationPreview, Flight, StoredHold, ErrorResponse } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
-import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getUserBookings, getFlights, cancelBooking, getCancellationPreview, getHold, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
 import { AlertCircle } from 'lucide-react';
@@ -21,6 +21,8 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [cancelPreview, setCancelPreview] = useState<CancellationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -89,9 +91,21 @@ export const MyBookings = () => {
     loadData();
   }, [user, navigate, loadData]);
 
-  const handleCancelClick = (bookingId: number) => {
+  const handleCancelClick = async (bookingId: number) => {
     setBookingToCancel(bookingId);
+    setCancelPreview(null);
+    setPreviewLoading(true);
     setShowCancelModal(true);
+    try {
+      const preview = await getCancellationPreview(bookingId);
+      if (!isErrorResponse(preview)) {
+        setCancelPreview(preview);
+      }
+    } catch {
+      // Preview fetch failed — modal stays open with fallback message
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const handleConfirmCancel = async () => {
@@ -257,6 +271,29 @@ export const MyBookings = () => {
         size="sm"
       >
         <div className="space-y-4">
+          {/* Refund preview */}
+          {previewLoading ? (
+            <LoadingSpinner size="sm" text="Loading refund details…" />
+          ) : cancelPreview ? (
+            <div className="rounded-lg bg-white/5 border border-white/10 p-4 space-y-2">
+              <p className="text-star-white/60 text-sm">{cancelPreview.policy_description}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-star-white/70">Refund</span>
+                <span className="text-star-white font-medium">${cancelPreview.refund_amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-star-white/70">Fee</span>
+                <span className="text-nebula-pink font-medium">${cancelPreview.fee_amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-star-white/70">Travel credit</span>
+                <span className="text-star-white font-medium">${cancelPreview.travel_credit_amount.toFixed(2)}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-star-white/50 text-sm">Unable to load refund details.</p>
+          )}
+
           <p className="text-star-white/70">
             Are you sure you want to cancel this booking? This action cannot be undone.
           </p>
@@ -266,10 +303,10 @@ export const MyBookings = () => {
               onClick={() => setShowCancelModal(false)}
               className="flex-1"
             >
-              Keep Booking
+              Keep booking
             </Button>
             <Button variant="danger" onClick={handleConfirmCancel} className="flex-1">
-              Cancel Booking
+              Cancel booking
             </Button>
           </div>
         </div>

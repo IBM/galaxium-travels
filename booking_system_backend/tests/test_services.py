@@ -971,3 +971,136 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestCancellationPolicyHelper:
+    """Unit tests for calculate_cancellation_preview — pure policy logic."""
+
+    def test_seven_or_more_days_full_refund(self):
+        result = booking.calculate_cancellation_preview(1000.00, 7)
+        assert result["refund_amount"] == 1000.00
+        assert result["fee_amount"] == 0.00
+        assert result["travel_credit_amount"] == 0.00
+        assert "7 or more" in result["policy_description"]
+
+    def test_far_future_still_full_refund(self):
+        result = booking.calculate_cancellation_preview(500.00, 30)
+        assert result["refund_amount"] == 500.00
+        assert result["fee_amount"] == 0.00
+        assert result["travel_credit_amount"] == 0.00
+
+    def test_six_days_partial_refund(self):
+        result = booking.calculate_cancellation_preview(1000.00, 6)
+        assert result["refund_amount"] == 750.00
+        assert result["fee_amount"] == 100.00
+        assert result["travel_credit_amount"] == 150.00
+        assert "3" in result["policy_description"]
+
+    def test_three_days_partial_refund(self):
+        result = booking.calculate_cancellation_preview(1000.00, 3)
+        assert result["refund_amount"] == 750.00
+        assert result["fee_amount"] == 100.00
+        assert result["travel_credit_amount"] == 150.00
+
+    def test_two_days_fifty_percent(self):
+        result = booking.calculate_cancellation_preview(1000.00, 2)
+        assert result["refund_amount"] == 500.00
+        assert result["fee_amount"] == 250.00
+        assert result["travel_credit_amount"] == 250.00
+        assert "1" in result["policy_description"]
+
+    def test_one_day_fifty_percent(self):
+        result = booking.calculate_cancellation_preview(1000.00, 1)
+        assert result["refund_amount"] == 500.00
+        assert result["fee_amount"] == 250.00
+        assert result["travel_credit_amount"] == 250.00
+
+    def test_same_day_zero_payout(self):
+        result = booking.calculate_cancellation_preview(1000.00, 0)
+        assert result["refund_amount"] == 0.00
+        assert result["fee_amount"] == 0.00
+        assert result["travel_credit_amount"] == 0.00
+        assert "Same day" in result["policy_description"]
+
+    def test_negative_days_treated_as_same_day(self):
+        """Already-departed flight — same policy as same-day."""
+        result = booking.calculate_cancellation_preview(1000.00, -5)
+        assert result["refund_amount"] == 0.00
+        assert result["fee_amount"] == 0.00
+        assert result["travel_credit_amount"] == 0.00
+
+    def test_float_price_rounded_to_two_dp(self):
+        result = booking.calculate_cancellation_preview(249.99, 3)
+        # 75% of 249.99 = 187.4925 → 187.49
+        assert result["refund_amount"] == 187.49
+        # 10% of 249.99 = 24.999 → 25.00
+        assert result["fee_amount"] == 25.00
+        # 15% of 249.99 = 37.4985 → 37.50
+        assert result["travel_credit_amount"] == 37.50
+
+
+class TestGetCancellationPreview:
+    """Unit tests for get_cancellation_preview — DB-backed service function."""
+
+    def _make_flight(self, db_session, departure_time: str):
+        f = Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time=departure_time,
+            arrival_time="2099-06-20 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        )
+        db_session.add(f)
+        db_session.commit()
+        return db_session.query(Flight).first()
+
+    def _make_booking(self, db_session, flight_id: int, price_paid: float = 1000.0):
+        b = Booking(
+            user_id=1,
+            flight_id=flight_id,
+            status="booked",
+            booking_time="2026-01-01 10:00",
+            seat_class="economy",
+            price_paid=price_paid,
+        )
+        db_session.add(b)
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    def test_booking_not_found(self, db_session):
+        result = booking.get_cancellation_preview(db_session, 999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
+    def test_found_booking_future_departure(self, db_session):
+        flight_obj = self._make_flight(db_session, "2099-06-20 09:00")
+        booking_obj = self._make_booking(db_session, flight_obj.flight_id)
+        result = booking.get_cancellation_preview(db_session, booking_obj.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.booking_id == booking_obj.booking_id
+        assert result.price_paid == 1000.0
+        # Far-future departure → 7+ days band
+        assert result.refund_amount == 1000.0
+        assert result.fee_amount == 0.0
+        assert result.travel_credit_amount == 0.0
+
+    def test_iso8601_departure_time_parsed(self, db_session):
+        """departure_time in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ) is handled."""
+        flight_obj = self._make_flight(db_session, "2099-06-20T09:00:00Z")
+        booking_obj = self._make_booking(db_session, flight_obj.flight_id)
+        result = booking.get_cancellation_preview(db_session, booking_obj.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.days_to_departure > 0
+
+    def test_past_departure_same_day_policy(self, db_session):
+        """A booking whose flight already departed returns the same-day (zero) policy."""
+        flight_obj = self._make_flight(db_session, "2000-01-01 09:00")
+        booking_obj = self._make_booking(db_session, flight_obj.flight_id, price_paid=500.0)
+        result = booking.get_cancellation_preview(db_session, booking_obj.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.refund_amount == 0.0
+        assert result.fee_amount == 0.0
+        assert result.travel_credit_amount == 0.0
