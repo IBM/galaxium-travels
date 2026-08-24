@@ -22,26 +22,19 @@ gh api --method DELETE /repos/IBM/galaxium-travels/issues/comments/<id>
 
 ## Step 2 — Create Demo Branch
 
-Create a fresh branch from `main` and push it. The branch name must follow the convention `dev-day-demo-q3-2026-xx` where `xx` is replaced with today's two-letter initials or a short identifier (e.g. `mj`). If a branch with those initials already exists, append a numeric suffix: `-02`, `-03`, etc.
+Always create a **new** branch from `main` — never reuse an existing one, even if it looks clean. A reused branch may contain a previous demo's committed implementation, which would spoil the live build.
 
-First, commit any uncommitted changes on the current branch so nothing is lost (they can be discarded later):
-
-```bash
-git add -A
-git commit -m "wip: save uncommitted changes before demo reset"
-```
-
-Then create the new demo branch from `main` and switch to it:
+The branch name must follow the convention `dev-day-demo-q3-2026-xx-NN` where `xx` is your two-letter initials and `NN` is a two-digit run counter starting at `01`. Increment the counter for each new demo run (e.g. `mj-01`, `mj-02`, `mj-03`).
 
 ```bash
-git fetch origin main
+# Replace xx-NN with your initials and next run number, e.g. mj-04
 git checkout main
 git pull origin main
-git checkout -b dev-day-demo-q3-2026-xx
-git push -u origin dev-day-demo-q3-2026-xx
+git checkout -b dev-day-demo-q3-2026-xx-NN
+git push -u origin dev-day-demo-q3-2026-xx-NN
 ```
 
-You are now on a clean branch. The old branch with the WIP commit can be deleted later once the demo is done.
+> **If `git checkout -b` fails** with "branch already exists", you have the wrong counter — increment `NN` and try again. Do not force-reset or reuse the branch.
 
 ---
 
