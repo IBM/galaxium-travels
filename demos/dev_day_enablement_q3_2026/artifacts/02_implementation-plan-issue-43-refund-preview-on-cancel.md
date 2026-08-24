@@ -16,11 +16,11 @@ The plan is sound. The cancel modal will block on the preview fetch before openi
 
 ## Key Decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Modal open timing | Block on preview fetch, then open modal | Simpler state management; acceptable latency for demo |
-| Amount display format | `$` prefix + comma-formatted integer (e.g. `$1,500,000`) | Matches existing `BookingCard` display; `price_paid` is stored as whole credits |
-| MCP tool registration | FastApiMCP auto-wrapping is sufficient | Endpoint is read-only; manual `SessionLocal()` tool only needed for write/bypass patterns |
+| Decision              | Choice                                                   | Rationale                                                                                 |
+| -----------------------| ----------------------------------------------------------| -------------------------------------------------------------------------------------------|
+| Modal open timing     | Block on preview fetch, then open modal                  | Simpler state management; acceptable latency for demo                                     |
+| Amount display format | `$` prefix + comma-formatted integer (e.g. `$1,500,000`) | Matches existing `BookingCard` display; `price_paid` is stored as whole credits           |
+| MCP tool registration | FastApiMCP auto-wrapping is sufficient                   | Endpoint is read-only; manual `SessionLocal()` tool only needed for write/bypass patterns |
 
 ---
 
