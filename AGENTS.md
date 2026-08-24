@@ -7,6 +7,8 @@ When you are asked to create a plan while in agent mode, do other things you nee
 When creating planning documents, put them on the root level in all caps. 
 
 Before you start building anything look for information about tests and verification
+
+For any exploration task, use subagents. E.g. when you are asked to create an onboarding document
  
 ## Footguns
 
