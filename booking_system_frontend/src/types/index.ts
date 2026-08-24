@@ -73,6 +73,17 @@ export interface UserContextType {
   logout: () => void;
 }
 
+// Cancellation preview
+export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  days_to_departure: number;
+  refund_amount: number;
+  fee_amount: number;
+  travel_credit_amount: number;
+  policy_description: string;
+}
+
 // Java Inventory Hold Service types
 
 export interface Quote {
