@@ -60,7 +60,7 @@ Always tell the user which suites you are running and why (e.g. "Skipping Java u
 
 Run only if Python backend is in scope:
 ```bash
-cd booking_system_backend && python -m pytest -v --tb=short
+cd booking_system_backend && .venv/bin/python -m pytest -v --tb=short
 ```
 - Working directory: `booking_system_backend/`
 - Uses in-memory SQLite; no external services needed.

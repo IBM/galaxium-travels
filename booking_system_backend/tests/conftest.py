@@ -33,6 +33,7 @@ def db_session():
     finally:
         session.close()
         Base.metadata.drop_all(bind=test_engine)
+        test_engine.dispose()
 
 
 @pytest.fixture(scope="function")
