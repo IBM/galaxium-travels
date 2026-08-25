@@ -38,6 +38,34 @@ git push -u origin dev-day-demo-q3-2026-xx-NN
 
 ---
 
+## Step 2b — Verify the Branch is Clean
+
+Run these two checks immediately after creating the branch. Both must pass before continuing.
+
+**Check 1 — none of the demo feature files exist in the committed code:**
+
+```bash
+git show HEAD:booking_system_backend/schemas.py | grep CancellationPreviewOut
+```
+
+Expected output: **nothing** (no match). If you see `CancellationPreviewOut`, the feature has been committed to `main` and must be reverted before proceeding.
+
+**Check 2 — working tree is clean (no uncommitted modifications):**
+
+```bash
+git status --short
+```
+
+Expected output: at most `?? ISSUE-43-PLAN.md` (untracked planning doc is fine). Any `M` lines mean leftover working-tree changes from a previous session — discard them with:
+
+```bash
+git checkout -- .
+```
+
+> **If Check 1 fails:** the implementation was accidentally merged into `main`. Run `git log --oneline origin/main` to find the offending commit, then `git revert <sha> --no-edit && git push origin main` to undo it before re-running Step 2.
+
+---
+
 ## Step 3 — Open Browser Tabs
 
 Open Chrome with both tabs:
