@@ -6,6 +6,7 @@ import type {
   BookingRequest,
   UserRegistration,
   ErrorResponse,
+  CancellationPreview,
   Quote,
   Hold,
 } from '../types';
@@ -142,6 +143,18 @@ export const cancelBooking = async (
 ): Promise<Booking | ErrorResponse> => {
   const response = await api.post<Booking | ErrorResponse>(
     `/cancel/${bookingId}`
+  );
+  return response.data;
+};
+
+/**
+ * Get cancellation preview for a booking — read-only, no state changes
+ */
+export const getCancellationPreview = async (
+  bookingId: number
+): Promise<CancellationPreview> => {
+  const response = await api.get<CancellationPreview>(
+    `/bookings/${bookingId}/cancellation-preview`
   );
   return response.data;
 };

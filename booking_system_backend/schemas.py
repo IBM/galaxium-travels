@@ -85,3 +85,15 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class CancellationPreview(BaseModel):
+    booking_id: int
+    price_paid: int
+    tier_label: str        # e.g. "Full Refund", "Partial Refund", "Travel Credit Only", "No Refund"
+    refund_amount: int     # cash refund in same currency units as price_paid
+    fee_amount: int        # cancellation fee retained by airline
+    credit_amount: int     # travel-credit issued (non-cash)
+    refund_pct: float      # 0.0–1.0 fraction of price_paid returned as cash
+    fee_pct: float
+    credit_pct: float
