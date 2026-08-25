@@ -85,3 +85,12 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class CancellationPreview(BaseModel):
+    tier_label: str
+    refund_amount: int
+    fee_amount: int
+    credit_amount: int
+    total_forfeited: int
+    price_paid: int

@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
+import type { Booking, Flight, StoredHold, ErrorResponse, CancellationPreview } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
-import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getUserBookings, getFlights, cancelBooking, getHold, getCancellationPreview, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowDownLeft, XCircle, Ticket } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { formatCurrency } from '../utils/formatters';
 
 export const MyBookings = () => {
   const { user } = useUser();
@@ -21,6 +22,9 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [previewData, setPreviewData] = useState<CancellationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -89,9 +93,24 @@ export const MyBookings = () => {
     loadData();
   }, [user, navigate, loadData]);
 
-  const handleCancelClick = (bookingId: number) => {
+  const handleCancelClick = async (bookingId: number) => {
     setBookingToCancel(bookingId);
+    setPreviewData(null);
+    setPreviewError(false);
+    setPreviewLoading(true);
     setShowCancelModal(true);
+    try {
+      const result = await getCancellationPreview(bookingId);
+      if (isErrorResponse(result)) {
+        setPreviewError(true);
+      } else {
+        setPreviewData(result);
+      }
+    } catch {
+      setPreviewError(true);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const handleConfirmCancel = async () => {
@@ -257,10 +276,96 @@ export const MyBookings = () => {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-star-white/70">
-            Are you sure you want to cancel this booking? This action cannot be undone.
-          </p>
-          <div className="flex gap-3">
+          {previewLoading ? (
+            <LoadingSpinner size="sm" text="Loading refund preview…" />
+          ) : previewError || !previewData ? (
+            <p className="text-star-white/70">
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {/* Tier badge */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                  previewData.tier_label === 'Full Refund'
+                    ? 'text-alien-green border-alien-green/40 bg-alien-green/10'
+                    : previewData.tier_label === 'Partial Refund'
+                    ? 'text-solar-orange border-solar-orange/40 bg-solar-orange/10'
+                    : previewData.tier_label === 'Non-refundable'
+                    ? 'text-nebula-pink border-nebula-pink/40 bg-nebula-pink/10'
+                    : 'text-star-white/50 border-white/20 bg-white/5'
+                }`}>
+                  {previewData.tier_label}
+                </span>
+                <span className="text-xs text-star-white/50">cancellation policy</span>
+              </div>
+
+              {/* Proportion bar */}
+              {previewData.price_paid > 0 && (
+                <div className="h-2 w-full rounded-full overflow-hidden flex bg-white/10">
+                  {previewData.refund_amount > 0 && (
+                    <div
+                      className="bg-alien-green h-full"
+                      style={{ width: `${(previewData.refund_amount / previewData.price_paid) * 100}%` }}
+                    />
+                  )}
+                  {previewData.credit_amount > 0 && (
+                    <div
+                      className="bg-solar-orange h-full"
+                      style={{ width: `${(previewData.credit_amount / previewData.price_paid) * 100}%` }}
+                    />
+                  )}
+                  {previewData.fee_amount > 0 && (
+                    <div
+                      className="bg-nebula-pink h-full"
+                      style={{ width: `${(previewData.fee_amount / previewData.price_paid) * 100}%` }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Per-row breakdown */}
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-alien-green">
+                    <ArrowDownLeft size={14} />
+                    Cash refund
+                  </span>
+                  <span className="text-star-white font-medium">
+                    {formatCurrency(previewData.refund_amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-solar-orange">
+                    <Ticket size={14} />
+                    Travel credit
+                  </span>
+                  <span className="text-star-white font-medium">
+                    {formatCurrency(previewData.credit_amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-nebula-pink">
+                    <XCircle size={14} />
+                    Cancellation fee
+                  </span>
+                  <span className="text-star-white font-medium">
+                    {formatCurrency(previewData.fee_amount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Net summary */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-star-white/70">You'll receive back</span>
+                <span className="text-lg font-bold text-alien-green">
+                  {formatCurrency(previewData.refund_amount)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
             <Button
               variant="secondary"
               onClick={() => setShowCancelModal(false)}
