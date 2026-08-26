@@ -113,4 +113,14 @@ export interface StoredHold {
   reservedUntil: string;
 }
 
+export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  refund_amount: number;
+  cancellation_fee: number;
+  travel_credit: number;
+  days_to_departure: number;
+  policy_tier: 'full_refund' | 'partial_refund' | 'credit_heavy' | 'no_refund';
+}
+
 // Made with Bob

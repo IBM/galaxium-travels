@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -480,6 +481,177 @@ class TestBookingService:
         """Test getting bookings when user has none."""
         result = booking.get_bookings(db_session, 999)
         assert result == []
+
+
+
+class TestCancellationPreviewService:
+    """Test compute_cancellation_preview service function."""
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    def _make_booking(self, db_session, departure_time: str, price: int = 1_000_000) -> "Booking":
+        """Create a user + flight + active booking; return the Booking ORM object."""
+        db_session.add(User(name="Traveller", email="t@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time=departure_time,
+            arrival_time="2099-12-31 09:00",
+            base_price=price,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=price,
+        ))
+        db_session.commit()
+        return db_session.query(Booking).first()
+
+    # ── not-found / already-cancelled guards ─────────────────────────────────
+
+    def test_preview_booking_not_found(self, db_session):
+        """Returns BOOKING_NOT_FOUND when booking_id does not exist."""
+        result = booking.compute_cancellation_preview(db_session, 999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
+    def test_preview_already_cancelled(self, db_session):
+        """Returns ALREADY_CANCELLED when the booking is already cancelled."""
+        db_session.add(User(name="Traveller", email="t@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1_000_000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="cancelled",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=1_000_000,
+        ))
+        db_session.commit()
+        b = db_session.query(Booking).first()
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "ALREADY_CANCELLED"
+
+    # ── tier: full_refund (≥14 days) ─────────────────────────────────────────
+
+    def test_preview_tier_full_refund(self, db_session):
+        """≥14 days to departure → full_refund: 100% back, 0 fee, 0 credit."""
+        b = self._make_booking(db_session, "2099-12-31 12:00", price=1_000)
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.policy_tier == "full_refund"
+        assert result.refund_amount == 1_000
+        assert result.cancellation_fee == 0
+        assert result.travel_credit == 0
+
+    # ── tier: partial_refund (7–13 days) ─────────────────────────────────────
+
+    def test_preview_tier_partial_refund(self, db_session):
+        """7–13 days to departure → partial_refund: 75% refund, 10% fee, 15% credit."""
+        from datetime import timedelta
+        dep = (datetime.now(tz=timezone.utc) + timedelta(days=10)).strftime("%Y-%m-%d %H:%M")
+        b = self._make_booking(db_session, dep, price=1_000)
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.policy_tier == "partial_refund"
+        assert result.refund_amount == 750
+        assert result.cancellation_fee == 100
+        assert result.travel_credit == 150
+
+    # ── tier: credit_heavy (3–6 days) ────────────────────────────────────────
+
+    def test_preview_tier_credit_heavy(self, db_session):
+        """3–6 days to departure → credit_heavy: 25% refund, 25% fee, 50% credit."""
+        from datetime import timedelta
+        dep = (datetime.now(tz=timezone.utc) + timedelta(days=4)).strftime("%Y-%m-%d %H:%M")
+        b = self._make_booking(db_session, dep, price=1_000)
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.policy_tier == "credit_heavy"
+        assert result.refund_amount == 250
+        assert result.cancellation_fee == 250
+        assert result.travel_credit == 500
+
+    # ── tier: no_refund (0–2 days) ───────────────────────────────────────────
+
+    def test_preview_tier_no_refund(self, db_session):
+        """0–2 days to departure → no_refund: 0% refund, 0% fee, 0% credit."""
+        from datetime import timedelta
+        dep = (datetime.now(tz=timezone.utc) + timedelta(hours=12)).strftime("%Y-%m-%d %H:%M")
+        b = self._make_booking(db_session, dep, price=1_000)
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.policy_tier == "no_refund"
+        assert result.refund_amount == 0
+        assert result.cancellation_fee == 0
+        assert result.travel_credit == 0
+
+    # ── ISO-Z departure_time format ───────────────────────────────────────────
+
+    def test_preview_iso_z_format(self, db_session):
+        """departure_time stored as ISO-8601 with Z suffix is parsed correctly."""
+        db_session.add(User(name="Traveller", email="t@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Jupiter",
+            departure_time="2099-06-15T10:30:00Z",
+            arrival_time="2099-06-20T10:30:00Z",
+            base_price=2_000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=2_000,
+        ))
+        db_session.commit()
+        b = db_session.query(Booking).first()
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.policy_tier == "full_refund"
+        assert result.refund_amount == 2_000
+
+    # ── response shape ────────────────────────────────────────────────────────
+
+    def test_preview_response_fields(self, db_session):
+        """Result contains all expected CancellationPreviewOut fields."""
+        b = self._make_booking(db_session, "2099-12-31 12:00", price=500)
+        result = booking.compute_cancellation_preview(db_session, b.booking_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.booking_id == b.booking_id
+        assert result.price_paid == 500
+        assert result.days_to_departure >= 0
+
 
 
 
