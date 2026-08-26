@@ -414,6 +414,61 @@ class TestCancelEndpoint:
         assert data["error_code"] == "BOOKING_NOT_FOUND"
 
 
+class TestCancellationPreviewEndpoint:
+    """Test GET /bookings/{booking_id}/cancellation-preview endpoint."""
+
+    def test_preview_success(self, client, db_session, sample_user_data):
+        """Valid booking returns 200 with a complete preview breakdown."""
+        # Register user
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        # Flight far in the future (≥14 days) → full_refund tier
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/cancellation-preview")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["booking_id"] == booking_obj.booking_id
+        assert data["price_paid"] == 1000
+        assert data["policy_tier"] == "full_refund"
+        assert data["refund_amount"] == 1000
+        assert data["cancellation_fee"] == 0
+        assert data["travel_credit"] == 0
+        assert data["days_to_departure"] >= 0
+
+    def test_preview_not_found(self, client, db_session):
+        """Non-existent booking_id returns 404."""
+        response = client.get("/bookings/999/cancellation-preview")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["error_code"] == "BOOKING_NOT_FOUND"
+
+
+
+
 class TestHealthEndpoint:
     """Test health check endpoint."""
 

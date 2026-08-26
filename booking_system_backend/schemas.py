@@ -85,3 +85,13 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class CancellationPreviewOut(BaseModel):
+    booking_id: int
+    price_paid: int
+    refund_amount: int
+    cancellation_fee: int
+    travel_credit: int
+    days_to_departure: int
+    policy_tier: str
