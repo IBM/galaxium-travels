@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -85,3 +85,16 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class CancellationPreview(BaseModel):
+    booking_id: int
+    price_paid: int
+    cancellation_tier: Literal['full_refund', 'partial_refund', 'fee_only', 'forfeit']
+    refund_amount: int        # amount returned to customer
+    cancellation_fee: int     # fee charged
+    travel_credit: int        # credit issued in lieu of cash refund
+    refund_pct: float         # 0.0–1.0 fraction of price_paid returned as refund
+    fee_pct: float            # 0.0–1.0 fraction of price_paid kept as fee
+    credit_pct: float         # 0.0–1.0 fraction of price_paid issued as credit
+    days_until_departure: Optional[int]  # None when departure cannot be parsed
