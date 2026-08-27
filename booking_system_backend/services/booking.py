@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreview, ErrorResponse, SeatClass
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +128,102 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+# ==================== Cancellation Policy ====================
+
+# Accepted departure_time formats stored in the DB
+_DEPARTURE_FORMATS = [
+    "%Y-%m-%d %H:%M",      # legacy seed format: "2099-01-01 09:00"
+    "%Y-%m-%dT%H:%M:%SZ",  # ISO-8601 UTC:        "2099-01-01T09:00:00Z"
+    "%Y-%m-%dT%H:%M:%S",   # ISO-8601 no-tz:      "2099-01-01T09:00:00"
+]
+
+
+def _parse_departure_time(departure_time: str) -> Optional[datetime]:
+    """Parse a departure_time string into a datetime, trying multiple formats.
+
+    Returns None if no format matches, allowing callers to handle unparseable
+    departure times gracefully (e.g. show 'unknown' days_until_departure).
+    """
+    for fmt in _DEPARTURE_FORMATS:
+        try:
+            return datetime.strptime(departure_time, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _cancellation_policy(days_until_departure: int) -> dict:
+    """Return refund/fee/credit percentages for the given days-until-departure.
+
+    Tiers (plan spec):
+      >= 30 days : full_refund    — 100% refund, 0% fee, 0% credit
+      7–29 days  : partial_refund — 50% refund,  25% fee, 25% credit
+      1–6 days   : fee_only       — 0% refund,   25% fee, 75% credit
+      0 days     : forfeit        — 0% refund,   0% fee,  0% credit  (same-day total forfeit)
+    """
+    if days_until_departure >= 30:
+        return {"tier": "full_refund", "refund_pct": 1.0, "fee_pct": 0.0, "credit_pct": 0.0}
+    elif days_until_departure >= 7:
+        return {"tier": "partial_refund", "refund_pct": 0.5, "fee_pct": 0.25, "credit_pct": 0.25}
+    elif days_until_departure >= 1:
+        return {"tier": "fee_only", "refund_pct": 0.0, "fee_pct": 0.25, "credit_pct": 0.75}
+    else:
+        return {"tier": "forfeit", "refund_pct": 0.0, "fee_pct": 0.0, "credit_pct": 0.0}
+
+
+def get_cancellation_preview(db: Session, booking_id: int) -> CancellationPreview | ErrorResponse:
+    """Return a refund/fee/credit preview for cancelling a booking.
+
+    Looks up the booking and its flight, computes days_until_departure,
+    applies the cancellation policy, and returns a CancellationPreview.
+    Returns ErrorResponse when the booking is not found or already cancelled.
+    """
+    booking_obj = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking_obj:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+    if booking_obj.status == "cancelled":
+        return ErrorResponse(
+            error="Booking already cancelled",
+            error_code="ALREADY_CANCELLED",
+            details=f"Booking {booking_id} is already cancelled.",
+        )
+
+    # Determine days until departure
+    flight = db.query(Flight).filter(Flight.flight_id == booking_obj.flight_id).first()
+    days_until_departure: Optional[int] = None
+    if flight:
+        parsed = _parse_departure_time(flight.departure_time)
+        if parsed is not None:
+            today = date.today()
+            departure_date = parsed.date()
+            days_until_departure = (departure_date - today).days
+
+    # Apply policy (fall back to forfeit when departure cannot be determined)
+    if days_until_departure is not None:
+        policy = _cancellation_policy(days_until_departure)
+    else:
+        policy = {"tier": "forfeit", "refund_pct": 0.0, "fee_pct": 0.0, "credit_pct": 0.0}
+
+    price = booking_obj.price_paid
+    refund_amount = int(price * policy["refund_pct"])
+    cancellation_fee = int(price * policy["fee_pct"])
+    travel_credit = int(price * policy["credit_pct"])
+
+    return CancellationPreview(
+        booking_id=booking_id,
+        price_paid=price,
+        cancellation_tier=policy["tier"],
+        refund_amount=refund_amount,
+        cancellation_fee=cancellation_fee,
+        travel_credit=travel_credit,
+        refund_pct=policy["refund_pct"],
+        fee_pct=policy["fee_pct"],
+        credit_pct=policy["credit_pct"],
+        days_until_departure=days_until_departure,
+    )
