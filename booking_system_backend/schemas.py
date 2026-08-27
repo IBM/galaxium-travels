@@ -81,7 +81,17 @@ class UserOut(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    success: bool = False
-    error: str
-    error_code: str
-    details: str | None = None
+  success: bool = False
+  error: str
+  error_code: str
+  details: str | None = None
+
+
+class CancellationPreviewOut(BaseModel):
+    booking_id: int
+    tier_label: str
+    days_to_departure: int
+    total_price: int
+    refund_amount: int
+    fee_amount: int
+    credit_amount: int
