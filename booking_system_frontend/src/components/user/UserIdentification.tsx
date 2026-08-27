@@ -96,7 +96,7 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
 
         <Input
           label="Email"
-          type="email"
+          type="text"
           placeholder="john@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
