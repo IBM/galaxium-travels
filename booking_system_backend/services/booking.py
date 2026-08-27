@@ -143,8 +143,13 @@ def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
 
     def _to_ics_dt(dt_str: str) -> str:
         """Convert 'YYYY-MM-DD HH:MM' to ICS UTC format 'YYYYMMDDTHHMMSSz'."""
-        dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
-        return dt.strftime("%Y%m%dT%H%M%SZ")
+        for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"):
+            try:
+                dt = datetime.strptime(dt_str, fmt)
+                return dt.strftime("%Y%m%dT%H%M%SZ")
+            except ValueError:
+                continue
+        raise ValueError(f"Unrecognised datetime format: {dt_str!r}")
 
     if flight:
         dtstart = _to_ics_dt(flight.departure_time)
