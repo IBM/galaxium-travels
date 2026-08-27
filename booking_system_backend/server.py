@@ -12,6 +12,7 @@ from db import get_db, init_db
 from schemas import (
     BookingOut,
     BookingRequest,
+    CancellationPreviewOut,
     ErrorResponse,
     FlightOut,
     UserOut,
@@ -162,6 +163,21 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
     result = booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
     if isinstance(result, ErrorResponse):
         status = 404 if result.error_code in ("FLIGHT_NOT_FOUND", "USER_NOT_FOUND") else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
+
+
+@app.get("/bookings/{booking_id}/cancellation-preview", response_model=CancellationPreviewOut, tags=["Bookings"])
+def get_cancellation_preview(booking_id: int, db: Session = Depends(get_db)):
+    """Preview the refund breakdown for cancelling a booking.
+
+    Returns tier_label, days_to_departure, total_price, refund_amount, fee_amount,
+    and credit_amount without modifying the booking.
+    Raises 404 if booking is not found, 409 if already cancelled.
+    """
+    result = booking.get_cancellation_preview(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code == "BOOKING_NOT_FOUND" else 409
         raise HTTPException(status_code=status, detail=result.model_dump())
     return result
 
