@@ -127,3 +127,56 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate an iCalendar (RFC 5545) string for a specific booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+
+    def _to_ics_dt(dt_str: str) -> str:
+        """Convert 'YYYY-MM-DD HH:MM' to ICS UTC format 'YYYYMMDDTHHMMSSz'."""
+        dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    if flight:
+        dtstart = _to_ics_dt(flight.departure_time)
+        dtend = _to_ics_dt(flight.arrival_time)
+        summary = f"Galaxium Travels: {flight.origin} to {flight.destination}"
+        location = f"{flight.origin} → {flight.destination}"
+        description = (
+            f"Flight #{flight.flight_id} | "
+            f"Seat class: {booking.seat_class} | "
+            f"Booking #{booking_id}"
+        )
+    else:
+        dtstart = "19700101T000000Z"
+        dtend = "19700101T000000Z"
+        summary = f"Galaxium Travels: Booking #{booking_id}"
+        location = ""
+        description = f"Booking #{booking_id}"
+
+    uid = f"booking-{booking_id}@galaxium-travels"
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Galaxium Travels//EN\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"SUMMARY:{summary}\r\n"
+        f"LOCATION:{location}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"DESCRIPTION:{description}\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    return ics
