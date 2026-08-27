@@ -15,12 +15,12 @@ A modern, space-themed frontend for the Galaxium Travels interplanetary booking 
 
 ## 🛠️ Tech Stack
 
-- **React 18** - UI library
+- **React 19** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Utility-first styling
 - **Framer Motion** - Animations
-- **React Router v6** - Client-side routing
+- **React Router v7** - Client-side routing
 - **Axios** - HTTP client
 - **React Hot Toast** - Toast notifications
 - **Lucide React** - Icons
