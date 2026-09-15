@@ -1,5 +1,17 @@
 // API Data Models matching backend schemas
 
+export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  tier_label: string;
+  refund_amount: number;
+  fee_amount: number;
+  credit_amount: number;
+  refund_pct: number;
+  fee_pct: number;
+  credit_pct: number;
+}
+
 export type SeatClass = 'economy' | 'business' | 'galaxium';
 
 export interface Flight {
