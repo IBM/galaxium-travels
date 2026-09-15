@@ -869,3 +869,55 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestCancellationPreviewEndpoint:
+    """Test GET /bookings/{booking_id}/cancellation-preview."""
+
+    def test_cancellation_preview_success(self, client, db_session, sample_user_data):
+        """Preview returns correct fields for a future-departure booking."""
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2026-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/cancellation-preview")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["booking_id"] == booking_obj.booking_id
+        assert data["price_paid"] == 1000000.0
+        # Far-future departure → full refund band
+        assert data["refund_amount"] == 1000000.0
+        assert data["fee_amount"] == 0.0
+        assert data["travel_credit_amount"] == 0.0
+        assert "policy_description" in data
+        assert "days_to_departure" in data
+
+    def test_cancellation_preview_not_found(self, client, db_session):
+        """Returns 404 for unknown booking_id."""
+        response = client.get("/bookings/999/cancellation-preview")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["error_code"] == "BOOKING_NOT_FOUND"
