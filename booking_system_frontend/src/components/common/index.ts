@@ -4,5 +4,6 @@ export { Input } from './Input';
 export { Modal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Starfield } from './Starfield';
+export { TrajectoryMap } from './TrajectoryMap';
 
 // Made with Bob

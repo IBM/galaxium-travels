@@ -1,5 +1,5 @@
 import type { Flight, SeatClass } from '../../types';
-import { Card, Button } from '../common';
+import { Card, Button, TrajectoryMap } from '../common';
 import { Plane, Clock, Users, Crown, Rocket } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
@@ -68,20 +68,26 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
       transition={{ duration: 0.3 }}
     >
       <Card className="h-full flex flex-col">
-        {/* Route Header */}
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cosmic-gradient">
-              <Plane className="text-white" size={24} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-star-white">
-                {flight.origin} → {destLabel}
-              </h3>
-              <p className="text-sm text-star-white/60">
-                Flight #{flight.flight_id}
-              </p>
-            </div>
+        {/* Route Header — title left, trajectory map right */}
+        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
+          <div className="p-2 rounded-lg bg-cosmic-gradient flex-shrink-0">
+            <Plane className="text-white" size={24} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xl font-bold text-star-white truncate">
+              {flight.origin} → {destLabel}
+            </h3>
+            <p className="text-sm text-star-white/60">
+              Flight #{flight.flight_id}
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <TrajectoryMap
+              origin={flight.origin}
+              destination={flight.destination}
+              size={90}
+              className="opacity-90 rounded-lg overflow-hidden"
+            />
           </div>
         </div>
 
