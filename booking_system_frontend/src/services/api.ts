@@ -8,6 +8,7 @@ import type {
   ErrorResponse,
   Quote,
   Hold,
+  CancellationPreview,
 } from '../types';
 
 // Create axios instance with base configuration
@@ -142,6 +143,18 @@ export const cancelBooking = async (
 ): Promise<Booking | ErrorResponse> => {
   const response = await api.post<Booking | ErrorResponse>(
     `/cancel/${bookingId}`
+  );
+  return response.data;
+};
+
+/**
+ * Get cancellation preview (refund/fee/credit breakdown) for a booking
+ */
+export const getCancellationPreview = async (
+  bookingId: number
+): Promise<CancellationPreview> => {
+  const response = await api.get<CancellationPreview>(
+    `/bookings/${bookingId}/cancellation-preview`
   );
   return response.data;
 };
