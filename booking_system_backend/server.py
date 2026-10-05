@@ -12,6 +12,7 @@ from db import get_db, init_db
 from schemas import (
     BookingOut,
     BookingRequest,
+    CancellationPreview,
     ErrorResponse,
     FlightOut,
     UserOut,
@@ -166,6 +167,21 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
     return result
 
 
+@app.get("/bookings/{id}/cancellation-preview", response_model=CancellationPreview, tags=["Bookings"])
+def get_cancellation_preview_endpoint(id: int, db: Session = Depends(get_db)):
+    """Return the cancellation-policy breakdown for a booking before confirming cancellation.
+
+    Returns tier label, refund amount, fee, travel credit, and net forfeited amount.
+    Raises 404 if the booking does not exist.
+    """
+    result = booking.get_cancellation_preview(db, id)
+    if isinstance(result, ErrorResponse):
+        raise HTTPException(status_code=404, detail=result.model_dump())
+    return result
+
+
+# NOTE: /bookings/{id}/cancellation-preview must be registered above this route —
+# FastAPI matches in registration order and this wildcard would shadow the two-segment path otherwise.
 @app.get("/bookings/{user_id}", response_model=list[BookingOut], tags=["Bookings"])
 def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     """Retrieve all bookings for a specific user by user_id."""

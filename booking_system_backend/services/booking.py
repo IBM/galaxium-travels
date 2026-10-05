@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreview, ErrorResponse, SeatClass
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +127,88 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+# Supported departure_time string formats (seed data uses ISO-Z, test fixtures use "YYYY-MM-DD HH:MM")
+_DEPARTURE_TIME_FORMATS = [
+    "%Y-%m-%d %H:%M",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S",
+]
+
+
+def compute_cancellation_preview(price_paid: int, departure_time: str) -> CancellationPreview:
+    """Compute the cancellation-policy breakdown for a booking.
+
+    Days-to-departure is calculated as timedelta.days (integer floor), matching the
+    policy tier table exactly.  Current time reference is datetime.utcnow() — a future
+    cleanup should switch to datetime.now(timezone.utc) once Python 3.12+ is required.
+
+    Policy tiers:
+      7+   days  → 100% cash refund, 0% fee, 0% credit
+      3–6  days  → 75% refund, 10% fee, 15% credit
+      1–2  days  → 0% refund, 25% fee, 25% credit
+      0    days  → 0% refund, 0% fee, 0% credit (total forfeit)
+
+    Raises ValueError for unrecognised departure_time formats.
+    """
+    parsed: datetime | None = None
+    for fmt in _DEPARTURE_TIME_FORMATS:
+        try:
+            parsed = datetime.strptime(departure_time, fmt)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        raise ValueError(
+            f"Unrecognised departure_time format: {departure_time!r}. "
+            f"Expected one of: {_DEPARTURE_TIME_FORMATS}"
+        )
+
+    days_to_departure = (parsed - datetime.utcnow()).days  # integer floor via timedelta.days
+
+    if days_to_departure >= 7:
+        tier_label = "Full Refund"
+        refund_pct, fee_pct, credit_pct = 1.0, 0.0, 0.0
+    elif days_to_departure >= 3:
+        tier_label = "Partial Refund"
+        refund_pct, fee_pct, credit_pct = 0.75, 0.10, 0.15
+    elif days_to_departure >= 1:
+        tier_label = "Non-refundable"
+        refund_pct, fee_pct, credit_pct = 0.0, 0.25, 0.25
+    else:
+        tier_label = "Forfeit"
+        refund_pct, fee_pct, credit_pct = 0.0, 0.0, 0.0
+
+    refund_amount = int(price_paid * refund_pct)
+    fee_amount = int(price_paid * fee_pct)
+    credit_amount = int(price_paid * credit_pct)
+    total_forfeited = price_paid - refund_amount - credit_amount
+
+    return CancellationPreview(
+        tier_label=tier_label,
+        refund_amount=refund_amount,
+        fee_amount=fee_amount,
+        credit_amount=credit_amount,
+        total_forfeited=total_forfeited,
+        price_paid=price_paid,
+    )
+
+
+def get_cancellation_preview(db: Session, booking_id: int) -> CancellationPreview | ErrorResponse:
+    """Return a cancellation-policy preview for an existing booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight for booking {booking_id} could not be found.",
+        )
+    return compute_cancellation_preview(int(booking.price_paid), str(flight.departure_time))
