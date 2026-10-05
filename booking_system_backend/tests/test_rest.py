@@ -869,3 +869,61 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestCancellationPreviewEndpoint:
+    """Test GET /bookings/{booking_id}/cancellation-preview endpoint."""
+
+    def _seed_booking(self, client, db_session, sample_user_data, price: int = 1_000_000, status: str = "booked"):
+        user_resp = client.post("/register", json=sample_user_data)
+        user_id = user_resp.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-06-01T12:00:00Z",
+            arrival_time="2099-06-01T20:00:00Z",
+            base_price=price,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        flight = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight.flight_id,
+            status=status,
+            booking_time="2099-01-01T00:00:00Z",
+            seat_class="economy",
+            price_paid=price,
+        ))
+        db_session.commit()
+        b = db_session.query(Booking).first()
+        return b
+
+    def test_preview_success(self, client, db_session, sample_user_data):
+        """Returns 200 with all preview fields for a valid active booking."""
+        b = self._seed_booking(client, db_session, sample_user_data)
+        response = client.get(f"/bookings/{b.booking_id}/cancellation-preview")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["booking_id"] == b.booking_id
+        assert data["price_paid"] == 1_000_000
+        assert "tier_label" in data
+        total = data["refund_amount"] + data["fee_amount"] + data["credit_amount"]
+        assert total == data["price_paid"]
+
+    def test_preview_not_found(self, client, db_session):
+        """Returns 404 for non-existent booking."""
+        response = client.get("/bookings/99999/cancellation-preview")
+        assert response.status_code == 404
+        assert response.json()["detail"]["error_code"] == "BOOKING_NOT_FOUND"
+
+    def test_preview_already_cancelled(self, client, db_session, sample_user_data):
+        """Returns 409 for a booking already in cancelled state."""
+        b = self._seed_booking(client, db_session, sample_user_data, status="cancelled")
+        response = client.get(f"/bookings/{b.booking_id}/cancellation-preview")
+        assert response.status_code == 409
+        assert response.json()["detail"]["error_code"] == "ALREADY_CANCELLED"
