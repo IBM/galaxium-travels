@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
+import type { Booking, Flight, StoredHold, ErrorResponse, CancellationPreview } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
-import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse, getCancellationPreview } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeftCircle, XCircle, Ticket } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { formatCurrency } from '../utils/formatters';
 
 export const MyBookings = () => {
   const { user } = useUser();
@@ -21,6 +22,8 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [cancellationPreview, setCancellationPreview] = useState<CancellationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -91,7 +94,27 @@ export const MyBookings = () => {
 
   const handleCancelClick = (bookingId: number) => {
     setBookingToCancel(bookingId);
+    setCancellationPreview(null);
     setShowCancelModal(true);
+    setPreviewLoading(true);
+
+    let retried = false;
+    const fetchPreview = () => {
+      getCancellationPreview(bookingId)
+        .then((preview) => {
+          setCancellationPreview(preview);
+          setPreviewLoading(false);
+        })
+        .catch(() => {
+          if (!retried) {
+            retried = true;
+            setTimeout(fetchPreview, 2000);
+          } else {
+            setPreviewLoading(false);
+          }
+        });
+    };
+    fetchPreview();
   };
 
   const handleConfirmCancel = async () => {
@@ -99,6 +122,8 @@ export const MyBookings = () => {
 
     setCancellingId(bookingToCancel);
     setShowCancelModal(false);
+    setCancellationPreview(null);
+    setPreviewLoading(false);
 
     try {
       const result = await cancelBooking(bookingToCancel);
@@ -252,23 +277,146 @@ export const MyBookings = () => {
       {/* Cancel Confirmation Modal */}
       <Modal
         isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
+        onClose={() => {
+          setShowCancelModal(false);
+          setCancellationPreview(null);
+          setPreviewLoading(false);
+        }}
         title="Cancel Booking"
-        size="sm"
+        size="md"
       >
-        <div className="space-y-4">
-          <p className="text-star-white/70">
-            Are you sure you want to cancel this booking? This action cannot be undone.
-          </p>
-          <div className="flex gap-3">
+        <div className="space-y-5">
+          {previewLoading && (
+            <div className="flex items-center justify-center py-6">
+              <LoadingSpinner size="sm" text="Calculating your refund…" />
+            </div>
+          )}
+
+          {!previewLoading && cancellationPreview && (
+            <>
+              {/* Tier badge */}
+              <div className="flex items-center gap-2">
+                {cancellationPreview.tier_label === 'Non-refundable' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-nebula-pink/20 text-nebula-pink border border-nebula-pink/40">
+                    <XCircle size={14} />
+                    {cancellationPreview.tier_label}
+                  </span>
+                ) : cancellationPreview.tier_label === 'Full Refund' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-alien-green/20 text-alien-green border border-alien-green/40">
+                    <ArrowLeftCircle size={14} />
+                    {cancellationPreview.tier_label}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-solar-orange/20 text-solar-orange border border-solar-orange/40">
+                    <ArrowLeftCircle size={14} />
+                    {cancellationPreview.tier_label}
+                  </span>
+                )}
+                <span className="text-star-white/50 text-sm">
+                  {cancellationPreview.days_to_departure === 0
+                    ? 'Departing today'
+                    : `${cancellationPreview.days_to_departure} day${cancellationPreview.days_to_departure === 1 ? '' : 's'} to departure`}
+                </span>
+              </div>
+
+              {/* Same-day non-refundable banner */}
+              {cancellationPreview.tier_label === 'Non-refundable' && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-nebula-pink/10 border border-nebula-pink/30 text-nebula-pink text-sm">
+                  <XCircle size={16} className="shrink-0" />
+                  <span>This booking is <strong>non-refundable</strong>. No cash or credit will be returned.</span>
+                </div>
+              )}
+
+              {/* Line items */}
+              <div className="rounded-lg border border-star-white/10 divide-y divide-star-white/10">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-2 text-star-white/70 text-sm">
+                    <ArrowLeftCircle size={15} className="text-alien-green" />
+                    Cash refund
+                  </div>
+                  <span className="text-star-white font-medium text-sm">
+                    {formatCurrency(cancellationPreview.refund_amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-2 text-star-white/70 text-sm">
+                    <XCircle size={15} className="text-nebula-pink" />
+                    Cancellation fee
+                  </div>
+                  <span className="text-nebula-pink font-medium text-sm">
+                    -{formatCurrency(cancellationPreview.fee_amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-2 text-star-white/70 text-sm">
+                    <Ticket size={15} className="text-solar-orange" />
+                    Travel credit
+                  </div>
+                  <span className="text-solar-orange font-medium text-sm">
+                    {formatCurrency(cancellationPreview.credit_amount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Proportion bar (hidden when all zero) */}
+              {(cancellationPreview.refund_amount > 0 || cancellationPreview.fee_amount > 0 || cancellationPreview.credit_amount > 0) && (
+                <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                  {cancellationPreview.refund_amount > 0 && (
+                    <div
+                      className="bg-alien-green"
+                      style={{ flex: cancellationPreview.refund_amount }}
+                    />
+                  )}
+                  {cancellationPreview.fee_amount > 0 && (
+                    <div
+                      className="bg-nebula-pink"
+                      style={{ flex: cancellationPreview.fee_amount }}
+                    />
+                  )}
+                  {cancellationPreview.credit_amount > 0 && (
+                    <div
+                      className="bg-solar-orange"
+                      style={{ flex: cancellationPreview.credit_amount }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Net summary */}
+              <div className="flex items-center justify-between pt-1 border-t border-star-white/10">
+                <span className="text-star-white/70 text-sm">You'll receive back</span>
+                <span className="text-star-white font-bold text-lg">
+                  {formatCurrency(cancellationPreview.refund_amount)}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Fallback copy when preview failed to load */}
+          {!previewLoading && !cancellationPreview && (
+            <p className="text-star-white/70 text-sm">
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </p>
+          )}
+
+          <div className="flex gap-3 pt-1">
             <Button
               variant="secondary"
-              onClick={() => setShowCancelModal(false)}
+              onClick={() => {
+                setShowCancelModal(false);
+                setCancellationPreview(null);
+                setPreviewLoading(false);
+              }}
               className="flex-1"
             >
               Keep Booking
             </Button>
-            <Button variant="danger" onClick={handleConfirmCancel} className="flex-1">
+            <Button
+              variant="danger"
+              onClick={handleConfirmCancel}
+              className="flex-1"
+              disabled={previewLoading}
+            >
               Cancel Booking
             </Button>
           </div>
