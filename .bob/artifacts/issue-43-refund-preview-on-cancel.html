@@ -1,0 +1,322 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Issue #43 — Refund Preview on Cancel</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 40px 20px 60px;
+  }
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1f2328;
+    margin-bottom: 10px;
+  }
+  .badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 9px;
+    border-radius: 12px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    color: #57606a;
+  }
+  .badge.reviewed {
+    background: #eaf2fb;
+    border-color: #bad3f0;
+    color: #2d6eb4;
+  }
+  .badge.issue {
+    background: #f3f0fb;
+    border-color: #cfc2ef;
+    color: #5a3fa8;
+  }
+  section {
+    margin-bottom: 32px;
+  }
+  section h2 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #57606a;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .summary-box {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #3b82d4;
+    padding: 14px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #1f2328;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  thead th {
+    background: #f7f8fa;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+    color: #1f2328;
+  }
+  tbody td {
+    padding: 9px 12px;
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+    color: #1f2328;
+  }
+  tbody tr:nth-child(even) td {
+    background: #fafbfc;
+  }
+  .decision-label {
+    font-weight: 600;
+    color: #1f2328;
+  }
+  .choice-tag {
+    display: inline-block;
+    background: #eaf2fb;
+    color: #2d6eb4;
+    border: 1px solid #bad3f0;
+    border-radius: 3px;
+    font-size: 12px;
+    padding: 1px 7px;
+    font-weight: 500;
+  }
+  ul.open-items {
+    list-style: none;
+    padding: 0;
+  }
+  ul.open-items li {
+    padding: 7px 10px 7px 26px;
+    position: relative;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13.5px;
+  }
+  ul.open-items li:last-child { border-bottom: none; }
+  ul.open-items li::before {
+    content: "→";
+    position: absolute;
+    left: 6px;
+    color: #57606a;
+  }
+  ol.next-steps {
+    padding-left: 20px;
+  }
+  ol.next-steps li {
+    padding: 5px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid #f0f1f3;
+  }
+  ol.next-steps li:last-child { border-bottom: none; }
+  .subtask-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .subtask-card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  .subtask-card .st-num {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #57606a;
+    margin-bottom: 3px;
+  }
+  .subtask-card .st-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2328;
+    margin-bottom: 5px;
+  }
+  .subtask-card .st-desc {
+    font-size: 12px;
+    color: #57606a;
+  }
+  .policy-table th, .policy-table td {
+    text-align: center;
+  }
+  .policy-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+  }
+  code {
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: 12px;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #5a3fa8;
+  }
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 12px;
+    color: #8b949e;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Issue #43 — Refund Preview on Cancel</h1>
+    <div class="badges">
+      <span class="badge issue">#43</span>
+      <span class="badge reviewed">Draft · Reviewed</span>
+      <span class="badge">July 2026</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>Summary</h2>
+    <div class="summary-box">
+      Add a cancellation preview to the cancel modal in <code>MyBookings.tsx</code> so users see a refund / fee / travel-credit breakdown before confirming. The modal opens immediately with an inline spinner while the preview loads asynchronously — the backend exposes a new <code>GET /bookings/{id}/cancellation-preview</code> REST endpoint and matching MCP tool backed by a pure policy-calculation helper. <code>price_paid</code> accepts <code>float</code> and all amounts are returned rounded to 2 decimal places; the approved same-day policy is zero-payout across all three values.
+    </div>
+  </section>
+
+  <section>
+    <h2>Key Decisions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:28%">Decision</th>
+          <th style="width:24%">Choice</th>
+          <th>Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="decision-label">Same-day cancellation payout</td>
+          <td><span class="choice-tag">0 / 0 / 0</span></td>
+          <td>Intentional zero-payout for same-day cancellations. Policy is approved; no travel credit exception needed.</td>
+        </tr>
+        <tr>
+          <td class="decision-label">Cancel modal loading UX</td>
+          <td><span class="choice-tag">Open immediately + inline spinner</span></td>
+          <td>Modal opens fast; preview loads in place via spinner. Better experience on slow connections than blocking open.</td>
+        </tr>
+        <tr>
+          <td class="decision-label"><code>price_paid</code> data type</td>
+          <td><span class="choice-tag">float → float (2 dp)</span></td>
+          <td>Real pricing uses decimals (e.g. $249.99). Function accepts <code>float</code> and returns amounts rounded to 2 decimal places.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Cancellation Policy</h2>
+    <table class="policy-table">
+      <thead>
+        <tr>
+          <th>Days to departure</th>
+          <th>Refund</th>
+          <th>Fee</th>
+          <th>Travel credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>7+ days</td><td>100%</td><td>0%</td><td>0%</td></tr>
+        <tr><td>3–6 days</td><td>75%</td><td>10%</td><td>15%</td></tr>
+        <tr><td>1–2 days</td><td>50%</td><td>25%</td><td>25%</td></tr>
+        <tr><td>Same-day (0)</td><td>0%</td><td>0%</td><td>0%</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Sub-tasks</h2>
+    <div class="subtask-grid">
+      <div class="subtask-card">
+        <div class="st-num">Sub-task 1 · Backend</div>
+        <div class="st-title">Policy helper + unit tests</div>
+        <div class="st-desc"><code>calculate_cancellation_preview(price_paid: float, days_to_departure: int)</code> in <code>services/booking.py</code>. Boundary tests for all four bands.</div>
+      </div>
+      <div class="subtask-card">
+        <div class="st-num">Sub-task 2 · Backend</div>
+        <div class="st-title">Service function + schema</div>
+        <div class="st-desc"><code>get_cancellation_preview(db, booking_id)</code> + <code>CancellationPreviewOut</code> Pydantic schema. Handles both departure-time formats.</div>
+      </div>
+      <div class="subtask-card">
+        <div class="st-num">Sub-task 3 · Backend</div>
+        <div class="st-title">REST endpoint + MCP tool</div>
+        <div class="st-desc"><code>GET /bookings/{id}/cancellation-preview</code> + matching <code>@mcp.tool()</code> using direct <code>SessionLocal()</code> pattern.</div>
+      </div>
+      <div class="subtask-card">
+        <div class="st-num">Sub-task 4 · Frontend</div>
+        <div class="st-title">API helper + TypeScript type</div>
+        <div class="st-desc"><code>CancellationPreview</code> interface in <code>types/index.ts</code> + <code>getCancellationPreview()</code> in <code>api.ts</code>.</div>
+      </div>
+      <div class="subtask-card" style="grid-column:1 / -1">
+        <div class="st-num">Sub-task 5 · Frontend</div>
+        <div class="st-title">Cancel modal UI in MyBookings.tsx</div>
+        <div class="st-desc">Open modal immediately; show inline spinner while preview loads; render policy description + three line items (Refund, Fee, Travel credit). Fallback message on fetch failure.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Items</h2>
+    <ul class="open-items">
+      <li><strong>Departure-time parsing:</strong> <code>departure_time</code> stored in two formats (<code>"YYYY-MM-DD HH:MM"</code> and ISO 8601 <code>"YYYY-MM-DDTHH:MM:SSZ"</code>). Must try both or use <code>fromisoformat</code> fallback — a single <code>strptime</code> pattern will silently break on live data.</li>
+      <li><strong>Negative days guard:</strong> Bookings for already-departed flights should be treated as same-day (0) — confirm this edge case is covered in unit tests.</li>
+      <li><strong>Already-cancelled bookings:</strong> Service function must return a sensible preview (not an error) for cancelled bookings — treat departure as past → same-day policy.</li>
+      <li><strong>Out of scope:</strong> Actual refund processing (payment is a stub), MCP tool via running server, and e2e Docker tests are explicitly excluded.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Next Steps</h2>
+    <ol class="next-steps">
+      <li>Implement <code>calculate_cancellation_preview(price_paid: float, days_to_departure: int)</code> in <code>services/booking.py</code> — note <code>float</code> not <code>int</code> for price.</li>
+      <li>Add boundary unit tests in <code>tests/test_services.py</code> covering all four policy bands plus negative-days guard. Run <code>pytest tests/test_services.py</code>.</li>
+      <li>Add <code>CancellationPreviewOut</code> schema to <code>schemas.py</code> and <code>get_cancellation_preview(db, booking_id)</code> to <code>services/booking.py</code> with dual date-format parsing.</li>
+      <li>Expose <code>GET /bookings/{id}/cancellation-preview</code> REST endpoint and matching MCP tool in <code>server.py</code>. Add <code>TestCancellationPreviewEndpoint</code> to <code>tests/test_rest.py</code>.</li>
+      <li>Add <code>CancellationPreview</code> TypeScript interface and <code>getCancellationPreview()</code> API helper. Confirm <code>npm run build</code> clean.</li>
+      <li>Update <code>MyBookings.tsx</code>: open modal immediately, fetch preview async, show inline spinner, render breakdown, handle error with fallback message. Confirm <code>npm run build</code> clean.</li>
+    </ol>
+  </section>
+
+  <div class="footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>

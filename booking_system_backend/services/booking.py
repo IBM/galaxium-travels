@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreviewOut, ErrorResponse, SeatClass
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +127,96 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+# ---------------------------------------------------------------------------
+# Cancellation policy
+# ---------------------------------------------------------------------------
+
+def calculate_cancellation_preview(price_paid: float, days_to_departure: int) -> dict:
+    """Return refund breakdown based on cancellation policy.
+
+    Policy:
+      7+ days  → 100% refund, 0% fee, 0% travel credit
+      3–6 days →  75% refund, 10% fee, 15% travel credit
+      1–2 days →  50% refund, 25% fee, 25% travel credit
+      0 days   →   0% refund,  0% fee,  0% travel credit (same-day / departed)
+
+    Negative days_to_departure is treated as same-day (already departed).
+    All amounts are rounded to 2 decimal places.
+    """
+    if days_to_departure >= 7:
+        refund_pct, fee_pct, credit_pct = 1.00, 0.00, 0.00
+        policy_description = "7 or more days before departure"
+    elif days_to_departure >= 3:
+        refund_pct, fee_pct, credit_pct = 0.75, 0.10, 0.15
+        policy_description = "3–6 days before departure"
+    elif days_to_departure >= 1:
+        refund_pct, fee_pct, credit_pct = 0.50, 0.25, 0.25
+        policy_description = "1–2 days before departure"
+    else:
+        # 0 or negative — same-day or already departed
+        refund_pct, fee_pct, credit_pct = 0.00, 0.00, 0.00
+        policy_description = "Same day or after departure"
+
+    return {
+        "refund_amount": round(price_paid * refund_pct, 2),
+        "fee_amount": round(price_paid * fee_pct, 2),
+        "travel_credit_amount": round(price_paid * credit_pct, 2),
+        "policy_description": policy_description,
+    }
+
+
+def _parse_departure_time(departure_time_str: str) -> datetime:
+    """Parse departure_time supporting both seed-data and ISO 8601 formats.
+
+    Formats handled:
+      "YYYY-MM-DD HH:MM"        (no seconds, no timezone — seed/fixture data)
+      "YYYY-MM-DDTHH:MM:SSZ"   (UTC Z suffix — live ISO 8601)
+      Any other ISO 8601 variant via fromisoformat fallback
+    """
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.strptime(departure_time_str, fmt)
+        except ValueError:
+            continue
+    # Last-resort: fromisoformat (Python 3.11+ handles Z natively; strip it first)
+    return datetime.fromisoformat(departure_time_str.replace("Z", "+00:00"))
+
+
+def get_cancellation_preview(db: Session, booking_id: int) -> CancellationPreviewOut | ErrorResponse:
+    """Return a cancellation refund preview for a booking."""
+    booking_obj = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking_obj:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+
+    flight_obj = db.query(Flight).filter(Flight.flight_id == booking_obj.flight_id).first()
+    if not flight_obj:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight for booking {booking_id} not found.",
+        )
+
+    departure = _parse_departure_time(str(flight_obj.departure_time))
+    now = datetime.now(tz=timezone.utc)
+    days_to_departure = (departure.date() - now.date()).days
+
+    preview = calculate_cancellation_preview(
+        price_paid=float(booking_obj.price_paid),
+        days_to_departure=days_to_departure,
+    )
+
+    return CancellationPreviewOut(
+        booking_id=booking_id,
+        price_paid=float(booking_obj.price_paid),
+        days_to_departure=days_to_departure,
+        refund_amount=preview["refund_amount"],
+        fee_amount=preview["fee_amount"],
+        travel_credit_amount=preview["travel_credit_amount"],
+        policy_description=preview["policy_description"],
+    )

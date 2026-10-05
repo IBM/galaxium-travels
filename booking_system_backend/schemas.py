@@ -80,6 +80,18 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CancellationPreviewOut(BaseModel):
+    booking_id: int
+    price_paid: float
+    days_to_departure: int
+    refund_amount: float
+    fee_amount: float
+    travel_credit_amount: float
+    policy_description: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ErrorResponse(BaseModel):
     success: bool = False
     error: str
