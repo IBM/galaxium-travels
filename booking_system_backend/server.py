@@ -12,6 +12,7 @@ from db import get_db, init_db
 from schemas import (
     BookingOut,
     BookingRequest,
+    CancellationPreviewOut,
     ErrorResponse,
     FlightOut,
     UserOut,
@@ -162,6 +163,26 @@ def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db))
     result = booking.book_flight(db, request.user_id, request.name, request.flight_id, request.seat_class)
     if isinstance(result, ErrorResponse):
         status = 404 if result.error_code in ("FLIGHT_NOT_FOUND", "USER_NOT_FOUND") else 409
+        raise HTTPException(status_code=status, detail=result.model_dump())
+    return result
+
+
+@app.get("/bookings/{booking_id}/cancellation-preview", response_model=CancellationPreviewOut, tags=["Bookings"])
+def get_cancellation_preview(booking_id: int, db: Session = Depends(get_db)):
+    """Preview the refund/fee/credit breakdown for cancelling a booking.
+
+    Returns a breakdown based on days-to-departure policy tiers:
+    - 14+ days: full refund (100%)
+    - 7–13 days: 75% refund, 10% fee, 15% travel credit
+    - 3–6 days: 25% refund, 25% fee, 50% travel credit
+    - 0–2 days: no refund, no fee, no credit (total forfeit)
+
+    Does NOT cancel the booking — call /cancel/{booking_id} to confirm.
+    Raises 404 if the booking is not found, 409 if already cancelled.
+    """
+    result = booking.compute_cancellation_preview(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        status = 404 if result.error_code in ("BOOKING_NOT_FOUND", "FLIGHT_NOT_FOUND") else 409
         raise HTTPException(status_code=status, detail=result.model_dump())
     return result
 
