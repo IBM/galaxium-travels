@@ -36,6 +36,20 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh .bob/hooks/pre-compact.sh", "timeout": 15 }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh .bob/hooks/post-compact.sh", "timeout": 5 }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
