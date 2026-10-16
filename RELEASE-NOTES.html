@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Release Notes: Calendar Export for Bookings</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 15px; line-height: 1.6; color: #1f2328; background: #ffffff; margin: 0; padding: 40px 20px; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 32px 0 8px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+  h3 { font-size: 16px; margin: 20px 0 6px; }
+  p { margin: 8px 0; }
+  .meta { color: #57606a; margin-bottom: 24px; }
+  a { color: #3b82d4; text-decoration: none; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  th { background: #f7f8fa; }
+  .callout { background: #f7f8fa; border: 1px solid #e5e7eb; border-left: 3px solid #3b82d4; padding: 12px 16px; margin: 12px 0; }
+  footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Release Notes: Calendar Export for Bookings</h1>
+  <p class="meta">Commit <code>304a62c</code> &middot; Issue <a href="https://github.com/IBM/galaxium-travels/issues/44">#44</a></p>
+
+  <h2>Highlights</h2>
+  <div class="callout">
+    Travelers can now add a booked flight to their calendar. Each active booking on the My Bookings page has an <strong>Add to Calendar</strong> button that downloads an iCalendar (<code>.ics</code>) file. The file opens in Apple Calendar, Google Calendar, Outlook and other RFC 5545-compatible apps.
+  </div>
+
+  <h2>What's new</h2>
+
+  <h3>Backend</h3>
+  <ul>
+    <li><strong>New endpoint:</strong> <code>GET /bookings/{booking_id}/export.ics</code>
+      <ul>
+        <li>Returns <code>Content-Type: text/calendar</code> with <code>Content-Disposition: attachment; filename="booking-{id}.ics"</code>.</li>
+        <li>The file contains one <code>VEVENT</code> for the flight, with the fields below.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <table>
+    <thead><tr><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><code>UID</code></td><td><code>booking-{id}@galaxium-travels</code></td></tr>
+      <tr><td><code>DTSTART</code> / <code>DTEND</code></td><td>Flight departure / arrival, normalized to UTC</td></tr>
+      <tr><td><code>SUMMARY</code></td><td><code>Flight from {origin} to {destination}</code></td></tr>
+      <tr><td><code>LOCATION</code></td><td><code>{origin} &rarr; {destination}</code></td></tr>
+      <tr><td><code>DESCRIPTION</code></td><td>Booking ID, Flight ID, seat class, price paid</td></tr>
+    </tbody>
+  </table>
+
+  <ul>
+    <li>Output follows RFC 5545: special characters are escaped, and lines over 75 octets are folded with UTF-8 safety.</li>
+    <li>Flight times in <code>YYYY-MM-DD HH:MM[:SS[.ffffff]]</code> format and ISO 8601 (including a trailing <code>Z</code> or a UTC offset) are all accepted. Times without a timezone are treated as UTC.</li>
+    <li><strong>New service function:</strong> <code>get_booking_ics()</code> in <a href="booking_system_backend/services/booking.py"><code>services/booking.py</code></a>. It returns an <code>ErrorResponse</code> on failure, following the existing Union-return convention.</li>
+  </ul>
+
+  <p><strong>Error responses</strong></p>
+  <table>
+    <thead><tr><th>Condition</th><th>HTTP status</th><th><code>error_code</code></th></tr></thead>
+    <tbody>
+      <tr><td>Booking does not exist</td><td>404</td><td><code>BOOKING_NOT_FOUND</code></td></tr>
+      <tr><td>Booking's flight does not exist</td><td>404</td><td><code>FLIGHT_NOT_FOUND</code></td></tr>
+      <tr><td>Flight time cannot be parsed</td><td>400</td><td><code>INVALID_TIME_FORMAT</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Frontend</h3>
+  <ul>
+    <li><a href="booking_system_frontend/src/components/bookings/BookingCard.tsx"><code>BookingCard.tsx</code></a> now shows an <strong>Add to Calendar</strong> button next to <strong>Cancel Booking</strong>. It appears only for bookings with status <code>booked</code>.</li>
+    <li>The download is triggered by a temporary <code>&lt;a download&gt;</code> link, not Axios, so the browser handles it as a normal file download.</li>
+    <li><a href="booking_system_frontend/src/services/api.ts"><code>api.ts</code></a> now exports <code>API_BASE_URL</code> so components can build direct download links.</li>
+  </ul>
+
+  <h3>Developer experience</h3>
+  <ul>
+    <li><a href="scripts/local/start_locally.sh"><code>start_locally.sh</code></a> now supports Windows (Git Bash/MSYS). It falls back to <code>python</code> when <code>python3</code> is missing, and uses <code>.venv/Scripts/</code> instead of <code>.venv/bin/</code> on Windows.</li>
+  </ul>
+
+  <h2>Tests</h2>
+  <ul>
+    <li>New unit tests in <code>tests/test_services.py</code> and REST tests in <code>tests/test_rest.py</code> cover the <code>.ics</code> output, error paths and time parsing.</li>
+  </ul>
+
+  <h2>Known gaps and notes</h2>
+  <ul>
+    <li><strong>Out of scope per the issue:</strong> Google Calendar deep-links, and multi-leg itineraries with several <code>VEVENT</code>s.</li>
+    <li><strong>No dedicated MCP tool.</strong> Issue #44 asked for a matching MCP tool, but the commit adds only the REST endpoint. If MCP exposure is automatic through <code>FastApiMCP</code>, agents can already reach it. This needs confirming.</li>
+    <li><strong>Dependency lockfile change.</strong> <code>booking_system_frontend/package-lock.json</code> shrank by about 300 lines in the same commit. This is probably unrelated to the feature, so review it before release.</li>
+    <li>The frontend builds the download URL from <code>VITE_API_URL</code>, which defaults to <code>/api</code>. The deployment's reverse proxy must route that prefix to the backend.</li>
+  </ul>
+
+  <footer>Made with IBM Bob</footer>
+</main>
+</body>
+</html>
