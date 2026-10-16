@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Button } from '../components/common';
+import { Button, TrajectoryMap } from '../components/common';
 import { Rocket, Globe, Shield, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ALL_DESTINATIONS } from '../data/destinations';
@@ -137,7 +137,17 @@ export const Home = () => {
                     Destination
                   </span>
                   <h3 className="text-lg font-bold text-star-white mb-1">{dest.name}</h3>
-                  <p className="text-star-white/60 text-sm leading-snug">{dest.tagline}</p>
+                  <p className="text-star-white/60 text-sm leading-snug mb-3">{dest.tagline}</p>
+                  {dest.slug !== 'earth' && (
+                    <div className="flex justify-center">
+                      <TrajectoryMap
+                        origin="Earth"
+                        destination={dest.name}
+                        size={120}
+                        className="opacity-80"
+                      />
+                    </div>
+                  )}
                 </div>
               </Link>
             </motion.div>
