@@ -191,11 +191,16 @@ def export_booking_ics_endpoint(booking_id: int, db: Session = Depends(get_db)):
     """Export an existing booking as an RFC 5545 iCalendar (.ics) file.
 
     Returns an RFC 5545 iCalendar file with a single VEVENT for the booking's flight departure.
-    Raises 404 if the booking or associated flight is not found, or 400 if the flight time format is invalid.
+    Raises 404 if the booking or associated flight is not found, or 500 if stored flight time data is unparseable.
     """
     result = booking.get_booking_ics(db, booking_id)
     if isinstance(result, ErrorResponse):
-        status = 404 if result.error_code in ("BOOKING_NOT_FOUND", "FLIGHT_NOT_FOUND") else 400
+        status_map = {
+            "BOOKING_NOT_FOUND": 404,
+            "FLIGHT_NOT_FOUND": 404,
+            "INVALID_TIME_FORMAT": 500,
+        }
+        status = status_map.get(result.error_code, 500)
         raise HTTPException(status_code=status, detail=result.model_dump())
     
     headers = {

@@ -605,6 +605,81 @@ class TestBookingService:
         assert isinstance(result, ErrorResponse)
         assert result.error_code == "BOOKING_NOT_FOUND"
 
+    def test_get_booking_ics_flight_not_found(self, db_session):
+        """Test that get_booking_ics returns FLIGHT_NOT_FOUND when the associated flight is missing."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+
+        # Create a booking that references a non-existent flight_id
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=99999,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=500,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "FLIGHT_NOT_FOUND"
+
+    def test_get_booking_ics_invalid_time_format(self, db_session):
+        """Test that get_booking_ics returns INVALID_TIME_FORMAT when the flight time cannot be parsed."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="not-a-date",
+            arrival_time="also-not-a-date",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "INVALID_TIME_FORMAT"
+
+    def test_escape_ical_text_special_characters(self):
+        """Test that _escape_ical_text escapes commas, semicolons, and newlines."""
+        from services.booking import _escape_ical_text
+        assert _escape_ical_text("a,b") == "a\\,b"
+        assert _escape_ical_text("a;b") == "a\\;b"
+        assert _escape_ical_text("a\nb") == "a\\nb"
+        assert _escape_ical_text("a\r\nb") == "a\\nb"
+        # backslash must be escaped first
+        assert _escape_ical_text("a\\b") == "a\\\\b"
+
+    def test_fold_ical_line_multibyte(self):
+        """Test that _fold_ical_line folds a line >75 octets that contains multibyte characters (→)."""
+        from services.booking import _fold_ical_line
+        # Build a line that is definitely >75 octets due to the 3-byte → characters
+        long_line = "LOCATION:" + "A → B, " * 8  # well over 75 octets
+        result = _fold_ical_line(long_line)
+        # After folding the line must contain CRLF+SPACE fold markers
+        assert "\r\n " in result
+        # Each physical segment must be ≤75 octets
+        for segment in result.split("\r\n "):
+            assert len(segment.encode("utf-8")) <= 75
 
 
 class TestFlightFiltering:

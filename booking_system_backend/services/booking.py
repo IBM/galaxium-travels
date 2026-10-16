@@ -198,17 +198,56 @@ def _fold_ical_line(line: str) -> str:
     return "\r\n ".join(parts)
 
 
+def _generate_vcalendar(booking: Booking, flight: Flight, dtstart: str, dtend: str) -> str:
+    """Construct and fold an RFC 5545 VCALENDAR payload for a booking and flight."""
+    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    seat_class_display = booking.seat_class.capitalize() if booking.seat_class else ""
+
+    summary = f"Flight from {flight.origin} to {flight.destination}"
+    location = f"{flight.origin} → {flight.destination}"
+    description = (
+        f"Booking ID: {booking.booking_id}\n"
+        f"Flight ID: {flight.flight_id}\n"
+        f"Seat Class: {seat_class_display}\n"
+        f"Price Paid: ${booking.price_paid}"
+    )
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//NONSGML Booking Export//EN",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        f"UID:booking-{booking.booking_id}@galaxium-travels",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART:{dtstart}",
+        f"DTEND:{dtend}",
+        f"SUMMARY:{_escape_ical_text(summary)}",
+        f"LOCATION:{_escape_ical_text(location)}",
+        f"DESCRIPTION:{_escape_ical_text(description)}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+
+    return "\r\n".join(_fold_ical_line(line) for line in lines) + "\r\n"
+
+
 def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
     """Generate a valid iCalendar string for an existing booking."""
-    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
-    if not booking:
+    result = (
+        db.query(Booking, Flight)
+        .outerjoin(Flight, Booking.flight_id == Flight.flight_id)
+        .filter(Booking.booking_id == booking_id)
+        .first()
+    )
+    if not result:
         return ErrorResponse(
             error="Booking not found",
             error_code="BOOKING_NOT_FOUND",
             details=f"Booking with ID {booking_id} not found. The booking may have been deleted or the booking_id may be incorrect. Please verify the booking_id."
         )
 
-    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    booking, flight = result
     if not flight:
         return ErrorResponse(
             error="Flight not found",
@@ -226,37 +265,4 @@ def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
             details=str(e)
         )
 
-    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    
-    summary = f"Flight from {flight.origin} to {flight.destination}"
-    location = f"{flight.origin} → {flight.destination}"
-    description = (
-        f"Booking ID: {booking.booking_id}\n"
-        f"Flight ID: {flight.flight_id}\n"
-        f"Seat Class: {booking.seat_class.capitalize() if booking.seat_class else ''}\n"
-        f"Price Paid: ${booking.price_paid}"
-    )
-    
-    escaped_summary = _escape_ical_text(summary)
-    escaped_location = _escape_ical_text(location)
-    escaped_description = _escape_ical_text(description)
-    
-    lines = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Galaxium Travels//NONSGML Booking Export//EN",
-        "CALSCALE:GREGORIAN",
-        "BEGIN:VEVENT",
-        f"UID:booking-{booking.booking_id}@galaxium-travels",
-        f"DTSTAMP:{dtstamp}",
-        f"DTSTART:{dtstart}",
-        f"DTEND:{dtend}",
-        f"SUMMARY:{escaped_summary}",
-        f"LOCATION:{escaped_location}",
-        f"DESCRIPTION:{escaped_description}",
-        "END:VEVENT",
-        "END:VCALENDAR"
-    ]
-    
-    folded_lines = [_fold_ical_line(line) for line in lines]
-    return "\r\n".join(folded_lines) + "\r\n"
+    return _generate_vcalendar(booking, flight, dtstart, dtend)
