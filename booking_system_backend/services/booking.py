@@ -127,3 +127,136 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def _parse_time_to_utc_ics(time_str: str) -> str:
+    """Parse flight departure/arrival time into YYYYMMDDTHHMMSSZ UTC format."""
+    time_str = time_str.strip()
+    dt = None
+    
+    # Try different common formats
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+        try:
+            dt = datetime.strptime(time_str, fmt)
+            dt = dt.replace(tzinfo=timezone.utc)
+            break
+        except ValueError:
+            continue
+            
+    if dt is None:
+        try:
+            iso_str = time_str
+            if iso_str.endswith('Z'):
+                iso_str = iso_str[:-1] + '+00:00'
+            dt = datetime.fromisoformat(iso_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+        except ValueError:
+            pass
+            
+    if dt is None:
+        raise ValueError(f"Unable to parse time format: {time_str}")
+        
+    return dt.strftime("%Y%m%dT%H%M%SZ")
+
+
+def _escape_ical_text(text: str) -> str:
+    """Escape special characters in iCalendar text values according to RFC 5545."""
+    if not text:
+        return ""
+    escaped = text.replace("\\", "\\\\")
+    escaped = escaped.replace(";", "\\;")
+    escaped = escaped.replace(",", "\\,")
+    escaped = escaped.replace("\r\n", "\\n").replace("\n", "\\n")
+    return escaped
+
+
+def _fold_ical_line(line: str) -> str:
+    """Fold lines longer than 75 octets excluding the line break according to RFC 5545."""
+    encoded = line.encode('utf-8')
+    if len(encoded) <= 75:
+        return line
+
+    parts = []
+    current_chunk_bytes = bytearray()
+    limit = 75
+    for char in line:
+        char_bytes = char.encode('utf-8')
+        if len(current_chunk_bytes) + len(char_bytes) > limit:
+            if current_chunk_bytes:
+                parts.append(current_chunk_bytes.decode('utf-8'))
+            limit = 74
+            current_chunk_bytes = bytearray(char_bytes)
+        else:
+            current_chunk_bytes.extend(char_bytes)
+            
+    if current_chunk_bytes:
+        parts.append(current_chunk_bytes.decode('utf-8'))
+        
+    return "\r\n ".join(parts)
+
+
+def get_booking_ics(db: Session, booking_id: int) -> str | ErrorResponse:
+    """Generate a valid iCalendar string for an existing booking."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found. The booking may have been deleted or the booking_id may be incorrect. Please verify the booking_id."
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if not flight:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"The flight associated with booking {booking_id} does not exist in our system."
+        )
+
+    try:
+        dtstart = _parse_time_to_utc_ics(flight.departure_time)
+        dtend = _parse_time_to_utc_ics(flight.arrival_time)
+    except ValueError as e:
+        return ErrorResponse(
+            error="Invalid time format",
+            error_code="INVALID_TIME_FORMAT",
+            details=str(e)
+        )
+
+    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    
+    summary = f"Flight from {flight.origin} to {flight.destination}"
+    location = f"{flight.origin} → {flight.destination}"
+    description = (
+        f"Booking ID: {booking.booking_id}\n"
+        f"Flight ID: {flight.flight_id}\n"
+        f"Seat Class: {booking.seat_class.capitalize() if booking.seat_class else ''}\n"
+        f"Price Paid: ${booking.price_paid}"
+    )
+    
+    escaped_summary = _escape_ical_text(summary)
+    escaped_location = _escape_ical_text(location)
+    escaped_description = _escape_ical_text(description)
+    
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Galaxium Travels//NONSGML Booking Export//EN",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        f"UID:booking-{booking.booking_id}@galaxium-travels",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART:{dtstart}",
+        f"DTEND:{dtend}",
+        f"SUMMARY:{escaped_summary}",
+        f"LOCATION:{escaped_location}",
+        f"DESCRIPTION:{escaped_description}",
+        "END:VEVENT",
+        "END:VCALENDAR"
+    ]
+    
+    folded_lines = [_fold_ical_line(line) for line in lines]
+    return "\r\n".join(folded_lines) + "\r\n"

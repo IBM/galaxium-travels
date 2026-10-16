@@ -12,9 +12,24 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Check if Python is installed
-if ! command -v python3 &> /dev/null; then
+PYTHON_CMD=""
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    if python -c "import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)" &> /dev/null; then
+        PYTHON_CMD="python"
+    fi
+fi
+
+if [ -z "$PYTHON_CMD" ]; then
     echo "❌ Python 3 is not installed. Please install Python 3 first."
     exit 1
+fi
+
+# Detect OS / paths for python virtual environment
+IS_WINDOWS=false
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    IS_WINDOWS=true
 fi
 
 # Check if Node.js is installed
@@ -65,15 +80,23 @@ cd booking_system_backend
 # Check if virtual environment exists, create if not
 if [ ! -d ".venv" ]; then
     echo "Creating Python virtual environment..."
-    python3 -m venv .venv
+    "$PYTHON_CMD" -m venv .venv
 fi
 
 # Activate virtual environment and install dependencies
-source .venv/bin/activate
+if [ "$IS_WINDOWS" = true ]; then
+    source .venv/Scripts/activate
+else
+    source .venv/bin/activate
+fi
 pip install -q -r requirements.txt
 
 # Start backend server in background using venv Python
-.venv/bin/python server.py > backend.log 2>&1 &
+if [ "$IS_WINDOWS" = true ]; then
+    .venv/Scripts/python server.py > backend.log 2>&1 &
+else
+    .venv/bin/python server.py > backend.log 2>&1 &
+fi
 BACKEND_PID=$!
 
 # Wait for backend to start and verify

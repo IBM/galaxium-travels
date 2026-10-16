@@ -481,6 +481,130 @@ class TestBookingService:
         result = booking.get_bookings(db_session, 999)
         assert result == []
 
+    def test_get_booking_ics_success_space_format(self, db_session):
+        """Test generating iCalendar string with space-separated departure/arrival time format."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+        assert "VERSION:2.0" in result
+        assert "PRODID:-//Galaxium Travels//NONSGML Booking Export//EN" in result
+        assert f"UID:booking-{booking_obj.booking_id}@galaxium-travels" in result
+        assert "DTSTART:20990101T090000Z" in result
+        assert "DTEND:20990101T170000Z" in result
+        assert "SUMMARY:Flight from Earth to Mars" in result
+        assert "LOCATION:Earth → Mars" in result
+        assert f"DESCRIPTION:Booking ID: {booking_obj.booking_id}" in result
+        assert "END:VEVENT" in result
+        assert "END:VCALENDAR" in result
+        
+        # Verify CRLF line endings
+        assert result.endswith("\r\n")
+        lines = result.split("\r\n")
+        assert lines[-1] == ""
+        # Check that each line is at most 75 octets
+        for line in lines[:-1]:
+            assert len(line.encode('utf-8')) <= 75
+
+    def test_get_booking_ics_success_iso_format(self, db_session):
+        """Test generating iCalendar string with ISO departure/arrival time format with 'Z'."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01T09:00:00Z",
+            arrival_time="2099-01-01T17:00:00Z",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "DTSTART:20990101T090000Z" in result
+        assert "DTEND:20990101T170000Z" in result
+
+    def test_get_booking_ics_cancelled_booking(self, db_session):
+        """Test that a cancelled booking can still be exported to ICS."""
+        db_session.add(User(name="Test User", email="test@example.com"))
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+
+        user_obj = db_session.query(User).first()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_obj.user_id,
+            flight_id=flight_obj.flight_id,
+            status="cancelled",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        result = booking.get_booking_ics(db_session, booking_obj.booking_id)
+        assert isinstance(result, str)
+        assert "BEGIN:VCALENDAR" in result
+
+    def test_get_booking_ics_not_found(self, db_session):
+        """Test that get_booking_ics returns ErrorResponse with BOOKING_NOT_FOUND for non-existent booking."""
+        result = booking.get_booking_ics(db_session, 9999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
 
 
 class TestFlightFiltering:
