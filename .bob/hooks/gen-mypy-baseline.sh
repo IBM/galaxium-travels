@@ -7,7 +7,7 @@
 #
 # Errors are normalised to "file: error: message [code]" with the line number
 # stripped, so unrelated edits shifting line numbers do not register as new.
-# The mypy invocation MUST stay identical to the one in mypy-check.sh, or the
+# The mypy invocation MUST stay identical to the one in check-edit.sh, or the
 # paths will not line up and every error will look new.
 #
 # Run this manually after intentionally fixing or accepting type errors:

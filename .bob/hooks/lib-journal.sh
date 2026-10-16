@@ -28,6 +28,31 @@ journal_add() {
   printf '%s\n' "$2" >> "$(journal_for "$1")"
 }
 
+# use_supported_java -> exports JAVA_HOME for a JDK Lombok supports (17/21).
+# Tries the current java, then sdkman candidates. Returns 1 if none is found,
+# so callers can skip Java checks instead of reporting a bogus compile failure.
+use_supported_java() {
+  case "$(java -version 2>&1 | head -1 | sed -n 's/[^"]*"\([0-9]*\).*/\1/p')" in
+    17|21) return 0 ;;
+  esac
+  for jdk in "$HOME"/.sdkman/candidates/java/21* "$HOME"/.sdkman/candidates/java/17*; do
+    if [ -x "${jdk}/bin/java" ]; then
+      export JAVA_HOME="$jdk" PATH="${jdk}/bin:$PATH"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# hook_fired <session_id> <hook-name> <outcome>
+# Lets the receipt list which hooks ran and what each one decided, including
+# the quiet outcomes ("not a commit", "nothing pending") that leave no other trace.
+hook_fired() {
+  journal_add "$1" "$(jq -nc --arg t "$hook_ts" --argjson epoch "$hook_epoch" \
+    --arg hook "$2" --arg outcome "$3" \
+    '{kind:"hook", t:$t, epoch:$epoch, hook:$hook, outcome:$outcome}')"
+}
+
 # trunc <text> <max-chars>
 # Collapse to a single line and cut, so one pasted stack trace cannot blow out
 # the receipt. Marks the cut with an ellipsis so nothing looks silently complete.
