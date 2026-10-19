@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(write_file|apply_diff|search_and_replace|insert_content)$",
+        "hooks": [
+          { "type": "command", "command": "sh .bob/hooks/protect-hold-service.sh" }
+        ]
+      }
+    ]
+  }
+}
