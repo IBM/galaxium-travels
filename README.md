@@ -171,6 +171,15 @@ Seeded automatically on first start:
 
 Each class has independent seat counters. A sold-out class doesn't block bookings in other classes.
 
+## Multi-leg itineraries
+
+<!-- STAND-IN: replace with the section from the module 8 authoring run. -->
+
+- `GET /itineraries/search?origin=&destination=&date=` returns routes of one to three connecting flights whose first leg departs on the given date, sorted by total travel time and then price.
+- `POST /itineraries` holds every leg of a route through the inventory hold service, all or nothing, and returns the itinerary with status `held`.
+- `POST /itineraries/{itinerary_id}/confirm` turns every hold into a booking; if any leg fails, the confirmed legs are cancelled and the itinerary is marked `failed`.
+- `GET /users/{user_id}/itineraries` lists a user's itineraries, newest first.
+
 ## MCP tools (AI agent API)
 
 The backend exposes six tools at `/mcp`:
