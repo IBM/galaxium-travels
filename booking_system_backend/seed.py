@@ -10,12 +10,49 @@ from db import SessionLocal, engine
 from models import Base, Booking, Flight, User
 
 
+# Connecting flights for multi-leg itineraries. Inserted into existing databases
+# too, so learners who started the app before this feature still get routes.
+CONNECTING_FLIGHTS = [
+    ("Earth", "Moon", "2099-02-01T08:00:00Z", "2099-02-01T12:00:00Z", 500000),
+    ("Moon", "Mars", "2099-02-01T16:00:00Z", "2099-02-02T00:00:00Z", 800000),
+    ("Earth", "Mars", "2099-02-01T09:00:00Z", "2099-02-01T17:00:00Z", 1000000),
+    ("Mars", "Jupiter", "2099-02-02T06:00:00Z", "2099-02-02T16:00:00Z", 2500000),
+    ("Jupiter", "Europa", "2099-02-02T20:00:00Z", "2099-02-03T00:00:00Z", 2000000),
+    ("Earth", "Moon", "2099-03-01T08:00:00Z", "2099-03-01T12:00:00Z", 500000),
+    ("Moon", "Mars", "2099-03-01T15:00:00Z", "2099-03-01T23:00:00Z", 800000),
+]
+
+
+def seed_connecting_flights(db):
+    """Insert CONNECTING_FLIGHTS that are not already present."""
+    for origin, destination, departure, arrival, base_price in CONNECTING_FLIGHTS:
+        exists = db.query(Flight).filter(
+            Flight.origin == origin,
+            Flight.destination == destination,
+            Flight.departure_time == departure,
+        ).first()
+        if exists:
+            continue
+        db.add(Flight(
+            origin=origin,
+            destination=destination,
+            departure_time=departure,
+            arrival_time=arrival,
+            base_price=base_price,
+            economy_seats_available=6,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+    db.commit()
+
+
 def seed():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     # Only seed if the database is empty to avoid wiping registered users
     if db.query(User).count() > 0:
         print("Database already has data — skipping seed.")
+        seed_connecting_flights(db)
         db.close()
         return
     # Add demo users
@@ -110,6 +147,7 @@ def seed():
         ))
     db.add_all(bookings)
     db.commit()
+    seed_connecting_flights(db)
     db.close()
     print("Database seeded with elaborate demo data!")
 
