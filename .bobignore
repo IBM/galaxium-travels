@@ -1,0 +1,3 @@
+.env
+*.db
+booking_system_backend/.venv/
