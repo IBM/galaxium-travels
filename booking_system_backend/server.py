@@ -1,9 +1,10 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import date
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
 from sqlalchemy.orm import Session
@@ -14,11 +15,15 @@ from schemas import (
     BookingRequest,
     ErrorResponse,
     FlightOut,
+    ItineraryCreate,
+    ItineraryOut,
+    RouteOut,
     UserOut,
     UserRegistration,
 )
 from seed import seed
-from services import booking, flight, user
+from services import booking, flight, itinerary, user
+from services.hold_client import HoldClient, get_hold_client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -211,6 +216,87 @@ def get_user_endpoint(name: str, email: str, db: Session = Depends(get_db)):
         status = 404 if result.error_code == "USER_NOT_FOUND" else 422
         raise HTTPException(status_code=status, detail=result.model_dump())
     return result
+
+
+# ==================== ITINERARIES ====================
+
+ITINERARY_ERROR_STATUS = {
+    "USER_NOT_FOUND": 404,
+    "FLIGHT_NOT_FOUND": 404,
+    "ITINERARY_NOT_FOUND": 404,
+    "NAME_MISMATCH": 409,
+    "NO_SEATS_AVAILABLE": 409,
+    "INVALID_STATUS": 409,
+    "INVALID_LEG_COUNT": 422,
+    "INVALID_CONNECTION": 422,
+    "SAME_ORIGIN_DESTINATION": 422,
+    "TOO_MANY_HOLDS": 429,
+    "HOLD_FAILED": 502,
+    "CONFIRM_FAILED": 502,
+}
+
+
+def _raise_itinerary_error(result: ErrorResponse):
+    status = ITINERARY_ERROR_STATUS.get(result.error_code, 400)
+    raise HTTPException(status_code=status, detail=result.model_dump())
+
+
+@app.get("/itineraries/search", response_model=list[RouteOut], tags=["Itineraries"])
+def search_itineraries(
+    origin: str,
+    destination: str,
+    travel_date: date = Query(alias="date"),
+    db: Session = Depends(get_db),
+):
+    """Find routes of up to three connecting flights.
+
+    The first flight departs on `date` (YYYY-MM-DD, UTC). Layovers are 2 to 72
+    hours. Results are sorted by total travel time, then total price.
+    """
+    result = itinerary.search(db, origin, destination, travel_date)
+    if isinstance(result, ErrorResponse):
+        _raise_itinerary_error(result)
+    return result
+
+
+@app.post("/itineraries", response_model=ItineraryOut, tags=["Itineraries"])
+def create_itinerary_endpoint(
+    request: ItineraryCreate,
+    db: Session = Depends(get_db),
+    holds: HoldClient = Depends(get_hold_client),
+):
+    """Hold every flight of a trip, all or nothing.
+
+    If any leg cannot be held, earlier holds are released and nothing is saved.
+    """
+    result = itinerary.create_itinerary(
+        db, holds, request.user_id, request.name, request.flight_ids
+    )
+    if isinstance(result, ErrorResponse):
+        _raise_itinerary_error(result)
+    return result
+
+
+@app.post("/itineraries/{itinerary_id}/confirm", response_model=ItineraryOut, tags=["Itineraries"])
+def confirm_itinerary_endpoint(
+    itinerary_id: int,
+    db: Session = Depends(get_db),
+    holds: HoldClient = Depends(get_hold_client),
+):
+    """Turn every held leg into a booking that shares the itinerary_id.
+
+    If a leg fails, confirmed legs are cancelled and the itinerary is marked failed.
+    """
+    result = itinerary.confirm_itinerary(db, holds, itinerary_id)
+    if isinstance(result, ErrorResponse):
+        _raise_itinerary_error(result)
+    return result
+
+
+@app.get("/users/{user_id}/itineraries", response_model=list[ItineraryOut], tags=["Itineraries"])
+def list_user_itineraries(user_id: int, db: Session = Depends(get_db)):
+    """List a user's itineraries, newest first."""
+    return itinerary.list_itineraries(db, user_id)
 
 
 # ==================== JAVA SERVICE INTEGRATION ====================

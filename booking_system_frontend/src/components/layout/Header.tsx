@@ -53,6 +53,16 @@ export const Header = () => {
             >
               Flights
             </Link>
+            <Link
+              to="/trips"
+              className={`text-sm font-medium transition-colors ${
+                isActive('/trips')
+                  ? 'text-cosmic-purple'
+                  : 'text-star-white/70 hover:text-star-white'
+              }`}
+            >
+              Trips
+            </Link>
             {user && (
               <Link
                 to="/bookings"
@@ -125,6 +135,16 @@ export const Header = () => {
             }`}
           >
             Flights
+          </Link>
+          <Link
+            to="/trips"
+            className={`text-sm font-medium transition-colors ${
+              isActive('/trips')
+                ? 'text-cosmic-purple'
+                : 'text-star-white/70 hover:text-star-white'
+            }`}
+          >
+            Trips
           </Link>
           {user && (
             <Link
