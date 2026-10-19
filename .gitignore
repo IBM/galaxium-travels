@@ -141,6 +141,7 @@ desktop.ini
 .env
 
 ### Additional files
+booking_system_backend/.venv/
 HR_database/.venv/
 booking_system_rest/.venv/
 galaxium-booking-web-app/.venv/

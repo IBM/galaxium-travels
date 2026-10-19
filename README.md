@@ -73,7 +73,7 @@ Frontend → POST /quotes        (Python proxy)
 
 ## Quick start
 
-**Prerequisites:** Python 3.8+, Node.js 18+. For the Java hold service: Java 17 or 21 and Maven. For Docker Compose: see the [Docker on macOS notes](#docker-on-macos) below.
+**Prerequisites:** Python 3.10+, Node.js 20.19+ or 22.12+. For the Java hold service: Java 17 or 21 and Maven. For Docker Compose: see the [Docker on macOS notes](#docker-on-macos) below.
 
 ### Option 1 — One command (recommended for local dev)
 
