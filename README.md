@@ -171,6 +171,13 @@ Seeded automatically on first start:
 
 Each class has independent seat counters. A sold-out class doesn't block bookings in other classes.
 
+## Multi-leg itineraries
+
+- `GET /itineraries/search` — Search for multi-leg flight routes between origin and destination with layover constraints.
+- `POST /itineraries` — Create a new provisional multi-leg itinerary reservation.
+- `POST /itineraries/{itinerary_id}/confirm` — Confirm and book all legs in a provisional itinerary.
+- `GET /users/{user_id}/itineraries` — Retrieve all multi-leg itineraries for a specific user.
+
 ## MCP tools (AI agent API)
 
 The backend exposes six tools at `/mcp`:
