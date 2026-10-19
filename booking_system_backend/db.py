@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 
 from models import Base
@@ -25,6 +25,17 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    add_missing_columns(engine)
+
+def add_missing_columns(target_engine):
+    """Add columns introduced after a database was first created.
+
+    create_all() creates missing tables but never alters existing ones.
+    """
+    columns = {c["name"] for c in inspect(target_engine).get_columns("bookings")}
+    if "itinerary_id" not in columns:
+        with target_engine.begin() as conn:
+            conn.execute(text("ALTER TABLE bookings ADD COLUMN itinerary_id INTEGER"))
 
 def get_db():
     db = SessionLocal()

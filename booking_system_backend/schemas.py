@@ -63,6 +63,7 @@ class BookingOut(BaseModel):
     booking_time: str
     seat_class: str
     price_paid: int
+    itinerary_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -85,3 +86,44 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class LegOut(BaseModel):
+    flight_id: int
+    origin: str
+    destination: str
+    departure_time: str
+    arrival_time: str
+    price: int  # Economy price
+
+
+class RouteOut(BaseModel):
+    legs: list[LegOut]
+    total_minutes: int
+    total_price: int
+    layover_minutes: list[int]
+
+
+class ItineraryCreate(BaseModel):
+    user_id: int
+    name: str
+    flight_ids: list[int]
+
+
+class ItineraryLegOut(BaseModel):
+    position: int
+    flight_id: int
+    origin: str
+    destination: str
+    departure_time: str
+    arrival_time: str
+    booking_id: int | None
+
+
+class ItineraryOut(BaseModel):
+    itinerary_id: int
+    user_id: int
+    status: str
+    created_at: str
+    total_price: int
+    legs: list[ItineraryLegOut]

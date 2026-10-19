@@ -100,4 +100,20 @@ export const calculateDuration = (
   }
 };
 
+/**
+ * Minutes between two timestamps
+ */
+export const minutesBetween = (start: string, end: string): number =>
+  Math.round((parseISO(end).getTime() - parseISO(start).getTime()) / 60000);
+
+/**
+ * Format minutes as "13h", "4h 30m", or "45m"
+ */
+export const formatMinutes = (totalMinutes: number): string => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+};
+
 // Made with Bob

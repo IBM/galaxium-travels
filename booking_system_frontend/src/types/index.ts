@@ -25,6 +25,7 @@ export interface Booking {
   booking_time: string;
   seat_class: SeatClass;
   price_paid: number;
+  itinerary_id?: number | null;
 }
 
 export interface User {
@@ -114,3 +115,44 @@ export interface StoredHold {
 }
 
 // Made with Bob
+
+// Multi-leg itinerary types
+
+export interface TimelineLeg {
+  flight_id: number;
+  origin: string;
+  destination: string;
+  departure_time: string;
+  arrival_time: string;
+}
+
+export interface RouteLeg extends TimelineLeg {
+  price: number;
+}
+
+export interface Route {
+  legs: RouteLeg[];
+  total_minutes: number;
+  total_price: number;
+  layover_minutes: number[];
+}
+
+export interface ItineraryLeg extends TimelineLeg {
+  position: number;
+  booking_id: number | null;
+}
+
+export interface Itinerary {
+  itinerary_id: number;
+  user_id: number;
+  status: 'held' | 'confirmed' | 'failed';
+  created_at: string;
+  total_price: number;
+  legs: ItineraryLeg[];
+}
+
+export interface ItineraryRequest {
+  user_id: number;
+  name: string;
+  flight_ids: number[];
+}
