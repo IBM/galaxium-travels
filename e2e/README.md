@@ -17,7 +17,8 @@ E2E_RUN_SLOW=1 ./run-native.sh  # also run the ~90s hold auto-expiry test
 ```
 
 Starts the Python backend and Java hold service directly using throwaway SQLite
-databases — no Docker required. The Java jar is built automatically on first run
+databases on ports 18001 and 18082 — no Docker required, and no clash with a dev
+stack on 8001/8080. The Java jar is built automatically on first run
 if it isn't already present.
 
 Requirements:
@@ -30,8 +31,12 @@ If you already have both services up, skip the managed startup and point the
 tests at your running backend:
 
 ```bash
-E2E_BASE_URL=http://localhost:8001 ./run-native.sh
+cd e2e
+E2E_BASE_URL=http://localhost:8001 pytest
 ```
+
+`run-native.sh` always starts its own services, so call `pytest` directly here,
+with the packages in `e2e/requirements.txt` installed.
 
 ### Docker (CI / other environments)
 
@@ -69,5 +74,5 @@ E2E_BASE_URL=   # unset — conftest will manage compose
 | `E2E_KEEP_STACK=1` | Leave the compose stack up after the run (Docker path only) |
 | `E2E_RUN_SLOW=1` | Include the auto-expiry test (~90s) |
 
-The Docker-managed stack runs on ports **18001** (backend) and **18082** (Java)
-so it won't collide with a dev stack on 8001/8080.
+Both the native and the Docker-managed stacks run on ports **18001** (backend) and
+**18082** (Java), so they won't collide with a dev stack on 8001/8080.

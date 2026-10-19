@@ -18,8 +18,9 @@ BACKEND_DIR="$ROOT/booking_system_backend"
 JAVA_DIR="$ROOT/booking_system_inventory_hold_service"
 JAR="$JAVA_DIR/target/inventory-hold-service-1.0.0.jar"
 
-BACKEND_PORT=8001
-JAVA_PORT=8080
+# Same ports as the Docker e2e stack, so a dev stack on 8001/8080 keeps running.
+BACKEND_PORT=18001
+JAVA_PORT=18082
 
 TMPDIR_E2E="$(mktemp -d -t galaxium-e2e)"
 BACKEND_LOG="$TMPDIR_E2E/backend.log"
