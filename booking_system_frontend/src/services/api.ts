@@ -10,9 +10,12 @@ import type {
   Hold,
 } from '../types';
 
+// Export the base URL so other components can generate direct download links
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

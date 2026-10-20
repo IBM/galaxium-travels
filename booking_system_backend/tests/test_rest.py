@@ -414,6 +414,125 @@ class TestCancelEndpoint:
         assert data["error_code"] == "BOOKING_NOT_FOUND"
 
 
+class TestExportBookingIcsEndpoint:
+    """Test /bookings/{booking_id}/export.ics endpoint."""
+
+    def test_export_booking_ics_success(self, client, db_session, sample_user_data):
+        """Test successful booking export to iCalendar file."""
+        # Register user
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        # Create flight and booking
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000000,
+            economy_seats_available=4,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        ))
+        db_session.commit()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000000
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/export.ics")
+        assert response.status_code == 200
+        assert response.headers["Content-Type"].startswith("text/calendar")
+        assert response.headers["Content-Disposition"] == f'attachment; filename="booking-{booking_obj.booking_id}.ics"'
+        
+        body = response.text
+        assert "BEGIN:VCALENDAR" in body
+        assert "VERSION:2.0" in body
+        assert "BEGIN:VEVENT" in body
+        assert f"UID:booking-{booking_obj.booking_id}@galaxium-travels" in body
+        assert "DTSTART:20990101T090000Z" in body
+        assert "DTEND:20990101T170000Z" in body
+        assert "SUMMARY:Flight from Earth to Mars" in body
+        assert "LOCATION:Earth → Mars" in body
+        assert f"DESCRIPTION:Booking ID: {booking_obj.booking_id}" in body
+        assert "END:VEVENT" in body
+        assert "END:VCALENDAR" in body
+
+    def test_export_booking_ics_not_found(self, client, db_session):
+        """Test exporting non-existent booking to iCalendar file."""
+        response = client.get("/bookings/999/export.ics")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["success"] is False
+        assert data["error_code"] == "BOOKING_NOT_FOUND"
+
+    def test_export_booking_ics_flight_not_found(self, client, db_session, sample_user_data):
+        """Test that a booking whose flight was deleted returns 404 with FLIGHT_NOT_FOUND."""
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        # Booking references a flight_id that doesn't exist in the DB
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=99999,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=500,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/export.ics")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["success"] is False
+        assert data["error_code"] == "FLIGHT_NOT_FOUND"
+
+    def test_export_booking_ics_invalid_time_format(self, client, db_session, sample_user_data):
+        """Test that an unparseable flight time returns 400 with INVALID_TIME_FORMAT."""
+        user_response = client.post("/register", json=sample_user_data)
+        user_id = user_response.json()["user_id"]
+
+        db_session.add(Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="not-a-date",
+            arrival_time="also-not-a-date",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        flight_obj = db_session.query(Flight).first()
+
+        db_session.add(Booking(
+            user_id=user_id,
+            flight_id=flight_obj.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=1000,
+        ))
+        db_session.commit()
+        booking_obj = db_session.query(Booking).first()
+
+        response = client.get(f"/bookings/{booking_obj.booking_id}/export.ics")
+        assert response.status_code == 500
+        data = response.json()["detail"]
+        assert data["success"] is False
+        assert data["error_code"] == "INVALID_TIME_FORMAT"
+
+
 class TestHealthEndpoint:
     """Test health check endpoint."""
 

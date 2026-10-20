@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Issue #44 — ICS Calendar Export: Retrospective &amp; Hardening Plan</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 15px; line-height: 1.6; color: #1f2328; background: #fff; margin: 0; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px; }
+  h1 { font-size: 24px; margin: 0 0 8px; }
+  h2 { font-size: 18px; margin: 32px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 10px; border: 1px solid #3b82d4; color: #3b82d4; border-radius: 12px; }
+  .meta { color: #57606a; font-size: 13px; margin: 8px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 8px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 8px; border: 1px solid #e5e7eb; }
+  th { background: #f7f8fa; }
+  code { background: #f7f8fa; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
+  footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<main>
+<h1>Issue #44 — ICS Calendar Export: Retrospective &amp; Hardening Plan</h1>
+<span class="badge">Draft · Reviewed</span>
+<p class="meta">Branch <code>fix/ics-export-hardening</code> · Source: <code>demos/beginner-implementation-tasks/issue-44-implementation-plan.md</code></p>
+
+<h2>Summary</h2>
+<p>The original plan proposed a <code>GET /bookings/{id}/export.ics</code> endpoint, a matching MCP tool and an "Add to Calendar" button. All three are implemented on this branch, and the implementation goes beyond the plan: RFC 5545 escaping and line folding, <code>DTSTAMP</code>/<code>CALSCALE</code>, extra error codes and more tests. This document records what was built, where it deviated, and the remaining hardening work.</p>
+
+<h2>What was built</h2>
+<table>
+<tr><th>Area</th><th>Location</th><th>State</th></tr>
+<tr><td>Service</td><td><code>services/booking.py</code> <code>get_booking_ics()</code></td><td>Done; outer-joins Booking → Flight; helpers for time parsing, escaping, folding, VCALENDAR generation</td></tr>
+<tr><td>REST endpoint</td><td><code>server.py</code> <code>export_booking_ics_endpoint</code></td><td>Done; 404 for booking/flight missing, 500 for bad time data; <code>text/calendar</code> attachment</td></tr>
+<tr><td>MCP tool</td><td><code>server.py</code> <code>FastApiMCP(app)</code></td><td>Done implicitly via auto-generation</td></tr>
+<tr><td>Frontend</td><td><code>BookingCard.tsx</code></td><td>Done; <code>&lt;a download&gt;</code> handler; gated on <code>status === 'booked'</code></td></tr>
+<tr><td>Tests</td><td><code>test_services.py</code>, <code>test_rest.py</code></td><td>5 service + 4 REST (plan asked 2 + 2)</td></tr>
+</table>
+
+<h2>Deviations from the original plan</h2>
+<table>
+<tr><th>Plan said</th><th>Implemented</th><th>Assessment</th></tr>
+<tr><td>Explicit <code>@mcp.tool()</code> above <code>mcp_app</code></td><td><code>FastApiMCP(app)</code> auto-exposes all routes</td><td>Accepted; ordering pitfall obsolete</td></tr>
+<tr><td>SUMMARY "Galaxium Flight: A → B"</td><td>"Flight from A to B"</td><td>Minor; accepted</td></tr>
+<tr><td>Only <code>BOOKING_NOT_FOUND</code></td><td>Also <code>FLIGHT_NOT_FOUND</code>, <code>INVALID_TIME_FORMAT</code></td><td>Improvement</td></tr>
+<tr><td>Minimal VCALENDAR</td><td>Adds DTSTAMP, CALSCALE, escaping, 75-octet folding</td><td>Improvement</td></tr>
+<tr><td>2 + 2 tests</td><td>5 + 4 tests incl. cancelled, missing flight, bad time</td><td>Improvement</td></tr>
+<tr><td>Check Vite proxy / base URL</td><td>Proxy rewrites <code>/api</code>; <code>API_BASE_URL</code> defaults to <code>/api</code></td><td>Verified OK</td></tr>
+</table>
+
+<h2>Key decisions</h2>
+<table>
+<tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr>
+<tr><td>Treat plan as</td><td>Retrospective + hardening plan</td><td>Feature already exists</td></tr>
+<tr><td>MCP tool</td><td>Accept auto-generated tool</td><td>Satisfies the acceptance criterion; no duplication</td></tr>
+<tr><td>MCP verification</td><td>Add test/check that the tool is listed</td><td>Implicit generation can silently regress</td></tr>
+<tr><td>AGENTS.md</td><td>Flag as stale and correct</td><td>Describes FastMCP and explicit tools; code uses FastApiMCP</td></tr>
+<tr><td>Cancelled bookings</td><td>Export with <code>STATUS:CANCELLED</code>, no <code>METHOD</code></td><td>Avoid a live-looking event for a cancelled booking</td></tr>
+<tr><td>Button visibility</td><td>Keep gated on <code>booked</code></td><td>UI shouldn't offer export for cancelled; API stays permissive</td></tr>
+</table>
+
+<h2>Open items</h2>
+<ul>
+<li><code>_generate_vcalendar</code> emits no <code>STATUS</code>; cancelled exports look live.</li>
+<li><code>test_get_booking_ics_cancelled_booking</code> only asserts <code>BEGIN:VCALENDAR</code>.</li>
+<li>No test confirms the ICS route is listed as an MCP tool or how a <code>text/calendar</code> response is surfaced.</li>
+<li>AGENTS.md footguns on MCP ordering, <code>SessionLocal()</code> in MCP tools and "add matching MCP tool" are out of date.</li>
+<li>Undecided: emit <code>STATUS:CONFIRMED</code> for booked bookings (optional).</li>
+</ul>
+
+<h2>Next steps</h2>
+<ol>
+<li>Emit <code>STATUS:CANCELLED</code> for cancelled bookings in <code>_generate_vcalendar</code> (no <code>METHOD</code>).</li>
+<li>Strengthen service and REST cancelled tests; assert booked exports lack it.</li>
+<li>Add a test that the MCP server lists a tool for the ICS endpoint.</li>
+<li>Update AGENTS.md to describe <code>FastApiMCP(app)</code> auto-generation.</li>
+<li>Run the <code>verify</code> skill (ruff, pytest, frontend lint/tsc).</li>
+</ol>
+
+<footer>Made with IBM Bob</footer>
+</main>
+</body>
+</html>

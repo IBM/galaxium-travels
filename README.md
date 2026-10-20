@@ -286,6 +286,15 @@ Removes demo branches, database files, and build artifacts. See `DEMO_RUNBOOK.md
 - **New backend endpoints:** add a REST handler **and** a matching MCP tool, following the pattern in `server.py`.
 - **Never edit:** `booking_system_inventory_hold_service/target/` (Maven output), `booking_system_frontend/dist/` (Vite output), `scripts/terraform/.terraform/` (provider binaries).
 
+
+## Bob custom modes
+
+Two custom Bob modes are defined in [.bob/custom_modes.yaml](.bob/custom_modes.yaml). Switch to them inside Bob using the mode selector.
+
+| Mode | Slug | Permissions | When to use |
+|---|---|---|---|
+| **Code Reviewer** | code-reviewer | ead, execute, skill | Read-only code quality audit — style, naming, structure, and obvious bugs. Bob will not edit or create any files. |
+| **Deploy Engineer** | deploy-engineer | ead, execute, skill, edit (scoped to scripts/.*) | Working on deployment scripts, Docker config, or infrastructure code. Edits are restricted to the scripts/ directory. |
 ## Further reading
 
 - **[AGENTS.md](AGENTS.md)** â€” critical non-obvious patterns, footguns, and testing constraints for AI agents
