@@ -1,105 +1,64 @@
 ---
 name: grill-and-share
-description: "Use when the user wants to stress-test and document a plan for demo purposes - asks up to 3 focused questions, then produces a Markdown summary, optionally posts it to the originating GitHub issue as a comment, and finally generates the HTML planning document. Trigger phrases: grill and share, stress-test this plan, review and publish plan, grill my plan."
+description: "Use when the user wants to stress-test and document a plan for demo purposes - asks at most 3 focused questions, then writes a Markdown plan, posts it to the originating GitHub issue if one exists (otherwise saves it to .bob/planning-artifacts/), and always creates a human-readable HTML version. Trigger phrases: grill and share, stress-test this plan, review and publish plan, grill my plan."
 ---
 
 # Grill and Share
 
-You are running a focused planning review. The goal is: ask a few sharp questions, reach a clear shared understanding, then produce polished HTML and Markdown planning documents and (if a GitHub issue is available) post them as a comment.
+Run a focused planning review: ask a few sharp questions, reach a clear shared understanding, write the plan down, publish it, and always produce an HTML version.
 
-**Step order matters for live demos:** produce the Markdown first (fast), confirm and post to GitHub, then generate the HTML artifact last (slow).
-
-
+**Step order matters for live demos:** Markdown first (fast), publish, then HTML last (slow).
 
 ## Step 1 — Gather the Input
 
-Check what the user has provided. Accept any of the following as input:
+Accept any of: a pasted plan, a GitHub issue number or URL, or a reference to an existing plan document.
 
-- A pasted plan or description in the conversation
-- A GitHub issue number or URL (e.g. `#42` or `https://github.com/owner/repo/issues/42`)
-- A reference to an existing plan document
-
-If a GitHub issue number/URL was given, fetch its body now:
+If a GitHub issue number/URL was given, remember it as the target issue and fetch its body:
 
 ```bash
 gh issue view <number> --json title,body --jq '"# " + .title + "\n\n" + .body'
 ```
 
-Use the fetched content as the plan to review. If no input is provided at all, ask the user for one before continuing.
+Use the fetched content as the plan. If no input is provided at all, ask the user for one before continuing.
 
 ## Step 2 — Ask Up to 3 Questions
 
-Identify the **three most important gaps or risks** in the plan. Ask them **one at a time** using `ask_followup_question`, waiting for each answer before continuing. Do not exceed three questions total.
+Identify the three most important gaps or risks. Ask them one at a time with `ask_followup_question`, waiting for each answer. Never exceed three.
 
-For each question:
-- Provide your recommended answer as the first suggestion
-- Keep it tight and decision-forcing — no open-ended "tell me more" questions
-- If the answer can be determined by exploring the codebase, do that instead of asking
+- Give your recommended answer as the first suggestion.
+- Keep questions decision-forcing, not open-ended.
+- If the codebase can answer it, explore the codebase instead (this does not count toward the three).
 
-After all questions are answered, summarise the updated understanding in one short paragraph (2–4 sentences). Show it to the user and confirm they are happy before proceeding.
-
+Then summarise the updated understanding in 2–4 sentences and confirm the user is happy before proceeding.
 
 ## Step 3 — Markdown Document
 
-Use `write_file` to save a Markdown version on the project root:
+Use `write_file` to save `.bob/planning-artifacts/<plan-slug>.md` (kebab-case slug of the plan title; the folder is created automatically). Never overwrite a user-provided plan file; write a new file instead.
 
-Where `<plan-slug>` is a kebab-case slug of the plan title (e.g. `checkout-flow-plan.md`).
+Structure: title, summary, key decisions table (Decision | Choice | Rationale), open items (bullets), next steps (ordered list).
 
-If the user provided a markdown file, don't overwrite it. Create a new version with a scripted title in the same location.
+## Step 4 — Publish
 
-Structure the Markdown with: title, summary, key decisions table (Decision | Choice | Rationale), open items (bullet list), next steps (ordered list).
+1. **Find the issue.** Use the issue from Step 1 if there is one. Otherwise run `gh issue list --search "<plan title>" --limit 5`. If `gh` is missing, unauthenticated, or no issue clearly matches, treat it as "no issue".
+2. **Issue available:** tell the user which issue (number and title) you are about to post to, and confirm with `ask_followup_question` (options: post to #N / post to a different issue / don't post). On confirmation:
 
+   ```bash
+   gh issue comment <number> --body-file .bob/planning-artifacts/<plan-slug>.md
+   gh issue view <number> --json url --jq '.url'
+   ```
 
-## Step 4 — Confirm Before Posting
+   Show the issue link.
+3. **No issue, or user declined:** the Markdown already lives in `.bob/planning-artifacts/`. Tell the user the path.
 
-Tell the user the Markdown file path. Ask:
+## Step 5 — HTML Planning Document (always)
 
-> "Are you happy with this? I can post it as a comment to the GitHub issue if you have one."
+Use `write_file` to create `.bob/planning-artifacts/<plan-slug>.html`, even if nothing was posted. Self-contained: inline CSS, no external assets, single column ≤760px, system font, no animations.
 
-Use `ask_followup_question` with options:
-- "Yes — post to GitHub issue #N" (fill in the issue number if already known)
-- "Yes — post to GitHub, let me give you the issue number"
-- "No — keep the documents but don't post"
-
-If the user declines, skip to Step 5.
-
-
-## Step 5 — Post to GitHub Issue
-
-If the user confirmed in Step 4, post the Markdown content as a comment on the issue:
-
-```bash
-gh issue comment <number> --body-file <path-to-markdown-file>
-```
-
-If the issue number is not yet known, prompt for it first. After posting, confirm with the issue URL:
-
-```bash
-gh issue view <number> --json url --jq '.url'
-```
-
-Tell the user the comment was posted and show the issue link.
-
-
-## Step 6 — HTML Planning Document
-
-Use `create_html_artifact` to produce a self-contained HTML one-pager. Structure it as:
-
-- **Title** — the plan name
-- **Status badge** — e.g. "Draft · Reviewed"
-- **Summary** — the 2–4 sentence synthesis from Step 2
-- **Key Decisions** — a table with columns: Decision | Choice | Rationale (one row per question answered)
-- **Open Items** — any risks or follow-ups surfaced during the review (bullet list)
-- **Next Steps** — ordered list of concrete actions
-
-Follow the standard artifact design rules (single column, ≤760 px, system font, no animations, no external assets).
-
-
+Sections: title, status badge ("Draft · Reviewed"), summary, key decisions table, open items, next steps. Tell the user the file path.
 
 ## Constraints
 
-- Maximum **3 questions** in Step 2 — no more, even if there are more gaps.
+- Maximum 3 questions.
 - Never post to GitHub without explicit user confirmation in Step 4.
-- If `gh` is not installed or not authenticated, skip Step 5 and tell the user why.
-- Always produce the HTML artifact in Step 6, even if the user declined to post to GitHub.
-- Keep the tone direct and decision-focused — this is a demo tool, not a deep-dive research session.
+- Always produce the HTML in Step 5.
+- Keep the tone direct and decision-focused.
