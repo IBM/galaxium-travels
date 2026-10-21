@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # Seat class type definition
 SeatClass = Literal['economy', 'business', 'galaxium']
@@ -107,7 +107,8 @@ class RouteOut(BaseModel):
 class ItineraryCreate(BaseModel):
     user_id: int
     name: str
-    flight_ids: list[int]
+    # A route has at most 3 legs (MAX_LEGS in services/itinerary_search.py).
+    flight_ids: list[int] = Field(min_length=1, max_length=3)
 
 
 class ItineraryLegOut(BaseModel):

@@ -1,7 +1,8 @@
 """Multi-leg itineraries: search, hold every leg, confirm into bookings."""
 
 import logging
-from datetime import date, datetime, timezone
+import os
+from datetime import date, datetime, timedelta, timezone
 from itertools import pairwise
 
 from sqlalchemy.orm import Session
@@ -13,6 +14,23 @@ from services.hold_client import HoldClient, HoldError
 from services.itinerary_search import MAX_LEGS, Route, find_routes, is_valid_connection
 
 logger = logging.getLogger(__name__)
+
+MAX_ACTIVE_HELD_ITINERARIES = 3
+# Matches the Java hold service's HOLD_DURATION_MINUTES; older holds have expired there.
+HOLD_DURATION = timedelta(minutes=int(os.getenv("HOLD_DURATION_MINUTES", "15")))
+
+
+def _active_held_count(db: Session, user_id: int) -> int:
+    cutoff = (datetime.now(tz=timezone.utc) - HOLD_DURATION).isoformat()
+    return (
+        db.query(Itinerary)
+        .filter(
+            Itinerary.user_id == user_id,
+            Itinerary.status == ItineraryStatus.HELD.value,
+            Itinerary.created_at >= cutoff,
+        )
+        .count()
+    )
 
 
 def _route_out(route: Route) -> RouteOut:
@@ -147,6 +165,12 @@ def create_itinerary(
     user = _validate_user(db, user_id, name)
     if isinstance(user, ErrorResponse):
         return user
+    if _active_held_count(db, user.user_id) >= MAX_ACTIVE_HELD_ITINERARIES:
+        return ErrorResponse(
+            error="Too many held itineraries",
+            error_code="TOO_MANY_HOLDS",
+            details=f"Confirm or wait for your {MAX_ACTIVE_HELD_ITINERARIES} held itineraries to expire first.",
+        )
     legs = _validate_legs(db, flight_ids)
     if isinstance(legs, ErrorResponse):
         return legs
