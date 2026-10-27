@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
+import type { Booking, Flight, StoredHold, ErrorResponse, CancellationPreview } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
-import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getUserBookings, getFlights, cancelBooking, getCancellationPreview, getHold, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
 import { AlertCircle } from 'lucide-react';
@@ -21,6 +21,8 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [cancellationPreview, setCancellationPreview] = useState<CancellationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -89,9 +91,21 @@ export const MyBookings = () => {
     loadData();
   }, [user, navigate, loadData]);
 
-  const handleCancelClick = (bookingId: number) => {
+  const handleCancelClick = async (bookingId: number) => {
     setBookingToCancel(bookingId);
+    setCancellationPreview(null);
+    setPreviewLoading(true);
     setShowCancelModal(true);
+    try {
+      const result = await getCancellationPreview(bookingId);
+      if (!isErrorResponse(result)) {
+        setCancellationPreview(result);
+      }
+    } catch {
+      // Preview unavailable — modal stays open, user can still cancel
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const handleConfirmCancel = async () => {
@@ -99,6 +113,7 @@ export const MyBookings = () => {
 
     setCancellingId(bookingToCancel);
     setShowCancelModal(false);
+    setCancellationPreview(null);
 
     try {
       const result = await cancelBooking(bookingToCancel);
@@ -252,7 +267,7 @@ export const MyBookings = () => {
       {/* Cancel Confirmation Modal */}
       <Modal
         isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
+        onClose={() => { setShowCancelModal(false); setCancellationPreview(null); }}
         title="Cancel Booking"
         size="sm"
       >
@@ -260,10 +275,45 @@ export const MyBookings = () => {
           <p className="text-star-white/70">
             Are you sure you want to cancel this booking? This action cannot be undone.
           </p>
+
+          {previewLoading && (
+            <p className="text-star-white/50 text-sm text-center">Loading refund preview…</p>
+          )}
+
+          {cancellationPreview && !previewLoading && (
+            <div className="rounded-lg border border-star-white/10 overflow-hidden text-sm">
+              <div className="bg-star-white/5 px-3 py-2 text-star-white/60 italic">
+                {cancellationPreview.policy_wording}
+              </div>
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-t border-star-white/10">
+                    <td className="px-3 py-2 text-star-white/70">Amount paid</td>
+                    <td className="px-3 py-2 text-right text-star-white">${cancellationPreview.price_paid.toLocaleString()}</td>
+                  </tr>
+                  <tr className="border-t border-star-white/10">
+                    <td className="px-3 py-2 text-star-white/70">Cancellation fee</td>
+                    <td className="px-3 py-2 text-right text-red-400">−${cancellationPreview.cancellation_fee.toLocaleString()}</td>
+                  </tr>
+                  {cancellationPreview.travel_credit > 0 && (
+                    <tr className="border-t border-star-white/10">
+                      <td className="px-3 py-2 text-star-white/70">Travel credit</td>
+                      <td className="px-3 py-2 text-right text-solar-orange">${cancellationPreview.travel_credit.toLocaleString()}</td>
+                    </tr>
+                  )}
+                  <tr className="border-t border-star-white/10 font-semibold">
+                    <td className="px-3 py-2 text-star-white">Refund to card</td>
+                    <td className="px-3 py-2 text-right text-nebula-green">${cancellationPreview.refund_amount.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <Button
               variant="secondary"
-              onClick={() => setShowCancelModal(false)}
+              onClick={() => { setShowCancelModal(false); setCancellationPreview(null); }}
               className="flex-1"
             >
               Keep Booking
