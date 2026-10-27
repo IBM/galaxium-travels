@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreview, ErrorResponse, SeatClass
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +127,59 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_cancellation_preview(db: Session, booking_id: int) -> CancellationPreview | ErrorResponse:
+    """Return a refund/fee breakdown for a booking without cancelling it."""
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+
+    if booking.status == "cancelled":
+        return ErrorResponse(
+            error="Booking already cancelled",
+            error_code="ALREADY_CANCELLED",
+            details=f"Booking {booking_id} is already cancelled.",
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+
+    # Determine days until departure
+    days_until = None
+    if flight:
+        for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d %H:%M"):
+            try:
+                dep = datetime.strptime(flight.departure_time, fmt).replace(tzinfo=timezone.utc)
+                days_until = (dep - datetime.now(tz=timezone.utc)).days
+                break
+            except ValueError:
+                continue
+
+    price = booking.price_paid
+
+    if days_until is None or days_until < 0:
+        # Past / departed
+        refund_pct, fee_pct, credit_pct = 0, 100, 0
+        wording = "Non-refundable — flight has departed"
+    elif days_until <= 7:
+        refund_pct, fee_pct, credit_pct = 0, 25, 75
+        wording = "No refund; fare kept as travel credit less fee"
+    elif days_until <= 30:
+        refund_pct, fee_pct, credit_pct = 50, 20, 30
+        wording = "Partial refund; remainder as travel credit"
+    else:
+        refund_pct, fee_pct, credit_pct = 90, 10, 0
+        wording = "Full refund less cancellation fee"
+
+    return CancellationPreview(
+        booking_id=booking_id,
+        price_paid=price,
+        refund_amount=int(price * refund_pct / 100),
+        cancellation_fee=int(price * fee_pct / 100),
+        travel_credit=int(price * credit_pct / 100),
+        policy_wording=wording,
+    )

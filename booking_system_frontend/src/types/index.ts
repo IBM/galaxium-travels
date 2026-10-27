@@ -53,6 +53,15 @@ export interface ErrorResponse {
   details?: string;
 }
 
+export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  refund_amount: number;
+  cancellation_fee: number;
+  travel_credit: number;
+  policy_wording: string;
+}
+
 // Extended types for UI
 export interface BookingWithFlight extends Booking {
   flight?: Flight;
