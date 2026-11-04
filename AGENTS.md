@@ -12,17 +12,16 @@ For any exploration task, use subagents. E.g. when you are asked to create an on
  
 ## Footguns
 
-- **MCP server MUST be created before FastAPI app** — [`server.py` line 22](booking_system_backend/server.py:22) instantiates `FastMCP` before `FastAPI`. Swapping the order breaks lifespan composition.
-- **MCP tools bypass FastAPI DI** — they call `SessionLocal()` and `db.close()` directly; they do NOT use `Depends(get_db)`.
+- **MCP tools are auto-generated from the REST routes** — [`server.py`](booking_system_backend/server.py) calls `FastApiMCP(app)` + `mount_http()` at the very end of the module, after every route is registered. Routes defined below that call are not exposed as MCP tools. There are no hand-written MCP tools; they go through the same handlers and `Depends(get_db)` as REST.
 - **Service functions return Union types, not exceptions** — [`booking.py`](booking_system_backend/services/booking.py) returns `BookingOut | ErrorResponse`. Callers check `isinstance(result, ErrorResponse)`.
 - **`book_flight()` validates both `user_id` AND `name`** — intentional non-standard security pattern; name mismatch rejects the booking.
-- **SQLite is the production database** — `DATABASE_URL` is intentionally unset on ECS; [`db.py`](booking_system_backend/db.py) defaults to `./booking.db`. Data is ephemeral per container task.
+- **SQLite is the production database, but not the compose database** — `DATABASE_URL` is intentionally unset on ECS, so [`db.py`](booking_system_backend/db.py) defaults to `./booking.db` and data is ephemeral per container task. The root `docker-compose.yml` instead runs a `postgres` service and points the backend at it; `e2e/docker-compose.e2e.yml` uses SQLite (no Postgres).
 - **`SEED_DEMO_DATA=true` re-seeds on every start** — set to `false` if you need data to survive a restart locally.
-- **Tests must patch `SessionLocal` in two places** — [`conftest.py` lines 49–50](booking_system_backend/tests/conftest.py:49) patches both `db.SessionLocal` and `server.SessionLocal`. Patching only one leaves the MCP tools hitting the real DB.
+- **Tests isolate the DB via `dependency_overrides`, not by patching `SessionLocal`** — [`conftest.py`](booking_system_backend/tests/conftest.py) overrides `get_db` with an in-memory StaticPool session and stubs out `server.seed`. Any code that calls `SessionLocal()` directly instead of using `Depends(get_db)` will bypass this and hit `./booking.db`.
 - **Java hold service requires Java 17 or 21** — Lombok does not support Java 22+. The start script auto-detects sdkman candidates; set `JAVA_HOME` manually if needed.
 - **`docker-compose.yml` Java service is behind a profile** — it uses `profiles: [hold-service]`. Run `docker compose --profile hold-service up` to include it, or use `e2e/docker-compose.e2e.yml` which enables it unconditionally.
-- **Python proxy swallows Java 404s** — proxy endpoints in `server.py` catch `httpx.HTTPError` and return `{"error": "..."}` with HTTP 200. Callers must check the response body, not just the status code (see [`test_holds.py` line 82](e2e/test_holds.py:82)).
-- **`holds.db` and `booking.db` are committed artefacts** — do not delete; they seed local dev. They are regenerated on startup via `spring.jpa.hibernate.ddl-auto=update` and `SEED_DEMO_DATA=true`.
+- **Python proxy swallows Java 404s** — proxy endpoints in `server.py` catch `httpx.HTTPError` and return `{"error": "..."}` with HTTP 200. Callers must check the response body, not just the status code (see `test_hold_on_unknown_quote_returns_error` in [`test_holds.py`](e2e/test_holds.py:81)).
+- **`holds.db` and `booking.db` are local, gitignored artefacts** — they are not tracked; they are (re)created on startup via `spring.jpa.hibernate.ddl-auto=update` and `SEED_DEMO_DATA=true`. Deleting them just resets local data.
 - **Automated checks run after every edit, via lifecycle hooks** — see [`.bob/settings.json`](.bob/settings.json). Editing a backend `.py` file runs mypy (new errors only) + pytest; a frontend `.ts`/`.tsx` file runs `tsc -b` + eslint; a hold-service `.java` file runs `mvn test-compile`. If a check fails, your **next tool call is blocked once** with the report — fix it (or carry on if you are mid-change), then retry. Committing is blocked while the backend or Java unit suite is red. **If a tool call is reported as blocked, read `.bob/hooks/state/.last-block` for the reason** — the hook writes the full explanation there.
 
 ## Prerequisites
@@ -88,7 +87,7 @@ If `docker ps` errors with "cannot connect to the Docker daemon", `colima start`
 
 ```
 booking_system_backend/          Python/FastAPI service — REST API, MCP server, SQLite
-  server.py                        Entry point; MCP tools + REST endpoints + Java proxy
+  server.py                        Entry point; REST endpoints + Java proxy; MCP auto-mounted via fastapi-mcp
   services/{booking,flight,user}.py  Business logic (no I/O except DB)
   models.py                        SQLAlchemy ORM models
   schemas.py                       Pydantic request/response schemas
@@ -115,7 +114,7 @@ booking_system_frontend/         React 19 + TypeScript + Vite + Tailwind
     hooks/           Custom React hooks
 
 e2e/                             pytest end-to-end suite (Docker Compose)
-  docker-compose.e2e.yml         Runs backend + Java service + postgres on non-clashing ports
+  docker-compose.e2e.yml         Runs backend + Java service (SQLite, no Postgres) on non-clashing ports; short hold duration via env
   test_smoke.py                  Basic backend health and booking flow
   test_holds.py                  Full quote→hold→confirm→booking cross-service flow
 
@@ -134,7 +133,7 @@ scripts/
 - **Frontend API errors:** always inspect the `success` field or look for `error` in the body — HTTP status is not reliable for error detection (see [`api.ts`](booking_system_frontend/src/services/api.ts:112)).
 - **Custom Tailwind tokens:** space-themed palette defined in [`tailwind.config.js`](booking_system_frontend/tailwind.config.js) — do not assume standard Tailwind color names.
 - **Java:** Lombok `@Data`/`@Builder`/`@RequiredArgsConstructor` used throughout; no manual getters/setters. Service methods are `@Transactional`.
-- **New backend endpoints:** add REST handler + matching MCP tool if agent-accessible, following the pattern in `server.py`.
+- **New backend endpoints:** add a REST handler in `server.py` above the `FastApiMCP(app)` call; fastapi-mcp exposes it as an MCP tool automatically.
 
 ## Workflow
 
@@ -145,5 +144,5 @@ scripts/
 - `booking_system_inventory_hold_service/target/` is Maven output — never edit files inside it.
 - `booking_system_frontend/dist/` is Vite build output — never edit; regenerate with `npm run build`.
 - The `scripts/terraform/.terraform/` directory contains provider binaries — do not touch.
-- When adding a new Python service function, add both a REST endpoint and an MCP tool (see the pattern in `server.py`).
-- When modifying the Java service's hold duration or expiry interval, update `application.properties` and the e2e `test_holds.py` timeout accordingly.
+- When adding a new Python service function, expose it via a REST endpoint in `server.py` (above `FastApiMCP(app)`); the MCP tool is generated from it.
+- When modifying the Java service's hold duration or expiry interval, update `application.properties`. The e2e suite overrides both via `HOLD_DURATION_MINUTES` / `HOLD_EXPIRATION_CHECK_INTERVAL_SECONDS` in `e2e/docker-compose.e2e.yml`; if you change those, check the `test_hold_auto_expiry` timeout in `test_holds.py`.
