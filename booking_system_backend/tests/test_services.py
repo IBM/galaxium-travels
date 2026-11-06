@@ -229,6 +229,36 @@ class TestFlightService:
         assert len(result) == 1
         assert result[0].destination == "Mars"
 
+    def test_get_flight_success(self, db_session):
+        """Test retrieving an existing flight by ID."""
+        flight_obj = Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        )
+        db_session.add(flight_obj)
+        db_session.commit()
+
+        result = flight.get_flight(db_session, flight_obj.flight_id)
+        assert not isinstance(result, ErrorResponse)
+        assert result.flight_id == flight_obj.flight_id
+        assert result.origin == "Earth"
+        assert result.destination == "Mars"
+        assert result.economy_price == 1000
+        assert result.business_price == 2500
+        assert result.galaxium_price == 5000
+
+    def test_get_flight_not_found(self, db_session):
+        """Test retrieving a non-existent flight by ID."""
+        result = flight.get_flight(db_session, 999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "FLIGHT_NOT_FOUND"
+
 
 class TestUserService:
     """Test user service functions."""

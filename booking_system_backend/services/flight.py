@@ -229,4 +229,14 @@ def list_flights(
     # Return only FlightOut objects
     return [flight_out for flight_out, _, _ in result]
 
-# Made with Bob
+
+def get_flight(db: Session, flight_id: int) -> FlightOut | ErrorResponse:
+    """Retrieve a single flight by its ID."""
+    f = db.query(Flight).filter(Flight.flight_id == flight_id).first()
+    if not f:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight with ID {flight_id} not found"
+        )
+    return _flight_to_out(f)
