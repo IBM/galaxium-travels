@@ -149,6 +149,19 @@ def get_flights(
     )
 
 
+@app.get("/flights/{flight_id}", response_model=FlightOut, tags=["Flights"])
+def get_flight_endpoint(flight_id: int, db: Session = Depends(get_db)):
+    """Get a single flight by its flight_id.
+
+    Returns the flight in the same shape as one item of GET /flights.
+    Raises 404 if the flight is not found.
+    """
+    result = flight.get_flight(db, flight_id)
+    if isinstance(result, ErrorResponse):
+        raise HTTPException(status_code=404, detail=result.model_dump())
+    return result
+
+
 @app.post("/book", response_model=BookingOut, tags=["Bookings"])
 def book_flight_endpoint(request: BookingRequest, db: Session = Depends(get_db)):
     """Book a seat on a specific flight for a user in the specified seat class.
