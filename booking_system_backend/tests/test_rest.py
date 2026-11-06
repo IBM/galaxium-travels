@@ -218,6 +218,49 @@ class TestFlightsEndpoint:
         assert data[0]["destination"] == "Mars"
 
 
+class TestFlightByIdEndpoint:
+    """Test /flights/{flight_id} endpoint."""
+
+    def test_get_flight_by_id_success(self, client, db_session):
+        """Test retrieving a single flight by ID."""
+        flight_obj = Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time="2099-01-01 09:00",
+            arrival_time="2099-01-01 17:00",
+            base_price=1000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1
+        )
+        db_session.add(flight_obj)
+        db_session.commit()
+
+        list_response = client.get("/flights")
+        assert list_response.status_code == 200
+        list_item = list_response.json()[0]
+
+        response = client.get(f"/flights/{flight_obj.flight_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data == list_item
+        assert data["flight_id"] == flight_obj.flight_id
+        assert data["origin"] == "Earth"
+        assert data["destination"] == "Mars"
+        assert data["base_price"] == 1000
+        assert data["economy_price"] == 1000
+        assert data["business_price"] == 2500
+        assert data["galaxium_price"] == 5000
+
+    def test_get_flight_by_id_not_found(self, client, db_session):
+        """Test retrieving a non-existent flight returns 404 with ErrorResponse."""
+        response = client.get("/flights/999")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["success"] is False
+        assert data["error_code"] == "FLIGHT_NOT_FOUND"
+
+
 class TestRegisterEndpoint:
     """Test /register endpoint."""
 
