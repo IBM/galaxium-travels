@@ -7,7 +7,11 @@ name: 🤖 Galaxium Bob Agent
 # saying it needs a human. Bob's behaviour lives in .bob/, not here:
 #   - custom modes  issue-triager / issue-implementer   (.bob/custom_modes.yaml)
 #   - skills        issue-triage / issue-implement      (.bob/skills/)
-#   - hooks         check-edit, gate-commit, deny-agent-commands (.bob/settings.json)
+#   - hooks         the same .bob/settings.json as local sessions. The quality
+#                   hooks (check-edit, gate-commit) are switched off here with
+#                   BOB_QUALITY_HOOKS=off: Bob runs the verify skill itself and
+#                   every change still goes through a reviewed PR. The CI-only
+#                   safety hook deny-agent-commands stays on.
 # This file only decides when to run and gets the runner ready.
 # Design and rationale: AUTONOMOUS_ISSUE_AGENT_PLAN.md
 #
@@ -162,6 +166,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
           BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+          BOB_QUALITY_HOOKS: 'off'
           STATUS_COMMENT_ID: ${{ steps.status.outputs.id }}
         run: |
           bob run --mode issue-triager --accept-license --trust --disable-mcp --max-turns 40 \
@@ -239,18 +244,19 @@ jobs:
           git switch -c "$branch"
           echo "BRANCH=$branch" >> "$GITHUB_ENV"
 
-      # --- What the lifecycle hooks need (see AUTONOMOUS_ISSUE_AGENT_PLAN.md) ---
+      # --- What the verify skill needs: backend pytest and frontend lint/build ---
+      # (Java, Maven and mypy are not needed: the quality hooks are off here.)
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14' # the mypy baseline was generated with 3.14
+          python-version: '3.14'
 
       - name: Backend virtualenv at booking_system_backend/.venv
         working-directory: booking_system_backend
         run: |
           python -m venv .venv
-          .venv/bin/pip install -q -r requirements.txt mypy==2.3.0
+          .venv/bin/pip install -q -r requirements.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -263,38 +269,9 @@ jobs:
         working-directory: booking_system_frontend
         run: npm ci
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-
-      # gate-commit.sh runs `mvn -o test` (offline) on every commit; with an
-      # empty ~/.m2 that would refuse every commit Bob makes.
-      - name: Warm the Maven cache
-        working-directory: booking_system_inventory_hold_service
-        run: mvn -B -q test
-
-      - name: Make sure main is green before Bob starts
+      - name: Make sure the backend tests pass before Bob starts
         working-directory: booking_system_backend
         run: .venv/bin/pytest -q
-
-      - name: Line the mypy baseline up with this runner
-        run: |
-          # Same pipeline as .bob/hooks/check-edit.sh. If this runner's mypy sees
-          # errors the committed baseline doesn't list, every Python edit would
-          # be blocked for errors Bob didn't cause.
-          new=$(cd booking_system_backend && { .venv/bin/mypy . --ignore-missing-imports --show-error-codes 2>&1 || true; } \
-            | sed 's/:[0-9][0-9]*:/:/' | { grep ': error:' || true; } | sort -u | comm -23 - ../.bob/hooks/mypy-baseline.txt)
-          if [ -n "$new" ]; then
-            echo "::notice::The mypy baseline differs on this runner. Regenerating it for this run only (never committed)."
-            printf '%s\n' "$new"
-            sh .bob/hooks/gen-mypy-baseline.sh
-            git update-index --skip-worktree .bob/hooks/mypy-baseline.txt
-          else
-            echo "mypy baseline matches"
-          fi
 
       - name: Install Bob Shell
         run: curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash -s -- --pm npm
@@ -303,6 +280,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
           BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+          BOB_QUALITY_HOOKS: 'off'
         run: |
           bob run --mode issue-implementer --accept-license --trust --disable-mcp --max-turns 100 \
             "Implement issue #${ISSUE_NUMBER} in ${GITHUB_REPOSITORY} using the issue-implement skill. You are on branch ${BRANCH}. Run URL: ${RUN_URL}." \

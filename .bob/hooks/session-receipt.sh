@@ -103,6 +103,8 @@ jq -rs --argjson now "$hook_epoch" --arg sid "$sid" \
         ["UserPromptSubmit", "record-prompt.sh",   [$all[] | select(.kind=="prompt") | "recorded prompt"]],
         ["PreToolUse",       "relay-pending.sh",   [$all[] | (fires("relay-pending"),
                                                      (select(.kind=="blocked" and .by=="check-edit") | "BLOCKED next call"))]],
+        ["PreToolUse",       "deny-agent-commands.sh", [$all[] | (fires("deny-agent-commands"),
+                                                     (select(.kind=="blocked" and .by=="deny-agent-commands") | "DENIED command"))]],
         ["PreToolUse",       "gate-commit.sh",     [$all[] | (fires("gate-commit"),
                                                      (select(.kind=="blocked" and .by=="gate-commit") | "BLOCKED commit"))]],
         ["PostToolUse",      "record-tool.sh",     [$tools[] | "recorded tool call"]],
@@ -111,7 +113,7 @@ jq -rs --argjson now "$hook_epoch" --arg sid "$sid" \
         ["Stop",             "session-receipt.sh", [$all[] | fires("session-receipt")]]
       ][]
       | select(.[2] | length > 0)
-      | "   \(.[0] | rpad(17))\(.[1] | rpad(20))\(.[2] | length | tostring | rpad(4))\(.[2] | tally)"
+      | "   \(.[0] | rpad(17))\(.[1] | rpad(24))\(.[2] | length | tostring | rpad(4))\(.[2] | tally)"
     )
 ' "$journal" > "$out"
 

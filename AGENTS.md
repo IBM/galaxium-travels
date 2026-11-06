@@ -153,6 +153,7 @@ Its behaviour lives in the `issue-triager` / `issue-implementer` modes and the `
 - **Kill switch:** the repository variable `BOB_AGENT_ENABLED` must be `true`. Set it to `false` to stop the agent without a code change.
 - **The agent never reacts to itself.** The `gate` job skips any event sent by `galaxium-bob-agent` or a `[bot]`. Its own label and comment events show up as skipped runs, and that is expected.
 - **State is in `agent:*` labels:** `triage`, `needs-info`, `needs-human`, `ready`, `in-progress`, `pr-open`. Each triage run clears the old ones first.
+- **The quality hooks are off in the agent's runs.** The workflow sets `BOB_QUALITY_HOOKS=off`, so `check-edit.sh` and `gate-commit.sh` skip themselves. The agent runs the `verify` skill instead, and the runner doesn't need Java, Maven or mypy. Local sessions never set the variable, so the hooks still apply there.
 - **`deny-agent-commands.sh` only acts when `GITHUB_ACTIONS=true`.** It blocks merging, force-pushing, pushing to `main` and reading secrets. Local sessions are unaffected.
 - **Headless runs:** the plan-mode, subagent and ALL-CAPS-planning-doc instructions at the top of this file are for interactive sessions. The issue agent's modes don't have those tools.
 
