@@ -40,60 +40,20 @@ jobs:
         env:
           BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
         run: |
+          # How to review (two-pass process, PR categories, what the review contains)
+          # lives in the pr-reviewer custom mode in .bob/custom_modes.yaml. That mode
+          # only has the `read` tool group, so Bob cannot edit files or run commands.
+          # This prompt only states the task and the output markers the next step parses.
           cat > prompt.txt << 'PROMPT'
-          You are reviewing a pull request on the IBM/galaxium-travels repo, non-interactively, in CI.
-          Speed is critical — follow the two-pass process below exactly and do not deviate.
+          Review the pull request whose diff is in @pr.diff.
 
-          ## Repo context
-          Galaxium Travels is a *demo application* purpose-built to showcase IBM Bob's capabilities.
-          PRs typically fall into one of three categories:
-
-          1. **Feature / infrastructure change** — genuine additions or fixes (endpoints, UI, CI, Docker…).
-          2. **Demo scenario** — code that sets up a Bob demonstration; deliberate complexity is expected and is NOT a finding.
-          3. **Learning assignment** — trivial change from a Bob learning exercise. Flag it at the top and keep the review very short.
-
-          ---
-
-          ## PASS 1 — fast scan (always do this; keep it short)
-
-          Read AGENTS.md (for footguns and conventions) and @pr.diff simultaneously — these two reads are your entire scan.
-          From the diff alone, decide:
-          - Which category does this PR belong to?
-          - Are there any *obvious* red flags? (e.g. a removed safety check, a clearly wrong type, a secret committed, an import that cannot exist)
-
-          If the PR is a **demo scenario** or **learning assignment**, OR if Pass 1 reveals no red flags → go straight to "Write review" below. Do NOT read any more files.
-
-          If Pass 1 surfaces one or more concrete red flags → proceed to Pass 2 for those specific issues only.
-
-          ## PASS 2 — targeted deep-dive (only when Pass 1 found a red flag)
-
-          For each red flag, read only the specific file and line range needed to confirm or dismiss it.
-          Grep only for the exact changed symbol involved. Stop as soon as you can confirm or dismiss.
-          If the flag turns out to be a known pattern described in AGENTS.md, discard it — do not write it up.
-          If after reading you are still uncertain, discard it — uncertainty is not a finding.
-
-          ## Write review
-
-          Output the review to stdout. Do NOT call write_to_file or any file-writing tool.
-          Bracket the review with these two marker lines exactly, each on its own line:
+          Output the review to stdout, bracketed by these two marker lines exactly, each on its own line:
 
           <<<BOB_REVIEW_BEGIN>>>
           ...your review markdown...
           <<<BOB_REVIEW_END>>>
-
-          The review must contain:
-          - A 1-2 sentence summary at the top, followed by **PR category: Feature / Demo scenario / Learning assignment** (one sentence explaining why).
-          - For **demo scenario** PRs: one short paragraph describing what the scenario demonstrates, then blockers only (no nits).
-          - For **learning assignment** PRs: a brief encouraging note; no findings unless there is an outright blocker.
-          - For **feature / infrastructure** PRs: a "Findings" section grouped by severity: blocker / nit / question.
-            Each finding must include the exact file path and line number, a concrete description, and a short actionable suggestion.
-          - If no real issues were found, say so plainly. Do not invent findings.
-          - Do not restate what the diff already shows. Do not write hedged findings.
-          - Do not approve or block the PR — you are leaving a comment, not a verdict.
-
-          Do not modify any source files. Do not run the test suite. Do not write any files.
           PROMPT
-          bob run --accept-license --trust "$(cat prompt.txt)" 2>&1 | tee bob_output.txt
+          bob run --mode pr-reviewer --accept-license --trust "$(cat prompt.txt)" 2>&1 | tee bob_output.txt
 
       - name: Extract review from Bob's stdout
         run: |
