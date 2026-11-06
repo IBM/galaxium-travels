@@ -139,6 +139,23 @@ scripts/
 
 - Branch naming: no enforced convention observed; recent branches use `restore/`, `feature/` prefixes.
 - **Verification:** use the `verify` skill — it knows which checks are cheap vs. expensive and when e2e is needed.
+
+## Issue agent (GitHub Actions)
+
+[`bob-issue-agent.yml`](.github/workflows/bob-issue-agent.yml) runs the **Galaxium Bob Agent** headless:
+- It triages new issues from collaborators, or any issue a maintainer labels `agent:triage`.
+- It asks clarifying questions in the comments.
+- It implements simple issues as a PR from the machine user `galaxium-bob-agent`.
+
+Its behaviour lives in the `issue-triager` / `issue-implementer` modes and the `issue-triage` / `issue-implement` skills. Design: [`AUTONOMOUS_ISSUE_AGENT_PLAN.md`](AUTONOMOUS_ISSUE_AGENT_PLAN.md).
+
+- **Issue and comment events run `main`'s copy of the workflow.** Changes to `bob-issue-agent.yml` take effect only after merge. Use `workflow_dispatch` (with an issue number) to rerun one issue.
+- **Kill switch:** the repository variable `BOB_AGENT_ENABLED` must be `true`. Set it to `false` to stop the agent without a code change.
+- **The agent never reacts to itself.** The `gate` job skips any event sent by `galaxium-bob-agent` or a `[bot]`. Its own label and comment events show up as skipped runs, and that is expected.
+- **State is in `agent:*` labels:** `triage`, `needs-info`, `needs-human`, `ready`, `in-progress`, `pr-open`. Each triage run clears the old ones first.
+- **`deny-agent-commands.sh` only acts when `GITHUB_ACTIONS=true`.** It blocks merging, force-pushing, pushing to `main` and reading secrets. Local sessions are unaffected.
+- **Headless runs:** the plan-mode, subagent and ALL-CAPS-planning-doc instructions at the top of this file are for interactive sessions. The issue agent's modes don't have those tools.
+
 ## Notes for the agent
 
 - `booking_system_inventory_hold_service/target/` is Maven output — never edit files inside it.

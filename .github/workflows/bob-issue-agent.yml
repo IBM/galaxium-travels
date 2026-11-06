@@ -1,0 +1,348 @@
+name: 🤖 Galaxium Bob Agent
+
+# Autonomous issue → pull request agent for the Galaxium demo.
+#
+# Bob Shell triages new issues, asks clarifying questions in the comments, and
+# implements the simple ones as a pull request. Anything complex gets a comment
+# saying it needs a human. Bob's behaviour lives in .bob/, not here:
+#   - custom modes  issue-triager / issue-implementer   (.bob/custom_modes.yaml)
+#   - skills        issue-triage / issue-implement      (.bob/skills/)
+#   - hooks         check-edit, gate-commit, deny-agent-commands (.bob/settings.json)
+# This file only decides when to run and gets the runner ready.
+# Design and rationale: AUTONOMOUS_ISSUE_AGENT_PLAN.md
+#
+# Identity: every GitHub write uses AGENT_GH_TOKEN, the machine user
+# galaxium-bob-agent (classic token, `repo` scope, no `workflow` scope). The
+# Main ruleset requires a reviewed pull request and the agent cannot bypass it.
+#
+# Kill switch: the repository variable BOB_AGENT_ENABLED must be 'true'.
+#
+# Issue and comment events always run the copy of this file on main, so
+# changes to it only take effect after they are merged.
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to triage (and implement if it turns out simple)
+        required: true
+        type: number
+
+# The default GITHUB_TOKEN gets nothing unless a job asks for it.
+permissions: {}
+
+defaults:
+  run:
+    shell: bash # -eo pipefail, so `bob run … | tee` fails when Bob fails
+
+jobs:
+  gate:
+    name: Should Bob look at this?
+    # Never react to the agent's own comments and labels, or to other bots.
+    if: >-
+      vars.BOB_AGENT_ENABLED == 'true' &&
+      github.actor != 'galaxium-bob-agent' &&
+      !endsWith(github.actor, '[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      issues: read
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      issue: ${{ steps.decide.outputs.issue }}
+    steps:
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_ISSUE: ${{ inputs.issue }}
+        run: |
+          ev="$GITHUB_EVENT_PATH"
+          trusted='["OWNER","MEMBER","COLLABORATOR"]'
+          is_trusted() { jq -en --arg a "$1" "$trusted | index(\$a)" >/dev/null; }
+          skip() { echo "Skipping: $1"; echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; }
+
+          case "$GITHUB_EVENT_NAME" in
+            workflow_dispatch)
+              issue="$DISPATCH_ISSUE"
+              ;;
+            issues)
+              issue=$(jq -r .issue.number "$ev")
+              case "$(jq -r .action "$ev")" in
+                opened)
+                  assoc=$(jq -r .issue.author_association "$ev")
+                  is_trusted "$assoc" || skip "the author is $assoc, not a collaborator. A maintainer can add the agent:triage label to opt this issue in."
+                  ;;
+                labeled)
+                  [ "$(jq -r .label.name "$ev")" = "agent:triage" ] || skip "the new label is not agent:triage"
+                  ;;
+              esac
+              ;;
+            issue_comment)
+              issue=$(jq -r .issue.number "$ev")
+              jq -e '.issue.pull_request' "$ev" >/dev/null && skip "the comment is on a pull request"
+              jq -e '[.issue.labels[].name] | index("agent:needs-info")' "$ev" >/dev/null \
+                || skip "the issue is not waiting for an answer (no agent:needs-info label)"
+              commenter=$(jq -r .comment.user.login "$ev")
+              author=$(jq -r .issue.user.login "$ev")
+              assoc=$(jq -r .comment.author_association "$ev")
+              if [ "$commenter" != "$author" ] && ! is_trusted "$assoc"; then
+                skip "$commenter is neither the issue author nor a collaborator"
+              fi
+              ;;
+            *)
+              skip "unexpected event $GITHUB_EVENT_NAME"
+              ;;
+          esac
+
+          info=$(gh issue view "$issue" -R "$GITHUB_REPOSITORY" --json state,url)
+          [ "$(jq -r .state <<<"$info")" = "OPEN" ] || skip "issue #$issue is not open"
+          # gh issue view also resolves pull requests; only act on real issues.
+          case "$(jq -r .url <<<"$info")" in */pull/*) skip "#$issue is a pull request" ;; esac
+
+          echo "Bob will triage issue #$issue"
+          { echo "run=true"; echo "issue=$issue"; } >> "$GITHUB_OUTPUT"
+
+  triage:
+    name: Bob triages the issue
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # One agent run per issue at a time. On jobs, not the workflow, so the
+    # skipped runs from the agent's own label events never queue here.
+    concurrency:
+      group: bob-agent-issue-${{ needs.gate.outputs.issue }}
+      cancel-in-progress: false
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    env:
+      GH_REPO: ${{ github.repository }} # every gh call (Bob's too) targets this repo
+      ISSUE_NUMBER: ${{ needs.gate.outputs.issue }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Bob reads git history to spot already-fixed issues
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Bob Shell
+        run: curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash -s -- --pm npm
+
+      - name: Acknowledge the issue
+        id: status
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+        run: |
+          api="repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER"
+          gh api -X POST "$api/reactions" -f content=eyes >/dev/null
+
+          # Clear agent:* labels from earlier rounds, so the verdict read back
+          # after Bob runs can only come from this run.
+          stale=$(gh issue view "$ISSUE_NUMBER" --json labels --jq '[.labels[].name | select(startswith("agent:"))] | join(",")')
+          if [ -n "$stale" ]; then gh issue edit "$ISSUE_NUMBER" --remove-label "$stale"; fi
+
+          body=$(printf '<!-- galaxium-bob-agent:status -->\n👀 Looking at this… ([run](%s))' "$RUN_URL")
+          id=$(gh api -X POST "$api/comments" -f body="$body" --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Bob triages
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+          STATUS_COMMENT_ID: ${{ steps.status.outputs.id }}
+        run: |
+          bob run --mode issue-triager --accept-license --trust --disable-mcp --max-turns 40 \
+            "Triage issue #${ISSUE_NUMBER} in ${GITHUB_REPOSITORY} using the issue-triage skill. Status comment ID: ${STATUS_COMMENT_ID}. Run URL: ${RUN_URL}." \
+            2>&1 | tee bob-triage.log
+
+      - name: Read the verdict
+        id: verdict
+        if: always() && steps.status.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          STATUS_COMMENT_ID: ${{ steps.status.outputs.id }}
+        run: |
+          labels=$(gh issue view "$ISSUE_NUMBER" --json labels --jq '[.labels[].name] | join(",")')
+          case ",$labels," in
+            *,agent:ready,*)       verdict=ready ;;
+            *,agent:needs-info,*)  verdict=needs-info ;;
+            *,agent:needs-human,*) verdict=needs-human ;;
+            *)                     verdict=none ;;
+          esac
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          echo "### Issue #$ISSUE_NUMBER — triage verdict: \`$verdict\`" >> "$GITHUB_STEP_SUMMARY"
+
+          # Safety net: Bob stopped without a verdict. Say so on the issue.
+          if [ "$verdict" = none ]; then
+            body=$(printf '<!-- galaxium-bob-agent:status -->\n### ⚠️ Triage did not finish\n\nI stopped before reaching a verdict, so this one needs a human. The [run log](%s) shows what happened.' "$RUN_URL")
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$STATUS_COMMENT_ID" -f body="$body" >/dev/null
+            gh issue edit "$ISSUE_NUMBER" --add-label agent:needs-human
+          fi
+
+      - name: Upload Bob transcript and hook receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bob-triage-issue-${{ needs.gate.outputs.issue }}
+          path: |
+            bob-triage.log
+            .bob/hooks/state/receipts/
+          if-no-files-found: ignore
+          include-hidden-files: true
+
+  implement:
+    name: Bob implements and opens a PR
+    needs: [gate, triage]
+    if: needs.triage.outputs.verdict == 'ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    concurrency:
+      group: bob-agent-issue-${{ needs.gate.outputs.issue }}
+      cancel-in-progress: false
+    env:
+      GH_REPO: ${{ github.repository }}
+      ISSUE_NUMBER: ${{ needs.gate.outputs.issue }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      # Checked out with the agent's token, so Bob's `git push` goes out as
+      # galaxium-bob-agent and its pull request triggers Bob Review.
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AGENT_GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git as the agent and create the branch
+        run: |
+          git config user.name "Galaxium Bob Agent"
+          git config user.email "353342427+galaxium-bob-agent@users.noreply.github.com"
+          branch="agent/issue-$ISSUE_NUMBER"
+          # A branch from an earlier attempt stays as it is; this run gets its own.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            branch="$branch-run-$GITHUB_RUN_ID"
+          fi
+          git switch -c "$branch"
+          echo "BRANCH=$branch" >> "$GITHUB_ENV"
+
+      # --- What the lifecycle hooks need (see AUTONOMOUS_ISSUE_AGENT_PLAN.md) ---
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14' # the mypy baseline was generated with 3.14
+
+      - name: Backend virtualenv at booking_system_backend/.venv
+        working-directory: booking_system_backend
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -q -r requirements.txt mypy==2.3.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: booking_system_frontend/package-lock.json
+
+      - name: Frontend dependencies
+        working-directory: booking_system_frontend
+        run: npm ci
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # gate-commit.sh runs `mvn -o test` (offline) on every commit; with an
+      # empty ~/.m2 that would refuse every commit Bob makes.
+      - name: Warm the Maven cache
+        working-directory: booking_system_inventory_hold_service
+        run: mvn -B -q test
+
+      - name: Make sure main is green before Bob starts
+        working-directory: booking_system_backend
+        run: .venv/bin/pytest -q
+
+      - name: Line the mypy baseline up with this runner
+        run: |
+          # Same pipeline as .bob/hooks/check-edit.sh. If this runner's mypy sees
+          # errors the committed baseline doesn't list, every Python edit would
+          # be blocked for errors Bob didn't cause.
+          new=$(cd booking_system_backend && { .venv/bin/mypy . --ignore-missing-imports --show-error-codes 2>&1 || true; } \
+            | sed 's/:[0-9][0-9]*:/:/' | { grep ': error:' || true; } | sort -u | comm -23 - ../.bob/hooks/mypy-baseline.txt)
+          if [ -n "$new" ]; then
+            echo "::notice::The mypy baseline differs on this runner. Regenerating it for this run only (never committed)."
+            printf '%s\n' "$new"
+            sh .bob/hooks/gen-mypy-baseline.sh
+            git update-index --skip-worktree .bob/hooks/mypy-baseline.txt
+          else
+            echo "mypy baseline matches"
+          fi
+
+      - name: Install Bob Shell
+        run: curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash -s -- --pm npm
+
+      - name: Bob implements
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+        run: |
+          bob run --mode issue-implementer --accept-license --trust --disable-mcp --max-turns 100 \
+            "Implement issue #${ISSUE_NUMBER} in ${GITHUB_REPOSITORY} using the issue-implement skill. You are on branch ${BRANCH}. Run URL: ${RUN_URL}." \
+            2>&1 | tee bob-implement.log
+
+      - name: Make sure the issue says what happened
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          labels=$(gh issue view "$ISSUE_NUMBER" --json labels --jq '[.labels[].name] | join(",")')
+          drop=$(tr ',' '\n' <<<"$labels" | grep -E '^agent:(ready|in-progress)$' | paste -sd, - || true)
+
+          if [ -n "$pr" ]; then
+            echo "### Issue #$ISSUE_NUMBER → pull request #$pr" >> "$GITHUB_STEP_SUMMARY"
+            # Bob opened the PR; make sure the labels say so too.
+            case ",$labels," in *,agent:pr-open,*) ;; *)
+              if [ -n "$drop" ]; then gh issue edit "$ISSUE_NUMBER" --remove-label "$drop"; fi
+              gh issue edit "$ISSUE_NUMBER" --add-label agent:pr-open ;;
+            esac
+            exit 0
+          fi
+
+          echo "### Issue #$ISSUE_NUMBER — no pull request" >> "$GITHUB_STEP_SUMMARY"
+          # Bob already reported the failure itself (skill step 6).
+          case ",$labels," in *,agent:needs-human,*) exit 0 ;; esac
+
+          body=$(printf '### ⚠️ I could not finish this one\n\nThe run stopped before a pull request was opened (job status: %s). The [run log](%s) shows where. Handing this to a human.\n\n<sub>Galaxium Bob Agent · running on Bob Shell in GitHub Actions</sub>' "${{ job.status }}" "$RUN_URL")
+          gh issue comment "$ISSUE_NUMBER" --body "$body"
+          if [ -n "$drop" ]; then gh issue edit "$ISSUE_NUMBER" --remove-label "$drop"; fi
+          gh issue edit "$ISSUE_NUMBER" --add-label agent:needs-human
+
+      - name: Upload Bob transcript and hook receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bob-implement-issue-${{ needs.gate.outputs.issue }}
+          path: |
+            bob-implement.log
+            .bob/hooks/state/receipts/
+          if-no-files-found: ignore
+          include-hidden-files: true
