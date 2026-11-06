@@ -4,6 +4,7 @@
     "SessionStart      preflight.sh        print env warnings (Java, Docker, buildx) into context",
     "UserPromptSubmit  record-prompt.sh    journal the prompt (silent, receipt only)",
     "PreToolUse  *     relay-pending.sh    block next call ONCE if check-edit found failures",
+    "PreToolUse  exec  deny-agent-commands.sh  CI only (GITHUB_ACTIONS=true): block merging, force-push, push to main, secret access for the issue agent",
     "PreToolUse  exec  gate-commit.sh      block `git commit` while pytest or mvn test is red",
     "PostToolUse *     record-tool.sh      journal every tool call (feeds the receipt)",
     "PostToolUse edit  check-edit.sh       per-service checks: mypy+pytest / tsc+eslint / mvn test-compile",
@@ -38,6 +39,16 @@
           {
             "type": "command",
             "command": "sh .bob/hooks/relay-pending.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "^execute_command$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .bob/hooks/deny-agent-commands.sh",
             "timeout": 10
           }
         ]
