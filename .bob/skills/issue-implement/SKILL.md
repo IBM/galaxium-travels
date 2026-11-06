@@ -17,7 +17,7 @@ Your task message gives you these values. They are also in environment variables
 
 The runner is already set up:
 - **Git:** the branch is checked out from `main`, `git` commits as **Galaxium Bob Agent**, and `git push` and `gh` are signed in as **galaxium-bob-agent**.
-- **Checks:** the backend virtualenv (`booking_system_backend/.venv`), the frontend `node_modules` and the Maven cache are installed. The lifecycle hooks and the verify skill work.
+- **Checks:** the backend virtualenv (`booking_system_backend/.venv`) and the frontend `node_modules` are installed, so the verify skill works. The quality hooks (`check-edit`, `gate-commit`) are **switched off** for this run (`BOB_QUALITY_HOOKS=off`). Nothing checks your edits or commits automatically, so **Step 3 is your check**.
 
 ## Step 1: Read the plan
 
@@ -32,7 +32,7 @@ The newest `galaxium-bob-agent` comment headed **✅ Ready to build** holds the 
 
 - Read the code around the change first, and match its style. AGENTS.md lists the conventions: snake_case in Python, the `success` field for frontend API errors, and the custom Tailwind tokens. A new backend endpoint goes in `server.py` above the `FastApiMCP(app)` call, which generates its MCP tool automatically.
 - For backend changes, add or update tests in `booking_system_backend/tests/`.
-- Lifecycle hooks run checks after every edit: mypy and pytest for Python, tsc and eslint for TypeScript. If a tool call is reported as **blocked**, read `.bob/hooks/state/.last-block`, fix what it says, then retry.
+- If a tool call is reported as **blocked** (the safety hook still runs), read `.bob/hooks/state/.last-block`. Don't work around it.
 - Never edit `dist/`, `node_modules/`, `.venv/` or lockfiles. Don't create planning or notes files.
 
 ## Step 3: Verify
@@ -60,7 +60,7 @@ git push -u origin HEAD
 ```
 
 - `<type>` is `feat`, `fix`, `docs` or `refactor`. `<scope>` is `frontend` or `backend`.
-- Use a plain `git commit`. The `gate-commit` hook runs the unit suites and **refuses the commit while they are red**. That is expected: fix the tests and commit again.
+- Only commit after Step 3 is green. Use a plain `git commit`.
 - Never use `git -c`, `git -C`, `--no-verify`, a force push, or a push to `main`.
 
 ## Step 5: Open the pull request

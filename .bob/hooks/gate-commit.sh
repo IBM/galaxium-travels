@@ -22,6 +22,11 @@ if ! printf '%s' "$cmd" | grep -Eq '(^|[;&|][[:space:]]*)git[[:space:]]+commit';
   exit 0
 fi
 
+if quality_hooks_off; then
+  hook_fired "$sid" gate-commit "skipped: BOB_QUALITY_HOOKS=off"
+  exit 0
+fi
+
 root="$hook_root"
 state="$hook_state"
 report=""

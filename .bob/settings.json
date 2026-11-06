@@ -5,9 +5,9 @@
     "UserPromptSubmit  record-prompt.sh    journal the prompt (silent, receipt only)",
     "PreToolUse  *     relay-pending.sh    block next call ONCE if check-edit found failures",
     "PreToolUse  exec  deny-agent-commands.sh  CI only (GITHUB_ACTIONS=true): block merging, force-push, push to main, secret access for the issue agent",
-    "PreToolUse  exec  gate-commit.sh      block `git commit` while pytest or mvn test is red",
+    "PreToolUse  exec  gate-commit.sh      block `git commit` while pytest or mvn test is red (skipped when BOB_QUALITY_HOOKS=off, set only by the headless issue agent)",
     "PostToolUse *     record-tool.sh      journal every tool call (feeds the receipt)",
-    "PostToolUse edit  check-edit.sh       per-service checks: mypy+pytest / tsc+eslint / mvn test-compile",
+    "PostToolUse edit  check-edit.sh       per-service checks: mypy+pytest / tsc+eslint / mvn test-compile (skipped when BOB_QUALITY_HOOKS=off, set only by the headless issue agent)",
     "Stop              session-receipt.sh  write state/receipts/<time>_<session>.txt per turn: timeline + hooks fired"
   ],
   "hooks": {
