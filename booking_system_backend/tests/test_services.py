@@ -204,6 +204,28 @@ class TestFlightService:
         assert len(result) == 1
         assert result[0].destination == "Mars"
 
+    def test_get_flight_found(self, db_session):
+        """Test getting a single flight by id."""
+        f = Flight(
+            origin="Earth", destination="Mars",
+            departure_time="2099-01-01 09:00", arrival_time="2099-01-01 17:00",
+            base_price=1000, economy_seats_available=5, business_seats_available=3, galaxium_seats_available=1
+        )
+        db_session.add(f)
+        db_session.commit()
+
+        result = flight.get_flight(db_session, f.flight_id)
+        assert result.flight_id == f.flight_id
+        assert result.destination == "Mars"
+        assert result.business_price == 2500
+        assert result.galaxium_price == 5000
+
+    def test_get_flight_not_found(self, db_session):
+        """Test getting a flight that does not exist."""
+        result = flight.get_flight(db_session, 9999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "FLIGHT_NOT_FOUND"
+
     def test_list_flights_combined_filters(self, db_session):
         """Test combining multiple filters."""
         db_session.add(Flight(

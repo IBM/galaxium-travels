@@ -32,6 +32,18 @@ ROUTE_CATEGORIES = {
 }
 
 
+def get_flight(db: Session, flight_id: int) -> FlightOut | ErrorResponse:
+    """Get a single flight by flight_id, with computed prices for all seat classes."""
+    f = db.query(Flight).filter(Flight.flight_id == flight_id).first()
+    if not f:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"The specified flight_id {flight_id} does not exist in our system. Please check the flight_id or use list_flights to see available flights."
+        )
+    return _flight_to_out(f)
+
+
 def list_flights(
     db: Session,
     # Basic filters from main branch
