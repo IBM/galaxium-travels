@@ -146,6 +146,12 @@ export const cancelBooking = async (
   return response.data;
 };
 
+/**
+ * Get the download URL for a booking's .ics calendar file
+ */
+export const getBookingICSUrl = (bookingId: number): string =>
+  `${api.defaults.baseURL}/bookings/${bookingId}/export.ics`;
+
 // ==================== Quote & Hold Endpoints (Java Inventory Hold Service) ====================
 
 export interface CreateQuoteRequest {

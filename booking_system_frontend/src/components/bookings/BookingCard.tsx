@@ -3,6 +3,7 @@ import { Card, Button } from '../common';
 import { Plane, Calendar, CheckCircle, XCircle, Clock, Crown, Rocket } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { motion } from 'framer-motion';
+import { getBookingICSUrl } from '../../services/api';
 
 interface BookingCardProps {
   booking: Booking;
@@ -153,17 +154,32 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
           <span>Booked on {formatDate(booking.booking_time)}</span>
         </div>
 
-        {/* Cancel Button */}
+        {/* Action Buttons */}
         {canCancel && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => onCancel(booking.booking_id)}
-            isLoading={isCancelling}
-            className="w-full"
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex flex-col gap-2">
+            <a
+              href={getBookingICSUrl(booking.booking_id)}
+              download={`booking-${booking.booking_id}.ics`}
+              className="w-full"
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+              >
+                Add to Calendar
+              </Button>
+            </a>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onCancel(booking.booking_id)}
+              isLoading={isCancelling}
+              className="w-full"
+            >
+              Cancel Booking
+            </Button>
+          </div>
         )}
       </Card>
     </motion.div>

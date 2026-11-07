@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
 from sqlalchemy.orm import Session
@@ -184,6 +184,23 @@ def cancel_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
         status = 404 if result.error_code == "BOOKING_NOT_FOUND" else 409
         raise HTTPException(status_code=status, detail=result.model_dump())
     return result
+
+
+@app.get("/bookings/{booking_id}/export.ics", tags=["Bookings"])
+def export_booking_ics(booking_id: int, db: Session = Depends(get_db)):
+    """Export a booking as an iCalendar (.ics) file.
+
+    Returns a valid RFC 5545 iCalendar document for the specified booking.
+    Raises 404 if the booking is not found.
+    """
+    result = booking.get_booking_ics(db, booking_id)
+    if isinstance(result, ErrorResponse):
+        raise HTTPException(status_code=404, detail=result.model_dump())
+    return Response(
+        content=result,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="booking-{booking_id}.ics"'},
+    )
 
 
 @app.post("/register", response_model=UserOut, tags=["Users"])
