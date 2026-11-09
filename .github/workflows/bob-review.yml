@@ -52,7 +52,16 @@ jobs:
           .bob
           scripts
           ORDER
-          git diff -O diff-order.txt "$BASE_SHA...$HEAD_SHA" -- . ':(exclude).bob/artifacts' > pr.diff
+          # Prefix every hunk line with its line number in the new file (blank for
+          # removed lines), so Bob cites source line numbers, not pr.diff positions.
+          git diff -O diff-order.txt "$BASE_SHA...$HEAD_SHA" -- . ':(exclude).bob/artifacts' \
+            | awk '
+                /^diff --git / { in_hunk = 0; print; next }
+                /^@@ / { in_hunk = 1; match($0, /\+[0-9]+/); n = substr($0, RSTART + 1, RLENGTH - 1); print; next }
+                in_hunk && /^[ +]/ { printf "%6d %s\n", n, $0; n++; next }
+                in_hunk && /^-/ { printf "%6s %s\n", "", $0; next }
+                { print }
+              ' > pr.diff
           gh pr view "$PR_NUMBER" --json files --jq '.files[]
             | "- \(.path) (+\(.additions) -\(.deletions))"
               + (if (.path | startswith(".bob/artifacts/")) then " (generated output, not in pr.diff)" else "" end)' \
