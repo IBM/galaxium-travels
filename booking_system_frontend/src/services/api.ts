@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   Flight,
   Booking,
+  CancellationPreview,
   User,
   BookingRequest,
   UserRegistration,
@@ -142,6 +143,19 @@ export const cancelBooking = async (
 ): Promise<Booking | ErrorResponse> => {
   const response = await api.post<Booking | ErrorResponse>(
     `/cancel/${bookingId}`
+  );
+  return response.data;
+};
+
+/**
+ * Fetch the estimated refund / fee / credit breakdown before cancelling.
+ * Returns null if the server responds with an error (caller decides how to handle).
+ */
+export const getCancellationPreview = async (
+  bookingId: number
+): Promise<CancellationPreview | ErrorResponse> => {
+  const response = await api.get<CancellationPreview | ErrorResponse>(
+    `/bookings/${bookingId}/cancellation-preview`
   );
   return response.data;
 };

@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
+import type { Booking, CancellationPreview, Flight, StoredHold, ErrorResponse } from '../types';
 import { LoadingSpinner, Modal, Button } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
+import { CancellationBreakdown } from '../components/bookings/CancellationBreakdown';
 import { HoldCard } from '../components/bookings/HoldCard';
-import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
+import { getUserBookings, getFlights, cancelBooking, getCancellationPreview, getHold, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
 import { AlertCircle } from 'lucide-react';
@@ -21,6 +22,9 @@ export const MyBookings = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [preview, setPreview] = useState<CancellationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   const loadHolds = useCallback(async () => {
     if (!user) return;
@@ -91,7 +95,33 @@ export const MyBookings = () => {
 
   const handleCancelClick = (bookingId: number) => {
     setBookingToCancel(bookingId);
+    setPreview(null);
+    setPreviewError(null);
     setShowCancelModal(true);
+    // Fetch preview in the background; if it fails the modal still opens
+    setPreviewLoading(true);
+    getCancellationPreview(bookingId)
+      .then((result) => {
+        if (isErrorResponse(result)) {
+          setPreviewError(result.error);
+        } else {
+          setPreview(result);
+        }
+      })
+      .catch((err: unknown) => {
+        // Axios interceptor rejects with the ErrorResponse body for 4xx responses.
+        if (
+          err &&
+          typeof err === 'object' &&
+          'error' in err &&
+          typeof (err as { error: unknown }).error === 'string'
+        ) {
+          setPreviewError((err as { error: string }).error);
+        } else {
+          setPreviewError('Could not load refund estimate');
+        }
+      })
+      .finally(() => setPreviewLoading(false));
   };
 
   const handleConfirmCancel = async () => {
@@ -116,6 +146,8 @@ export const MyBookings = () => {
     } finally {
       setCancellingId(null);
       setBookingToCancel(null);
+      setPreview(null);
+      setPreviewError(null);
     }
   };
 
@@ -252,18 +284,33 @@ export const MyBookings = () => {
       {/* Cancel Confirmation Modal */}
       <Modal
         isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
+        onClose={() => {
+          setShowCancelModal(false);
+          setPreview(null);
+          setPreviewError(null);
+        }}
         title="Cancel Booking"
-        size="sm"
+        size="md"
       >
         <div className="space-y-4">
           <p className="text-star-white/70">
             Are you sure you want to cancel this booking? This action cannot be undone.
           </p>
-          <div className="flex gap-3">
+
+          <CancellationBreakdown
+            preview={preview}
+            isLoading={previewLoading}
+            error={previewError}
+          />
+
+          <div className="flex gap-3 pt-1">
             <Button
               variant="secondary"
-              onClick={() => setShowCancelModal(false)}
+              onClick={() => {
+                setShowCancelModal(false);
+                setPreview(null);
+                setPreviewError(null);
+              }}
               className="flex-1"
             >
               Keep Booking

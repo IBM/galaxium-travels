@@ -85,3 +85,14 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     details: str | None = None
+
+
+class CancellationPreview(BaseModel):
+    """Estimated refund breakdown for a cancellation. No money moves until a future payment phase."""
+    booking_id: int
+    price_paid: int
+    refund_amount: int      # Amount returned to original payment method
+    fee_amount: int         # Cancellation fee retained
+    credit_amount: int      # Travel credit issued
+    tier_label: str         # Human-readable tier name, e.g. "Full refund"
+    days_until_departure: float  # Fractional days from now to departure (negative = departed)

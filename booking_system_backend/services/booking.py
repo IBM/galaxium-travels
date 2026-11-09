@@ -3,7 +3,55 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from models import Booking, Flight, User
-from schemas import BookingOut, ErrorResponse, SeatClass
+from schemas import BookingOut, CancellationPreview, ErrorResponse, SeatClass
+
+# ---------------------------------------------------------------------------
+# Cancellation policy
+# ---------------------------------------------------------------------------
+# Tiers (days until departure → refund%, fee%, credit%):
+#   ≥ 7 days  → 100% refund / 0% fee / 0% credit   "Full refund"
+#   3–6 days  → 50% refund / 25% fee / 25% credit  "Partial refund"
+#   1–2 days  → 0% refund / 50% fee / 50% credit   "No refund"
+#   < 1 day   → 0% refund / 100% fee / 0% credit   "Non-refundable"
+# ---------------------------------------------------------------------------
+
+_CANCELLATION_POLICY = [
+    # (min_days, label, refund_pct, fee_pct, credit_pct)
+    (7.0,  "Full refund",    100,  0,   0),
+    (3.0,  "Partial refund",  50, 25,  25),
+    (1.0,  "No refund",        0, 50,  50),
+    (0.0,  "Non-refundable",   0, 100,  0),
+]
+
+
+def _parse_departure_time(departure_time: str) -> datetime:
+    """Parse a departure_time string to a UTC-aware datetime.
+
+    Accepts three formats used in this codebase:
+    - '2099-01-01T09:00:00Z'       (ISO 8601 with Z suffix — seed data)
+    - '2099-01-01T09:00:00'        (ISO 8601 without timezone)
+    - '2099-01-01 09:00'           (space-separated — tests)
+    Naive datetimes are treated as UTC.
+    """
+    for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            dt = datetime.strptime(departure_time, fmt)  # noqa: DTZ007
+            return dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognised departure_time format: {departure_time!r}")
+
+
+def _apply_policy(price_paid: int, days: float) -> tuple[int, int, int, str]:
+    """Return (refund, fee, credit, label) for the given days-until-departure."""
+    for min_days, label, refund_pct, fee_pct, credit_pct in _CANCELLATION_POLICY:
+        if days >= min_days:
+            refund = round(price_paid * refund_pct / 100)
+            fee    = round(price_paid * fee_pct    / 100)
+            credit = price_paid - refund - fee      # absorb rounding remainder
+            return refund, fee, credit, label
+    # Should never reach here (last tier covers days >= 0.0), but be safe
+    return 0, price_paid, 0, "Non-refundable"
 
 # Price multipliers for each seat class
 SEAT_CLASS_MULTIPLIERS = {
@@ -127,3 +175,70 @@ def get_bookings(db: Session, user_id: int) -> list[BookingOut]:
     """Retrieve all bookings for a specific user."""
     bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
     return [BookingOut.model_validate(b) for b in bookings]
+
+
+def get_cancellation_preview(
+    db: Session,
+    booking_id: int,
+    now: datetime | None = None,
+) -> CancellationPreview | ErrorResponse:
+    """Return an estimated refund / fee / travel-credit breakdown for cancelling a booking.
+
+    Cancellation policy tiers (days until departure at call time):
+    - >= 7 days  -> 100% refund, 0% fee, 0% credit      (Full refund)
+    - 3-6 days   -> 50% refund, 25% fee, 25% credit     (Partial refund)
+    - 1-2 days   -> 0% refund, 50% fee, 50% credit      (No refund)
+    - < 1 day    -> 0% refund, 100% fee, 0% credit      (Non-refundable)
+
+    Returns ErrorResponse with:
+    - BOOKING_NOT_FOUND   -- booking_id does not exist
+    - ALREADY_CANCELLED   -- booking is already cancelled
+    - INVALID_DATE        -- flight departure_time cannot be parsed
+    """
+    booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
+    if not booking:
+        return ErrorResponse(
+            error="Booking not found",
+            error_code="BOOKING_NOT_FOUND",
+            details=f"Booking with ID {booking_id} not found.",
+        )
+
+    if booking.status == "cancelled":
+        return ErrorResponse(
+            error="Booking already cancelled",
+            error_code="ALREADY_CANCELLED",
+            details=f"Booking {booking_id} is already cancelled.",
+        )
+
+    flight = db.query(Flight).filter(Flight.flight_id == booking.flight_id).first()
+    if flight is None:
+        return ErrorResponse(
+            error="Flight not found",
+            error_code="FLIGHT_NOT_FOUND",
+            details=f"Flight {booking.flight_id} associated with booking {booking_id} was not found.",
+        )
+
+    try:
+        departure_dt = _parse_departure_time(str(flight.departure_time))
+    except ValueError:
+        return ErrorResponse(
+            error="Invalid departure date",
+            error_code="INVALID_DATE",
+            details=f"Cannot parse departure_time '{flight.departure_time}' for flight {booking.flight_id}.",
+        )
+
+    reference_time = now or datetime.now(tz=timezone.utc)
+    days_until = (departure_dt - reference_time).total_seconds() / 86400.0
+
+    price_paid = int(booking.price_paid)
+    refund, fee, credit, label = _apply_policy(price_paid, days_until)
+
+    return CancellationPreview(
+        booking_id=booking_id,
+        price_paid=price_paid,
+        refund_amount=refund,
+        fee_amount=fee,
+        credit_amount=credit,
+        tier_label=label,
+        days_until_departure=round(days_until, 4),
+    )
