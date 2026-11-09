@@ -31,10 +31,32 @@ jobs:
       - name: Install Bob Shell
         run: curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash -s -- --pm npm
 
-      - name: Fetch PR diff
+      - name: Fetch PR diff and changed-file list
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr diff ${{ github.event.pull_request.number }} > pr.diff
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Bob's read_file truncates long files, and a truncated read can look like a
+          # complete one (PR #146: Bob reviewed the docs at the top of an 87 KB diff
+          # and never reached the code). So code files go first in pr.diff, generated
+          # output under .bob/artifacts/ is left out, and the prompt states every
+          # changed file and the diff's length so Bob can tell when it stopped early.
+          cat > diff-order.txt << 'ORDER'
+          booking_system_backend
+          booking_system_inventory_hold_service
+          booking_system_frontend
+          e2e
+          .github
+          .bob
+          scripts
+          ORDER
+          git diff -O diff-order.txt "$BASE_SHA...$HEAD_SHA" -- . ':(exclude).bob/artifacts' > pr.diff
+          gh pr view "$PR_NUMBER" --json files --jq '.files[]
+            | "- \(.path) (+\(.additions) -\(.deletions))"
+              + (if (.path | startswith(".bob/artifacts/")) then " (generated output, not in pr.diff)" else "" end)' \
+            > changed_files.txt
 
       - name: Run Bob Shell review
         env:
@@ -43,9 +65,14 @@ jobs:
           # How to review (two-pass process, PR categories, what the review contains)
           # lives in the pr-reviewer custom mode in .bob/custom_modes.yaml. That mode
           # only has the `read` tool group, so Bob cannot edit files or run commands.
-          # This prompt only states the task and the output markers the next step parses.
-          cat > prompt.txt << 'PROMPT'
-          Review the pull request whose diff is in @pr.diff.
+          # This prompt only states the task, the scope of the diff and the output
+          # markers the next step parses.
+          {
+            echo "Review the pull request whose diff is in @pr.diff."
+            echo ""
+            echo "pr.diff is $(wc -l < pr.diff | tr -d ' ') lines long, with code files first. This PR changes these files:"
+            cat changed_files.txt
+            cat << 'PROMPT'
 
           Output the review to stdout, bracketed by these two marker lines exactly, each on its own line:
 
@@ -53,6 +80,7 @@ jobs:
           ...your review markdown...
           <<<BOB_REVIEW_END>>>
           PROMPT
+          } > prompt.txt
           bob run --mode pr-reviewer --accept-license --trust "$(cat prompt.txt)" 2>&1 | tee bob_output.txt
 
       - name: Extract review from Bob's stdout

@@ -23,6 +23,9 @@ customModes:
 
       ## PASS 1 — fast scan (always do this; keep it short)
       Read AGENTS.md (for footguns and conventions) and the PR diff simultaneously — these two reads are your entire scan.
+      Read the whole diff before you decide anything. The prompt says how many lines pr.diff has and lists every changed file.
+      If a read is truncated or its output is saved to another file, keep reading that output in ranges until you reach the last line.
+      Those follow-up reads are part of reading the diff; they do not count as reading more files.
       From the diff alone, decide:
       - Which category does this PR belong to?
       - Are there any *obvious* red flags? (e.g. a removed safety check, a clearly wrong type, a secret committed, an import that cannot exist)
@@ -37,6 +40,7 @@ customModes:
       If after reading you are still uncertain, discard it — uncertainty is not a finding.
 
       ## What the review contains
+      - The summary and category must account for every changed code file in the prompt's file list. Never call a PR "documentation only" or "no code" while that list contains code files.
       - A 1-2 sentence summary at the top, followed by **PR category: Feature / Demo scenario / Learning assignment** (one sentence explaining why).
       - For **demo scenario** PRs: one short paragraph describing what the scenario demonstrates, then blockers only (no nits).
       - For **learning assignment** PRs: a brief encouraging note; no findings unless there is an outright blocker.
