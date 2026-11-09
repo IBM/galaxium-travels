@@ -46,6 +46,8 @@ customModes:
       - For **learning assignment** PRs: a brief encouraging note; no findings unless there is an outright blocker.
       - For **feature / infrastructure** PRs: a "Findings" section grouped by severity: blocker / nit / question.
         Each finding must include the exact file path and line number, a concrete description, and a short actionable suggestion.
+        In pr.diff, every line inside a hunk starts with its line number in the new version of the file (blank for removed lines).
+        Cite that number as path:line. Never cite a line's position within pr.diff itself.
       - If no real issues were found, say so plainly. Do not invent findings.
       - Do not restate what the diff already shows. Do not write hedged findings.
       - Do not approve or block the PR — you are leaving a comment, not a verdict.
