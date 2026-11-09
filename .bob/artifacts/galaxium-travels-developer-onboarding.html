@@ -1,0 +1,745 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Galaxium Travels — Developer Onboarding</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 64px;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .hero {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 28px 32px 24px;
+    margin-bottom: 32px;
+  }
+  .hero h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2328;
+    margin-bottom: 6px;
+  }
+  .hero .subtitle {
+    color: #57606a;
+    font-size: 13px;
+  }
+  .audience-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    background: #e8f0fe;
+    color: #3b82d4;
+    border: 1px solid #c7d9f8;
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag.yellow { background: #fef9e7; color: #a16207; border-color: #fde68a; }
+  .tag.red    { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+  /* TOC */
+  .toc {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+  }
+  .toc h2 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #57606a;
+    margin-bottom: 10px;
+  }
+  .toc ol {
+    padding-left: 18px;
+    column-count: 2;
+    column-gap: 24px;
+  }
+  .toc li { margin-bottom: 4px; }
+  .toc a { color: #3b82d4; text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Sections */
+  section {
+    margin-bottom: 36px;
+  }
+  h2.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2328;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2.section-title .num {
+    background: #3b82d4;
+    color: #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2328;
+    margin: 16px 0 8px;
+  }
+  p { margin-bottom: 10px; color: #1f2328; }
+
+  /* Code */
+  code {
+    font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+    font-size: 12px;
+    background: #f0f2f5;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  pre {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 10px 0 14px;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #1f2328;
+  }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 10px 0 14px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #1f2328;
+    white-space: nowrap;
+  }
+  td {
+    border: 1px solid #e5e7eb;
+    padding: 7px 10px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f7f8fa; }
+
+  /* Callouts */
+  .callout {
+    border-left: 4px solid #3b82d4;
+    background: #f0f6ff;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .callout.warn {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .callout.danger {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+  .callout strong { display: block; margin-bottom: 2px; }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 14px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .arch-box {
+    border: 1px solid #c8d4e8;
+    border-radius: 6px;
+    padding: 12px 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 480px;
+  }
+  .arch-box.blue  { background: #e8f0fe; border-color: #3b82d4; }
+  .arch-box.green { background: #e6f4ea; border-color: #34a853; }
+  .arch-box.purple { background: #f3eeff; border-color: #7c5cd8; }
+  .arch-box .service-name { font-weight: 700; font-size: 13px; }
+  .arch-box .service-meta { font-size: 11px; color: #57606a; margin-top: 2px; }
+  .arch-arrow {
+    font-size: 11px;
+    color: #57606a;
+    padding: 4px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .arch-arrow .arrow-label { font-style: italic; }
+
+  /* Flow */
+  .flow {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 10px 0;
+  }
+  .flow-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .flow-step:last-child { margin-bottom: 0; }
+  .flow-num {
+    background: #3b82d4;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Footguns */
+  .footgun-grid {
+    display: grid;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .footgun {
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #fef2f2;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+  }
+  .footgun-num {
+    font-weight: 700;
+    color: #ef4444;
+    min-width: 20px;
+  }
+  .footgun-text strong { display: block; color: #991b1b; margin-bottom: 2px; }
+  .footgun-text span { color: #57606a; }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-held     { background: #fef9e7; color: #a16207; border: 1px solid #fde68a; }
+  .badge-confirmed{ background: #e6f4ea; color: #166534; border: 1px solid #bbf7d0; }
+  .badge-expired  { background: #f7f8fa; color: #57606a; border: 1px solid #e5e7eb; }
+  .badge-failed   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+  /* Steps list */
+  .steps ol { padding-left: 20px; }
+  .steps li { margin-bottom: 8px; font-size: 13px; }
+
+  /* Data model */
+  .db-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 10px 0;
+  }
+  .db-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .db-box .db-header {
+    background: #3b82d4;
+    color: white;
+    font-weight: 600;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .db-box .db-header .db-svc { font-weight: 400; opacity: 0.8; font-size: 11px; }
+  .db-box .db-field {
+    padding: 4px 10px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 6px;
+  }
+  .db-box .db-field .fname { font-weight: 600; color: #1f2328; }
+  .db-box .db-field .ftype { color: #57606a; }
+
+  /* URLs table */
+  .url-pill {
+    font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+    font-size: 11px;
+    background: #f0f2f5;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 48px;
+    padding-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="hero">
+    <h1>🚀 Galaxium Travels — Developer Onboarding</h1>
+    <p class="subtitle">A multi-service interplanetary booking system. Enterprise patterns, polyglot stack, real cross-service workflows.</p>
+    <div class="audience-tags">
+      <span class="tag">✓ Experienced Angular Developer</span>
+      <span class="tag yellow">⚠ No Travel Industry Background</span>
+      <span class="tag red">⚠ Limited Java Experience</span>
+    </div>
+  </div>
+
+  
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#s1">What Is This?</a></li>
+      <li><a href="#s2">Architecture</a></li>
+      <li><a href="#s3">Travel Domain Concepts</a></li>
+      <li><a href="#s4">Frontend — React, Not Angular</a></li>
+      <li><a href="#s5">Python Backend (FastAPI)</a></li>
+      <li><a href="#s6">Java Hold Service (Spring Boot)</a></li>
+      <li><a href="#s7">Data Models</a></li>
+      <li><a href="#s8">Getting Started Locally</a></li>
+      <li><a href="#s9">Running Tests</a></li>
+      <li><a href="#s10">Critical Footguns</a></li>
+      <li><a href="#s11">Suggested First Steps</a></li>
+    </ol>
+  </div>
+
+  
+  <section id="s1">
+    <h2 class="section-title"><span class="num">1</span> What Is This?</h2>
+    <p>Galaxium Travels is a demo app for booking interplanetary space travel. Its purpose is to showcase challenges agents and developers face in a polyglot, enterprise-style codebase. Passengers can search flights, reserve seats on a time-limited hold, and confirm bookings across three services that communicate over HTTP.</p>
+    <p>The system supports <strong>7 destinations</strong>: Earth, Mars, Moon, Venus, Jupiter, Europa, and Pluto — each with lore, hazards, and travel times ranging from 3 hours (Moon) to 36 hours (Pluto).</p>
+    <p><strong>Key capabilities:</strong> Flight search with seat-class filtering · Quote → Hold → Confirm booking flow · Three independent seat classes (Economy, Business, Galaxium) · Dual REST + MCP API for browser and AI agent access · Auto-expiring holds · Full booking lifecycle (book, view, cancel)</p>
+  </section>
+
+  
+  <section id="s2">
+    <h2 class="section-title"><span class="num">2</span> Architecture</h2>
+
+    <div class="arch-diagram">
+      <div class="arch-box blue">
+        <div class="service-name">Frontend</div>
+        <div class="service-meta">React 19 · TypeScript · Vite · Tailwind CSS · Port 5173</div>
+      </div>
+      <div class="arch-arrow">
+        <span>↕</span>
+        <span class="arrow-label">HTTP / Axios</span>
+      </div>
+      <div class="arch-box green">
+        <div class="service-name">Python Backend</div>
+        <div class="service-meta">FastAPI · FastMCP · SQLAlchemy · Port 8001</div>
+        <div class="service-meta" style="margin-top:4px">owns: Users · Flights · Bookings (SQLite / PostgreSQL)</div>
+      </div>
+      <div class="arch-arrow">
+        <span>↕</span>
+        <span class="arrow-label">proxy (httpx) ↓ · callback /internal/bookings/from-hold ↑</span>
+      </div>
+      <div class="arch-box purple">
+        <div class="service-name">Java Hold Service</div>
+        <div class="service-meta">Spring Boot 3.4 · JPA · Hibernate · Port 8080</div>
+        <div class="service-meta" style="margin-top:4px">owns: Quotes · Holds (SQLite)</div>
+      </div>
+    </div>
+
+    <h3>Full booking-via-hold request flow</h3>
+    <div class="flow">
+      <div class="flow-step"><span class="flow-num">1</span><span>Browser sends <code>POST /quotes</code> to Python, which proxies to Java — a quote is created with a 15-min timer (<code>Q-2099-000001</code>)</span></div>
+      <div class="flow-step"><span class="flow-num">2</span><span>Browser sends <code>POST /quotes/{id}/holds</code> to Python proxy → Java creates a hold (<code>H-2099-000001</code>, status <span class="badge badge-held">HELD</span>). Seat is <em>not</em> decremented yet.</span></div>
+      <div class="flow-step"><span class="flow-num">3</span><span>Browser sends <code>POST /holds/{id}/confirm</code> to Python proxy → Java calls Python <code>/internal/bookings/from-hold</code></span></div>
+      <div class="flow-step"><span class="flow-num">4</span><span>Python creates the real <code>Booking</code> record in its DB and decrements the seat counter</span></div>
+      <div class="flow-step"><span class="flow-num">5</span><span>Hold status becomes <span class="badge badge-confirmed">CONFIRMED</span> with <code>externalBookingReference = booking_id</code></span></div>
+    </div>
+  </section>
+
+  
+  <section id="s3">
+    <h2 class="section-title"><span class="num">3</span> Travel Domain Concepts</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concept</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Quote</strong></td><td>A temporary pricing snapshot for a flight + seat class. Created by the Java service. Format: <code>Q-2099-000001</code>. Status is always <code>CREATED</code>.</td></tr>
+          <tr><td><strong>Hold</strong></td><td>A time-limited seat reservation (15 min by default). The seat is not permanently removed until the hold is <em>confirmed</em>. Format: <code>H-2099-000001</code>.</td></tr>
+          <tr><td><strong>Booking</strong></td><td>A committed purchase stored in the Python DB. Only created when a hold is confirmed. Statuses: <code>booked</code>, <code>cancelled</code>, <code>completed</code>.</td></tr>
+          <tr><td><strong>Seat classes</strong></td><td>Three independent classes per flight: <code>economy</code> (60% of seats, 1× price), <code>business</code> (30%, 2.5×), <code>galaxium</code> (10%, 5×). Sold-out economy does <strong>not</strong> block business.</td></tr>
+          <tr><td><strong>Hold expiry</strong></td><td>Java's <code>HoldExpirationScheduler</code> runs every 60 s. Holds past <code>reservedUntil</code> become <span class="badge badge-expired">EXPIRED</span> and the seat is freed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Hold status lifecycle:</strong></p>
+    <p>
+      <span class="badge badge-held">HELD</span> →
+      <span class="badge badge-confirmed">CONFIRMED</span> (user confirmed in time)  | 
+      <span class="badge badge-expired">EXPIRED</span> (scheduler)  | 
+      <span class="badge" style="background:#f3eeff;color:#6d28d9;border:1px solid #ddd8fe">RELEASED</span> (user released)  | 
+      <span class="badge badge-failed">CONFIRMATION_FAILED</span> (Python callback error)
+    </p>
+  </section>
+
+  
+  <section id="s4">
+    <h2 class="section-title"><span class="num">4</span> Frontend — React, Not Angular</h2>
+    <div class="callout warn"><strong>⚠ Key paradigm shift</strong>This codebase uses <strong>React 19</strong>. The mental model is fundamentally different from Angular.</div>
+
+    <h3>Concept mapping: Angular → React</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Angular</th><th>React (this codebase)</th></tr></thead>
+        <tbody>
+          <tr><td><code>@NgModule</code> / bootstrapping</td><td><code>main.tsx</code> → <code>&lt;App /&gt;</code></td></tr>
+          <tr><td><code>@Component</code> class</td><td>Function returning JSX</td></tr>
+          <tr><td><code>ngOnInit</code> / <code>ngOnDestroy</code></td><td><code>useEffect()</code></td></tr>
+          <tr><td><code>@Injectable()</code> service</td><td>Hooks + Context</td></tr>
+          <tr><td><code>HttpClient</code> + <code>Observable</code></td><td>Axios + <code>async/await</code></td></tr>
+          <tr><td><code>@angular/router</code></td><td>React Router 7 (<code>&lt;Routes&gt;</code>, <code>&lt;Route&gt;</code>)</td></tr>
+          <tr><td><code>FormBuilder</code> / <code>ngModel</code></td><td><code>useState</code> + controlled inputs</td></tr>
+          <tr><td>RxJS operators</td><td>Plain <code>async/await</code> or array methods</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Frontend directory layout</h3>
+    <pre><code>booking_system_frontend/src/
+├─ pages/            # Route-level components (Home, Flights, MyBookings, DestinationDetail)
+├─ components/       # UI pieces (Layout, FlightCard, BookingCard, HoldCard, Modal…)
+├─ services/api.ts   # Single Axios instance — ALL HTTP calls live here
+├─ types/index.ts    # TypeScript interfaces (Flight, Booking, Quote, Hold, User…)
+├─ hooks/            # useUser — auth state in Context + localStorage
+├─ utils/            # holdStorage.ts, formatters.ts
+├─ data/destinations.ts  # Hardcoded planet metadata
+└─ App.tsx           # BrowserRouter + route definitions</code></pre>
+
+    <h3>State management</h3>
+    <p>No Redux or NgRx. State lives in <code>useState</code> hooks and a single <code>UserContext</code>. The user object is persisted to <code>localStorage</code>.</p>
+
+    <div class="callout danger">
+      <strong>🚨 Never trust HTTP status codes from the proxy</strong>
+      The Python proxy swallows Java errors and returns <strong>HTTP 200</strong> with an error body. Always inspect the response body.
+    </div>
+    <pre><code>// BAD — Java 404 appears as HTTP 200 through the proxy
+if (response.status !== 200) throw new Error();
+
+// GOOD — always inspect the body
+const result = await api.post('/quotes', data);
+if ('error' in result.data) {
+  toast.error(result.data.error);
+  return;
+}</code></pre>
+
+    <h3>Custom Tailwind colors</h3>
+    <p>Do not use standard Tailwind color names. This project defines a space-themed palette:</p>
+    <pre><code>space-dark · space-blue · cosmic-purple · nebula-pink
+alien-green · solar-orange · star-white</code></pre>
+    <p>Check <code>tailwind.config.js</code> for the full list.</p>
+  </section>
+
+  
+  <section id="s5">
+    <h2 class="section-title"><span class="num">5</span> Python Backend (FastAPI)</h2>
+    <p>The backend is the <strong>hub</strong>: it owns users, flights, and bookings directly, and acts as a transparent proxy to the Java service for quotes and holds. It also auto-generates an MCP server from its REST routes via <code>FastApiMCP</code>.</p>
+
+    <h3>Key files</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>server.py</code></td><td>Routes, Java proxy endpoints, MCP registration</td></tr>
+          <tr><td><code>models.py</code></td><td>SQLAlchemy ORM: <code>User</code>, <code>Flight</code>, <code>Booking</code></td></tr>
+          <tr><td><code>schemas.py</code></td><td>Pydantic types + <code>ErrorResponse</code></td></tr>
+          <tr><td><code>services/booking.py</code></td><td><code>book_flight()</code> → <code>BookingOut | ErrorResponse</code></td></tr>
+          <tr><td><code>db.py</code></td><td><code>engine</code>, <code>SessionLocal</code>, <code>get_db()</code> dependency</td></tr>
+          <tr><td><code>seed.py</code></td><td>10 users, 10 flights, 20 bookings on first start</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Service functions return Union types, not exceptions</h3>
+    <pre><code># booking.py
+def book_flight(...) -&gt; BookingOut | ErrorResponse:
+    if user.name != name:          # intentional dual validation
+        return ErrorResponse(
+            error="Name mismatch",
+            error_code="NAME_MISMATCH",
+        )
+    return BookingOut(...)
+
+# server.py route checks result at call site
+result = booking.book_flight(db, ...)
+if isinstance(result, ErrorResponse):
+    raise HTTPException(status_code=409, detail=result.model_dump())
+return result</code></pre>
+
+    <div class="callout">
+      <strong>MCP route order matters</strong>
+      <code>FastApiMCP(app)</code> is called at the very <em>end</em> of <code>server.py</code>. Routes defined below that call are <strong>not</strong> exposed as MCP tools. Always place new endpoints above it.
+    </div>
+
+    <h3>Seat pricing</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Class</th><th>Seat share</th><th>Price multiplier</th></tr></thead>
+        <tbody>
+          <tr><td>economy</td><td>60%</td><td>1.0×</td></tr>
+          <tr><td>business</td><td>30%</td><td>2.5×</td></tr>
+          <tr><td>galaxium</td><td>10%</td><td>5.0×</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  
+  <section id="s6">
+    <h2 class="section-title"><span class="num">6</span> Java Hold Service (Spring Boot)</h2>
+    <p>This service owns the quote and hold lifecycle. You don't need deep Java expertise here, but you need to understand its role in the cross-service flow.</p>
+
+    <h3>Key classes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Class</th><th>Package</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>HoldService</code></td><td><code>service/</code></td><td><code>createHold()</code>, <code>confirmHold()</code>, <code>releaseHold()</code> — all <code>@Transactional</code></td></tr>
+          <tr><td><code>QuoteService</code></td><td><code>service/</code></td><td><code>createQuote()</code>, <code>getQuote()</code></td></tr>
+          <tr><td><code>HoldExpirationScheduler</code></td><td><code>scheduler/</code></td><td><code>@Scheduled</code> every 60 s — marks expired holds</td></tr>
+          <tr><td><code>PythonBackendClient</code></td><td><code>client/</code></td><td>HTTP callback to Python <code>/internal/bookings/from-hold</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Lombok convention</h3>
+    <p>All Java entities use <code>@Data</code>, <code>@Builder</code>, <code>@RequiredArgsConstructor</code> — there are <strong>no hand-written getters, setters, or constructors</strong>. Assume all fields are accessible via <code>.getFieldName()</code> / <code>.setFieldName()</code> even if you can't see them in the file.</p>
+
+    <div class="callout warn">
+      <strong>Java version requirement</strong>
+      Java <strong>17 or 21 only</strong>. Lombok does not support Java 22+. Verify with <code>java -version</code>.
+    </div>
+  </section>
+
+  
+  <section id="s7">
+    <h2 class="section-title"><span class="num">7</span> Data Models</h2>
+    <div class="db-group">
+      <div>
+        <p style="font-size:12px;color:#57606a;margin-bottom:6px;font-weight:600">PYTHON SERVICE (booking.db)</p>
+        <div class="db-box" style="margin-bottom:10px">
+          <div class="db-header">User</div>
+          <div class="db-field"><span class="fname">user_id</span><span class="ftype">int PK</span></div>
+          <div class="db-field"><span class="fname">name</span><span class="ftype">string</span></div>
+          <div class="db-field"><span class="fname">email</span><span class="ftype">string (unique)</span></div>
+        </div>
+        <div class="db-box" style="margin-bottom:10px">
+          <div class="db-header">Flight</div>
+          <div class="db-field"><span class="fname">flight_id</span><span class="ftype">int PK</span></div>
+          <div class="db-field"><span class="fname">origin / destination</span><span class="ftype">string</span></div>
+          <div class="db-field"><span class="fname">departure_time</span><span class="ftype">string (ISO)</span></div>
+          <div class="db-field"><span class="fname">base_price</span><span class="ftype">int (cents)</span></div>
+          <div class="db-field"><span class="fname">economy_seats_available</span><span class="ftype">int</span></div>
+          <div class="db-field"><span class="fname">business_seats_available</span><span class="ftype">int</span></div>
+          <div class="db-field"><span class="fname">galaxium_seats_available</span><span class="ftype">int</span></div>
+        </div>
+        <div class="db-box">
+          <div class="db-header">Booking</div>
+          <div class="db-field"><span class="fname">booking_id</span><span class="ftype">int PK</span></div>
+          <div class="db-field"><span class="fname">user_id</span><span class="ftype">int FK→User</span></div>
+          <div class="db-field"><span class="fname">flight_id</span><span class="ftype">int FK→Flight</span></div>
+          <div class="db-field"><span class="fname">status</span><span class="ftype">booked|cancelled|completed</span></div>
+          <div class="db-field"><span class="fname">seat_class</span><span class="ftype">economy|business|galaxium</span></div>
+          <div class="db-field"><span class="fname">price_paid</span><span class="ftype">int</span></div>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:12px;color:#57606a;margin-bottom:6px;font-weight:600">JAVA SERVICE (holds.db)</p>
+        <div class="db-box" style="margin-bottom:10px">
+          <div class="db-header" style="background:#7c5cd8">Quote</div>
+          <div class="db-field"><span class="fname">quoteId</span><span class="ftype">string PK (Q-2099-000001)</span></div>
+          <div class="db-field"><span class="fname">flightId</span><span class="ftype">int</span></div>
+          <div class="db-field"><span class="fname">seatClass</span><span class="ftype">string</span></div>
+          <div class="db-field"><span class="fname">travelerId</span><span class="ftype">int</span></div>
+          <div class="db-field"><span class="fname">pricePerSeat / totalPrice</span><span class="ftype">long</span></div>
+          <div class="db-field"><span class="fname">expiresAt</span><span class="ftype">Instant</span></div>
+          <div class="db-field"><span class="fname">status</span><span class="ftype">CREATED</span></div>
+        </div>
+        <div class="db-box">
+          <div class="db-header" style="background:#7c5cd8">Hold</div>
+          <div class="db-field"><span class="fname">holdId</span><span class="ftype">string PK (H-2099-000001)</span></div>
+          <div class="db-field"><span class="fname">quoteId</span><span class="ftype">string FK→Quote</span></div>
+          <div class="db-field"><span class="fname">status</span><span class="ftype">HELD|CONFIRMED|EXPIRED…</span></div>
+          <div class="db-field"><span class="fname">reservedUntil</span><span class="ftype">Instant</span></div>
+          <div class="db-field"><span class="fname">externalBookingReference</span><span class="ftype">string (booking_id)</span></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#57606a;margin-top:6px">Note: Quote and Hold are created via the Java service and never stored in Python's DB. A confirmed Hold's <code>externalBookingReference</code> links back to Python's <code>booking_id</code>.</p>
+  </section>
+
+  
+  <section id="s8">
+    <h2 class="section-title"><span class="num">8</span> Getting Started Locally</h2>
+
+    <h3>One-command start</h3>
+    <pre><code>./start.sh
+# Starts Python (:8001), Java (:8080), Frontend (:5173)
+# Press Ctrl+C to stop all</code></pre>
+
+    <h3>Manual (3 terminals)</h3>
+    <pre><code># Terminal 1 — Python backend
+cd booking_system_backend
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+# Terminal 2 — Java hold service
+cd booking_system_inventory_hold_service
+mvn spring-boot:run
+
+# Terminal 3 — Frontend
+cd booking_system_frontend
+npm install &amp;&amp; npm run dev</code></pre>
+
+    <h3>Service URLs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Service</th><th>URL</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td><span class="url-pill">http://localhost:5173</span></td><td>Main SPA</td></tr>
+          <tr><td>Backend REST</td><td><span class="url-pill">http://localhost:8001</span></td><td>API root</td></tr>
+          <tr><td>Swagger UI</td><td><span class="url-pill">http://localhost:8001/docs</span></td><td>Try REST endpoints interactively</td></tr>
+          <tr><td>MCP endpoint</td><td><span class="url-pill">http://localhost:8001/mcp</span></td><td>AI agent access</td></tr>
+          <tr><td>Java hold service</td><td><span class="url-pill">http://localhost:8080</span></td><td>Health: <code>/health</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  
+  <section id="s9">
+    <h2 class="section-title"><span class="num">9</span> Running Tests</h2>
+    <pre><code># Backend unit tests (fast, in-memory SQLite)
+cd booking_system_backend
+pytest -v
+
+# Frontend type-check + lint
+cd booking_system_frontend
+npm run build    # TypeScript compilation + Vite bundle
+npm run lint     # ESLint
+
+# E2E tests (requires services running)
+cd e2e
+./run-native.sh                    # smoke + hold flow
+E2E_RUN_SLOW=1 ./run-native.sh    # includes 90-second auto-expiry test</code></pre>
+
+    <div class="callout">
+      <strong>Test isolation</strong>
+      Backend tests patch <code>get_db</code> via <code>dependency_overrides</code> — they never touch <code>booking.db</code>. Don't call <code>SessionLocal()</code> directly in service code; always use <code>Depends(get_db)</code>, or tests will leak into the real database.
+    </div>
+  </section>
+
+  
+  <section id="s10">
+    <h2 class="section-title"><span class="num">10</span> Critical Footguns</h2>
+    <p style="color:#57606a;font-size:13px;margin-bottom:12px">These will cost you hours if you don't know them upfront.</p>
+    <div class="footgun-grid">
+      <div class="footgun"><span class="footgun-num">1</span><div class="footgun-text"><strong>Proxy returns HTTP 200 on Java errors</strong><span>Always check <code>response.data.error</code>, never rely on HTTP status alone.</span></div></div>
+      <div class="footgun"><span class="footgun-num">2</span><div class="footgun-text"><strong>Service functions return Union types, not exceptions</strong><span>Use <code>isinstance(result, ErrorResponse)</code>, not try/catch.</span></div></div>
+      <div class="footgun"><span class="footgun-num">3</span><div class="footgun-text"><strong><code>book_flight()</code> validates both user_id AND name</strong><span>Name mismatch rejects the booking. Frontend must pass the exact name from the user record.</span></div></div>
+      <div class="footgun"><span class="footgun-num">4</span><div class="footgun-text"><strong><code>FastApiMCP(app)</code> must be the last call in server.py</strong><span>New routes placed below it are never exposed as MCP tools.</span></div></div>
+      <div class="footgun"><span class="footgun-num">5</span><div class="footgun-text"><strong>SEED_DEMO_DATA=true re-seeds on every start (if DB empty)</strong><span>Set to <code>false</code> to preserve local data across restarts.</span></div></div>
+      <div class="footgun"><span class="footgun-num">6</span><div class="footgun-text"><strong>Java requires version 17 or 21 only</strong><span>Lombok doesn't support Java 22+. Verify: <code>java -version</code>.</span></div></div>
+      <div class="footgun"><span class="footgun-num">7</span><div class="footgun-text"><strong>Custom Tailwind colors only — no standard names</strong><span>Use <code>space-dark</code>, <code>cosmic-purple</code>, etc. Not <code>bg-blue-500</code>.</span></div></div>
+      <div class="footgun"><span class="footgun-num">8</span><div class="footgun-text"><strong>Seat classes are fully independent</strong><span>Sold-out economy does not block business or galaxium bookings.</span></div></div>
+      <div class="footgun"><span class="footgun-num">9</span><div class="footgun-text"><strong>Hold confirmation is idempotent</strong><span>Re-confirming the same hold returns the same booking — safe to retry, no double charge.</span></div></div>
+      <div class="footgun"><span class="footgun-num">10</span><div class="footgun-text"><strong>Never edit generated directories</strong><span><code>booking_system_inventory_hold_service/target/</code> and <code>booking_system_frontend/dist/</code> are build output. Regenerate, don't edit.</span></div></div>
+    </div>
+  </section>
+
+  
+  <section id="s11">
+    <h2 class="section-title"><span class="num">11</span> Suggested First Steps</h2>
+    <div class="steps">
+      <ol>
+        <li>Run <code>./start.sh</code> and open all three service URLs listed in Section 8.</li>
+        <li><strong>Create a user</strong>, search for a Mars flight, and go through the full <em>quote → hold → confirm</em> flow in the browser.</li>
+        <li>Open <strong>Swagger UI</strong> at <code>/docs</code> and try <code>GET /flights</code> and <code>POST /book</code> directly.</li>
+        <li>Read <code>AGENTS.md</code> at the repo root, especially the Footguns section.</li>
+        <li>Run <code>pytest booking_system_backend/ -v</code> — read <code>conftest.py</code> to understand how DB isolation works.</li>
+        <li><strong>Trace one confirm request end-to-end:</strong> follow <code>POST /holds/{id}/confirm</code> from <code>server.py</code> → Java <code>HoldController</code> → <code>HoldService.confirmHold()</code> → <code>PythonBackendClient</code> → Python <code>/internal/bookings/from-hold</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>

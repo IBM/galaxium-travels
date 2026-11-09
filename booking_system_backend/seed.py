@@ -34,6 +34,14 @@ def seed():
     db.add_all(users)
     db.commit()
     # Add demo flights with seat class distribution (60% economy, 30% business, 10% galaxium)
+    # Two near-term flights so the partial and non-refundable tiers show up in demo/UI.
+    # Dates are computed relative to now so they remain valid across re-seeds.
+    _now = datetime.now(tz=timezone.utc)
+    _dep2 = (_now + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    _arr2 = (_now + timedelta(days=2, hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    _dep5 = (_now + timedelta(days=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    _arr5 = (_now + timedelta(days=5, hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     flight_data = [
         ("Earth", "Mars", "2099-01-01T09:00:00Z", "2099-01-01T17:00:00Z", 1000000, 10),
         ("Earth", "Moon", "2099-01-02T10:00:00Z", "2099-01-02T14:00:00Z", 500000, 10),
@@ -45,6 +53,9 @@ def seed():
         ("Mars", "Jupiter", "2099-01-08T13:00:00Z", "2099-01-08T23:00:00Z", 2500000, 10),
         ("Europa", "Earth", "2099-01-09T09:00:00Z", "2099-01-09T21:00:00Z", 3000000, 10),
         ("Earth", "Pluto", "2099-01-10T06:00:00Z", "2099-01-11T06:00:00Z", 5000000, 10),
+        # Near-term demo flights — show "No refund" and "Partial refund" tiers in the UI
+        ("Earth", "Mars (Express)", _dep2, _arr2, 1500000, 6),
+        ("Moon", "Venus (Scenic)", _dep5, _arr5, 750000, 6),
     ]
     
     flights = []

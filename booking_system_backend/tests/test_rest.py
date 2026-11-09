@@ -869,3 +869,85 @@ class TestFlightsEndpointFiltering:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+
+
+class TestCancellationPreviewEndpoint:
+    """Test GET /bookings/{booking_id}/cancellation-preview endpoint."""
+
+    def _create_booking(self, client, db_session, departure_time: str, price: int = 1_000_000):
+        """Register a user, create a flight + booking, return booking_id."""
+        import time
+        unique = str(time.monotonic_ns())
+        reg = client.post("/register", json={"name": "Preview User", "email": f"prev_{unique}@test.com"})
+        user_id = reg.json()["user_id"]
+        db_session.add(Flight(
+            origin="Earth", destination="Mars",
+            departure_time=departure_time, arrival_time=departure_time,
+            base_price=price,
+            economy_seats_available=5, business_seats_available=3, galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        f = db_session.query(Flight).order_by(Flight.flight_id.desc()).first()
+        db_session.add(Booking(
+            user_id=user_id, flight_id=f.flight_id,
+            status="booked", booking_time="2024-01-01 10:00",
+            seat_class="economy", price_paid=price,
+        ))
+        db_session.commit()
+        b = db_session.query(Booking).order_by(Booking.booking_id.desc()).first()
+        return b.booking_id
+
+    def test_preview_returns_200(self, client, db_session):
+        """GET on a valid active booking returns 200 with preview fields."""
+        bid = self._create_booking(client, db_session, "2099-06-01 12:00")
+        response = client.get(f"/bookings/{bid}/cancellation-preview")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["booking_id"] == bid
+        assert "price_paid" in data
+        assert "refund_amount" in data
+        assert "fee_amount" in data
+        assert "credit_amount" in data
+        assert "tier_label" in data
+        assert data["refund_amount"] + data["fee_amount"] + data["credit_amount"] == data["price_paid"]
+
+    def test_preview_far_future_is_full_refund(self, client, db_session):
+        """2099 flight should always be full refund tier."""
+        bid = self._create_booking(client, db_session, "2099-01-01 09:00")
+        response = client.get(f"/bookings/{bid}/cancellation-preview")
+        assert response.status_code == 200
+        assert response.json()["tier_label"] == "Full refund"
+
+    def test_preview_not_found_returns_404(self, client, db_session):
+        """Unknown booking_id returns 404."""
+        response = client.get("/bookings/99999/cancellation-preview")
+        assert response.status_code == 404
+        data = response.json()["detail"]
+        assert data["error_code"] == "BOOKING_NOT_FOUND"
+
+    def test_preview_already_cancelled_returns_409(self, client, db_session):
+        """Already-cancelled booking returns 409."""
+        import time
+        unique = str(time.monotonic_ns())
+        reg = client.post("/register", json={"name": "Cancel User", "email": f"canc_{unique}@test.com"})
+        user_id = reg.json()["user_id"]
+        db_session.add(Flight(
+            origin="Earth", destination="Mars",
+            departure_time="2099-01-01 09:00", arrival_time="2099-01-01 17:00",
+            base_price=1_000_000,
+            economy_seats_available=5, business_seats_available=3, galaxium_seats_available=1,
+        ))
+        db_session.commit()
+        f = db_session.query(Flight).order_by(Flight.flight_id.desc()).first()
+        db_session.add(Booking(
+            user_id=user_id, flight_id=f.flight_id,
+            status="cancelled", booking_time="2024-01-01 10:00",
+            seat_class="economy", price_paid=1_000_000,
+        ))
+        db_session.commit()
+        b = db_session.query(Booking).order_by(Booking.booking_id.desc()).first()
+        response = client.get(f"/bookings/{b.booking_id}/cancellation-preview")
+        assert response.status_code == 409
+        data = response.json()["detail"]
+        assert data["error_code"] == "ALREADY_CANCELLED"
+

@@ -53,6 +53,17 @@ export interface ErrorResponse {
   details?: string;
 }
 
+/** Estimated refund breakdown returned by GET /bookings/{id}/cancellation-preview. */
+export interface CancellationPreview {
+  booking_id: number;
+  price_paid: number;
+  refund_amount: number;
+  fee_amount: number;
+  credit_amount: number;
+  tier_label: string;
+  days_until_departure: number;
+}
+
 // Extended types for UI
 export interface BookingWithFlight extends Booking {
   flight?: Flight;

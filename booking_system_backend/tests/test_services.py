@@ -971,3 +971,201 @@ class TestFlightFiltering:
 
         results = flight.list_flights(db_session, min_price=10000000)
         assert len(results) == 0
+
+
+class TestCancellationPreviewService:
+    """Test get_cancellation_preview service function."""
+
+    _counter: int = 0
+
+    # ---- helpers -----------------------------------------------------------
+
+    def _make_flight(self, departure_time: str) -> "Flight":
+        return Flight(
+            origin="Earth",
+            destination="Mars",
+            departure_time=departure_time,
+            arrival_time=departure_time,  # arrival not relevant for preview
+            base_price=1_000_000,
+            economy_seats_available=5,
+            business_seats_available=3,
+            galaxium_seats_available=1,
+        )
+
+    def _make_booking(self, db_session, departure_time: str, price: int = 1_000_000):
+        import time
+
+        from models import User
+        unique = str(time.monotonic_ns())
+        user = User(name="Preview Tester", email=f"preview_{unique}@test.com")
+        flight = self._make_flight(departure_time)
+        db_session.add_all([user, flight])
+        db_session.commit()
+        from models import Booking
+        b = Booking(
+            user_id=user.user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2099-01-01 10:00",
+            seat_class="economy",
+            price_paid=price,
+        )
+        db_session.add(b)
+        db_session.commit()
+        return b
+
+    # ---- policy tier boundary tests ----------------------------------------
+
+    def _preview_at(self, db_session, days_from_now: float, price: int = 1_000):
+        """Create a booking departing `days_from_now` days from a fixed reference and call preview."""
+        from datetime import datetime, timedelta, timezone
+        reference = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        departure = reference + timedelta(days=days_from_now)
+        dep_str = departure.strftime("%Y-%m-%d %H:%M")
+        bk = self._make_booking(db_session, dep_str, price=price)
+        result = booking.get_cancellation_preview(db_session, bk.booking_id, now=reference)
+        return result
+
+    def test_tier_full_refund_7_days(self, db_session):
+        """7 days out -> full refund tier."""
+        result = self._preview_at(db_session, days_from_now=7.0)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Full refund"
+        assert result.refund_amount == result.price_paid
+        assert result.fee_amount == 0
+        assert result.credit_amount == 0
+
+    def test_tier_full_refund_above_7_days(self, db_session):
+        """Well above 7 days -> full refund tier."""
+        result = self._preview_at(db_session, days_from_now=30.0)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Full refund"
+
+    def test_tier_partial_refund_6_days(self, db_session):
+        """6 days out -> partial refund tier."""
+        result = self._preview_at(db_session, days_from_now=6.0, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Partial refund"
+        assert result.refund_amount == 500
+        assert result.fee_amount == 250
+        assert result.refund_amount + result.fee_amount + result.credit_amount == result.price_paid
+
+    def test_tier_partial_refund_3_days(self, db_session):
+        """3 days out -> still partial refund tier."""
+        result = self._preview_at(db_session, days_from_now=3.0, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Partial refund"
+
+    def test_tier_no_refund_2_days(self, db_session):
+        """2 days out -> no refund tier."""
+        result = self._preview_at(db_session, days_from_now=2.0, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "No refund"
+        assert result.refund_amount == 0
+        assert result.fee_amount == 500
+        assert result.credit_amount == 500
+        assert result.refund_amount + result.fee_amount + result.credit_amount == result.price_paid
+
+    def test_tier_no_refund_1_day(self, db_session):
+        """1 day out -> no refund tier."""
+        result = self._preview_at(db_session, days_from_now=1.0, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "No refund"
+
+    def test_tier_non_refundable_same_day(self, db_session):
+        """Same day (0.5 days) -> non-refundable tier."""
+        result = self._preview_at(db_session, days_from_now=0.5, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Non-refundable"
+        assert result.refund_amount == 0
+        assert result.credit_amount == 0
+        assert result.fee_amount == result.price_paid
+
+    def test_tier_non_refundable_already_departed(self, db_session):
+        """Negative days (already departed) -> non-refundable tier."""
+        result = self._preview_at(db_session, days_from_now=-1.0, price=1_000)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Non-refundable"
+
+    def test_parts_sum_to_price_paid(self, db_session):
+        """refund + fee + credit always equals price_paid."""
+        for days in [30.0, 6.0, 2.0, 0.5, -1.0]:
+            result = self._preview_at(db_session, days_from_now=days, price=999)
+            assert not isinstance(result, ErrorResponse)
+            assert result.refund_amount + result.fee_amount + result.credit_amount == result.price_paid
+
+    # ---- date format tests -------------------------------------------------
+
+    def test_date_format_z_suffix(self, db_session):
+        """Accept ISO 8601 with Z suffix (seed data format)."""
+        from datetime import datetime, timezone
+        reference = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        bk = self._make_booking(db_session, "2024-01-10T12:00:00Z", price=1_000)
+        result = booking.get_cancellation_preview(db_session, bk.booking_id, now=reference)
+        assert not isinstance(result, ErrorResponse)
+        assert result.tier_label == "Full refund"  # 9.5 days away
+
+    def test_date_format_iso_no_tz(self, db_session):
+        """Accept ISO 8601 without timezone (treated as UTC)."""
+        from datetime import datetime, timezone
+        reference = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        bk = self._make_booking(db_session, "2024-01-10T12:00:00", price=1_000)
+        result = booking.get_cancellation_preview(db_session, bk.booking_id, now=reference)
+        assert not isinstance(result, ErrorResponse)
+
+    def test_date_format_space_separated(self, db_session):
+        """Accept space-separated YYYY-MM-DD HH:MM (test fixture format)."""
+        from datetime import datetime, timezone
+        reference = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        bk = self._make_booking(db_session, "2024-01-10 12:00", price=1_000)
+        result = booking.get_cancellation_preview(db_session, bk.booking_id, now=reference)
+        assert not isinstance(result, ErrorResponse)
+
+    # ---- error case tests --------------------------------------------------
+
+    def test_booking_not_found(self, db_session):
+        result = booking.get_cancellation_preview(db_session, 99999)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "BOOKING_NOT_FOUND"
+
+    def test_already_cancelled(self, db_session):
+        from models import Booking, User
+        user = User(name="Cancel User", email="cancel_prev@test.com")
+        flight = self._make_flight("2099-01-01 12:00")
+        db_session.add_all([user, flight])
+        db_session.commit()
+        b = Booking(
+            user_id=user.user_id,
+            flight_id=flight.flight_id,
+            status="cancelled",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=1_000,
+        )
+        db_session.add(b)
+        db_session.commit()
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "ALREADY_CANCELLED"
+
+    def test_invalid_date_returns_error(self, db_session):
+        """Booking referencing a flight with an unparseable departure_time returns INVALID_DATE."""
+        from models import Booking, User
+        user = User(name="Bad Date User", email="baddate@test.com")
+        flight = self._make_flight("NOT-A-DATE")
+        db_session.add_all([user, flight])
+        db_session.commit()
+        b = Booking(
+            user_id=user.user_id,
+            flight_id=flight.flight_id,
+            status="booked",
+            booking_time="2024-01-01 10:00",
+            seat_class="economy",
+            price_paid=1_000,
+        )
+        db_session.add(b)
+        db_session.commit()
+        result = booking.get_cancellation_preview(db_session, b.booking_id)
+        assert isinstance(result, ErrorResponse)
+        assert result.error_code == "INVALID_DATE"
+
