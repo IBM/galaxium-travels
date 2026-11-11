@@ -4,19 +4,23 @@ import com.galaxium.holdservice.api.dto.CreateQuoteRequest;
 import com.galaxium.holdservice.domain.Quote;
 import com.galaxium.holdservice.service.QuoteService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/quotes")
-@RequiredArgsConstructor
-@Slf4j
 public class QuoteController {
 
+    private static final Logger log = LoggerFactory.getLogger(QuoteController.class);
+
     private final QuoteService quoteService;
+
+    public QuoteController(QuoteService quoteService) {
+        this.quoteService = quoteService;
+    }
 
     @PostMapping
     public ResponseEntity<Quote> createQuote(@Valid @RequestBody CreateQuoteRequest request) {

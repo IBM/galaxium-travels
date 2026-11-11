@@ -2,19 +2,23 @@ package com.galaxium.holdservice.api;
 
 import com.galaxium.holdservice.domain.Hold;
 import com.galaxium.holdservice.service.HoldService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1")
-@RequiredArgsConstructor
-@Slf4j
 public class HoldController {
 
+    private static final Logger log = LoggerFactory.getLogger(HoldController.class);
+
     private final HoldService holdService;
+
+    public HoldController(HoldService holdService) {
+        this.holdService = holdService;
+    }
 
     @PostMapping("/quotes/{quoteId}/holds")
     public ResponseEntity<Hold> createHold(@PathVariable String quoteId) {

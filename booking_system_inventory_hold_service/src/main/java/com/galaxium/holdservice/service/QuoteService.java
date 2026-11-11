@@ -5,8 +5,6 @@ import com.galaxium.holdservice.domain.AuditEvent;
 import com.galaxium.holdservice.domain.Quote;
 import com.galaxium.holdservice.repository.AuditEventRepository;
 import com.galaxium.holdservice.repository.QuoteRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +12,23 @@ import java.time.Instant;
 import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class QuoteService {
+
+    private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
 
     private final QuoteRepository quoteRepository;
     private final AuditEventRepository auditEventRepository;
     private final PricingService pricingService;
+
+    public QuoteService(QuoteRepository quoteRepository, AuditEventRepository auditEventRepository, PricingService pricingService) {
+        this.quoteRepository = quoteRepository;
+        this.auditEventRepository = auditEventRepository;
+        this.pricingService = pricingService;
+    }
 
     @Transactional
     public Quote createQuote(CreateQuoteRequest request) {

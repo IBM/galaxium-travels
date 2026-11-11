@@ -10,7 +10,6 @@ This document outlines the modernization path for the Inventory Hold & Quote Ser
 - **Maven** - Standard build tool
 - **SQLite** - Embedded database for demo purposes
 - **JPA/Hibernate** - Modern ORM with annotation-based configuration
-- **Lombok** - Reduces boilerplate code
 - **Docker** - Containerized deployment
 
 ### Architecture Patterns
@@ -97,7 +96,7 @@ public interface QuoteRepository extends JpaRepository<Quote, String> {
 
 ### 4. Modern Language Features
 - **Before:** Verbose getters/setters, null checks
-- **After:** Lombok annotations, Optional, Stream API
+- **After:** Optional, Stream API
 - **Impact:** More concise, safer code
 
 ### 5. Cloud-Native Ready

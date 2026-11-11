@@ -58,7 +58,7 @@ command -v java >/dev/null || fail "java not found on PATH"
 if [ ! -f "$JAR" ]; then
   echo "[e2e] jar not found — building hold service (this takes ~1 min on first run)..."
   command -v mvn >/dev/null || fail "mvn not found on PATH — install Maven to auto-build the jar"
-  ( cd "$JAVA_DIR" && mvn package -DskipTests -q ) || fail "Maven build failed — check Java version (requires 17 or 21; Lombok doesn't compile under 22+)"
+  ( cd "$JAVA_DIR" && mvn package -DskipTests -q ) || fail "Maven build failed — check Java version (requires 17 or later)"
 fi
 
 # --- start backend (throwaway SQLite) ------------------------------------

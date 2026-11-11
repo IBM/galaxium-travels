@@ -73,7 +73,7 @@ Frontend → POST /quotes        (Python proxy)
 
 ## Quick start
 
-**Prerequisites:** Python 3.10+, Node.js 20.19+ or 22.12+. For the Java hold service: Java 17 or 21 and Maven. For Docker Compose: see the [Docker on macOS notes](#docker-on-macos) below.
+**Prerequisites:** Python 3.10+, Node.js 20.19+ or 22.12+. For the Java hold service: Java 17 or later and Maven. For Docker Compose: see the [Docker on macOS notes](#docker-on-macos) below.
 
 ### Option 1 — One command (recommended for local dev)
 
@@ -81,7 +81,7 @@ Frontend → POST /quotes        (Python proxy)
 ./start.sh
 ```
 
-Starts the Python backend (port **8001**), the Java hold service (port **8080**, if Maven and Java 17/21 are available), and the Vite frontend (port **5173**). Press `Ctrl+C` to stop everything.
+Starts the Python backend (port **8001**), the Java hold service (port **8080**, if Maven and Java 17 or later are available), and the Vite frontend (port **5173**). Press `Ctrl+C` to stop everything.
 
 ### Option 2 — Manual
 
@@ -272,7 +272,7 @@ Removes demo branches, database files, and build artifacts. See `DEMO_RUNBOOK.md
 |---|---|
 | Backend | Python 3, FastAPI, FastMCP, SQLAlchemy, Pydantic, Uvicorn |
 | Database | SQLite (local/e2e) or PostgreSQL (Docker Compose / cloud) |
-| Hold service | Java 17, Spring Boot 3.4, Lombok, SQLite (JPA) |
+| Hold service | Java 17, Spring Boot 3.4, SQLite (JPA) |
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3, Framer Motion, React Router 7, Axios, Lucide |
 | Testing | pytest, pytest-asyncio, pytest-cov (backend); Spring Test (Java); pytest + Docker Compose (e2e) |
 | Infrastructure | Docker, Docker Compose, Terraform (AWS), IBM Code Engine CLI |
@@ -282,7 +282,7 @@ Removes demo branches, database files, and build artifacts. See `DEMO_RUNBOOK.md
 - **Backend:** `snake_case` for functions/variables; `PascalCase` for classes and Pydantic models.
 - **Frontend API errors:** always inspect the `success` field or look for `error` in the body — HTTP status is not reliable (proxy endpoints return HTTP 200 even on errors).
 - **Custom Tailwind tokens:** `space-dark`, `space-blue`, `cosmic-purple`, `nebula-pink`, `alien-green`, `solar-orange`, `star-white` — do not assume standard Tailwind color names.
-- **Java:** Lombok `@Data`/`@Builder`/`@RequiredArgsConstructor` throughout; no manual getters/setters. Service methods are `@Transactional`.
+- **Java:** Plain Java, no Lombok. Entities and DTOs have hand-written getters, setters, and builders; beans use constructor injection. Service methods are `@Transactional`.
 - **New backend endpoints:** add a REST handler **and** a matching MCP tool, following the pattern in `server.py`.
 - **Never edit:** `booking_system_inventory_hold_service/target/` (Maven output), `booking_system_frontend/dist/` (Vite output), `scripts/terraform/.terraform/` (provider binaries).
 

@@ -2,8 +2,6 @@ package com.galaxium.holdservice.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,19 +11,26 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class PythonBackendClient {
 
+    private static final Logger log = LoggerFactory.getLogger(PythonBackendClient.class);
+
     private final ObjectMapper objectMapper;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     @Value("${python.backend.url}")
     private String pythonBackendUrl;
+
+    public PythonBackendClient(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     public BookingResponse createBookingFromHold(Map<String, Object> holdData) {
         try {

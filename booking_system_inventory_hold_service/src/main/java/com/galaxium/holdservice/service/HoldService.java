@@ -7,8 +7,6 @@ import com.galaxium.holdservice.domain.Quote;
 import com.galaxium.holdservice.repository.AuditEventRepository;
 import com.galaxium.holdservice.repository.HoldRepository;
 import com.galaxium.holdservice.repository.QuoteRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +16,13 @@ import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class HoldService {
+
+    private static final Logger log = LoggerFactory.getLogger(HoldService.class);
 
     private final HoldRepository holdRepository;
     private final QuoteRepository quoteRepository;
@@ -31,6 +31,13 @@ public class HoldService {
 
     @Value("${hold.duration.minutes:15}")
     private int holdDurationMinutes;
+
+    public HoldService(HoldRepository holdRepository, QuoteRepository quoteRepository, AuditEventRepository auditEventRepository, PythonBackendClient pythonBackendClient) {
+        this.holdRepository = holdRepository;
+        this.quoteRepository = quoteRepository;
+        this.auditEventRepository = auditEventRepository;
+        this.pythonBackendClient = pythonBackendClient;
+    }
 
     @Transactional
     public Hold createHold(String quoteId) {

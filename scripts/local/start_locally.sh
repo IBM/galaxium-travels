@@ -93,7 +93,7 @@ echo ""
 JAVA_PID=""
 HOLD_SERVICE_DIR="booking_system_inventory_hold_service"
 
-# Detect a Java 17 or 21 JDK for Maven (Lombok doesn't support Java 22+)
+# Detect a Java 17 or 21 JDK for Maven
 # Prefer sdkman candidates in order: 17, 21, then fall back to system Java
 JAVA_HOME_FOR_MAVEN=""
 if [ -d "$HOME/.sdkman/candidates/java" ]; then

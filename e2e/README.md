@@ -23,7 +23,7 @@ if it isn't already present.
 
 Requirements:
 - `booking_system_backend/.venv` exists with deps installed (`pip install -r requirements.txt`)
-- `java` and `mvn` on `PATH`, with **Java 17 or 21** active — the pinned Lombok version does not compile under Java 22+
+- `java` and `mvn` on `PATH`, with **Java 17 or later** active
 
 ### Against an already-running stack
 

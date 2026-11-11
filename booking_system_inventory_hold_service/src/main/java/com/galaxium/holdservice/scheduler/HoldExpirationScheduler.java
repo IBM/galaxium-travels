@@ -4,22 +4,27 @@ import com.galaxium.holdservice.domain.AuditEvent;
 import com.galaxium.holdservice.domain.Hold;
 import com.galaxium.holdservice.repository.AuditEventRepository;
 import com.galaxium.holdservice.repository.HoldRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class HoldExpirationScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(HoldExpirationScheduler.class);
 
     private final HoldRepository holdRepository;
     private final AuditEventRepository auditEventRepository;
+
+    public HoldExpirationScheduler(HoldRepository holdRepository, AuditEventRepository auditEventRepository) {
+        this.holdRepository = holdRepository;
+        this.auditEventRepository = auditEventRepository;
+    }
 
     @Scheduled(fixedDelayString = "${hold.expiration.check.interval.seconds:60}000")
     @Transactional

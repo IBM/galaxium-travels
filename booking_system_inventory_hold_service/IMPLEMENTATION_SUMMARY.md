@@ -190,7 +190,6 @@ curl http://localhost:8000/api/bookings/1
 - **Java 17** - Modern LTS version
 - **Spring Boot 3.2.0** - Latest stable release
 - **Maven** - Standard build tool
-- **Lombok** - Reduces boilerplate by ~60%
 - **JPA/Hibernate** - Modern ORM
 - **SQLite** - Zero-config database
 - **Docker** - Container-ready

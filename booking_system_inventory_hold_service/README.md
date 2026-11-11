@@ -31,7 +31,6 @@ Frontend → Python Backend → Java Hold Service
 - **Maven** for build management
 - **SQLite** for persistence
 - **JPA/Hibernate** for ORM
-- **Lombok** for reducing boilerplate
 
 ## Quick Start
 

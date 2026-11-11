@@ -254,18 +254,19 @@ class HoldTest {
     void testEqualsAndHashCode() {
         // Arrange
         String holdId = "hold-100";
+        Instant reservedUntil = Instant.now().plusSeconds(900);
         Hold hold1 = Hold.builder()
                 .holdId(holdId)
                 .quoteId("quote-200")
                 .status(Hold.HoldStatus.HELD)
-                .reservedUntil(Instant.now().plusSeconds(900))
+                .reservedUntil(reservedUntil)
                 .build();
 
         Hold hold2 = Hold.builder()
                 .holdId(holdId)
                 .quoteId("quote-200")
                 .status(Hold.HoldStatus.HELD)
-                .reservedUntil(Instant.now().plusSeconds(900))
+                .reservedUntil(reservedUntil)
                 .build();
 
         // Act & Assert
