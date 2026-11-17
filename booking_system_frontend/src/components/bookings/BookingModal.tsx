@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import type { SeatClass } from '../../types';
 import type { Flight } from '../../types';
 import { Modal, Button } from '../common';
 import { Plane, Calendar, Clock, DollarSign } from 'lucide-react';
@@ -14,11 +15,41 @@ interface BookingModalProps {
   onSuccess: () => void;
 }
 
+const SEAT_CLASSES: { key: SeatClass; label: string; multiplier: number; seatsField: keyof Flight }[] = [
+  { key: 'economy',  label: 'Economy',  multiplier: 1, seatsField: 'economy_seats'  },
+  { key: 'business', label: 'Business', multiplier: 2, seatsField: 'business_seats' },
+  { key: 'galaxium', label: 'Galaxium', multiplier: 4, seatsField: 'galaxium_seats' },
+];
+
+function getDefaultClass(flight: Flight): SeatClass {
+  if (flight.economy_seats  > 0) return 'economy';
+  if (flight.business_seats > 0) return 'business';
+  if (flight.galaxium_seats > 0) return 'galaxium';
+  return 'economy';
+}
+
 export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
+  const defaultClass = useMemo(
+    () => (flight ? getDefaultClass(flight) : 'economy'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [flight?.flight_id]
+  );
+  const [selectedClass, setSelectedClass] = useState<SeatClass>(defaultClass);
+
+  // Keep selectedClass in sync when the modal opens for a different flight
+  const effectiveClass: SeatClass = flight
+    ? (flight[SEAT_CLASSES.find(c => c.key === selectedClass)!.seatsField] as number) > 0
+      ? selectedClass
+      : getDefaultClass(flight)
+    : selectedClass;
+
   if (!flight) return null;
+
+  const selectedInfo = SEAT_CLASSES.find(c => c.key === effectiveClass)!;
+  const totalPrice = flight.price * selectedInfo.multiplier;
 
   const handleConfirmBooking = async () => {
     if (!user) {
@@ -33,6 +64,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         user_id: user.user_id,
         name: user.name,
         flight_id: flight.flight_id,
+        seat_class: effectiveClass,
       });
 
       if (isErrorResponse(result)) {
@@ -121,6 +153,42 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
           </div>
         )}
 
+        {/* Seat Class Picker */}
+        <div>
+          <h4 className="text-sm font-semibold text-star-white mb-3">Select Seat Class</h4>
+          <div className="grid grid-cols-3 gap-3">
+            {SEAT_CLASSES.map(({ key, label, multiplier, seatsField }) => {
+              const seats = flight[seatsField] as number;
+              const isDisabled = seats === 0;
+              const isSelected = effectiveClass === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => !isDisabled && setSelectedClass(key)}
+                  disabled={isDisabled}
+                  className={[
+                    'flex flex-col items-center gap-1 p-3 rounded-lg border transition-all text-center',
+                    isSelected
+                      ? 'border-cosmic-purple bg-cosmic-purple/20 text-star-white'
+                      : isDisabled
+                      ? 'border-white/10 bg-white/5 text-star-white/30 cursor-not-allowed'
+                      : 'border-white/20 bg-white/5 text-star-white/80 hover:border-cosmic-purple/60 hover:bg-cosmic-purple/10 cursor-pointer',
+                  ].join(' ')}
+                >
+                  <span className="font-semibold text-sm">{label}</span>
+                  <span className="text-xs opacity-80">{multiplier}×</span>
+                  <span className="font-bold text-sm">
+                    {formatCurrency(flight.price * multiplier)}
+                  </span>
+                  <span className={`text-xs ${isDisabled ? 'text-red-400/70' : 'text-star-white/50'}`}>
+                    {isDisabled ? 'Sold out' : `${seats} seat${seats !== 1 ? 's' : ''}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Price */}
         <div className="flex items-center justify-between p-4 glass-card bg-cosmic-gradient">
           <div className="flex items-center gap-2">
@@ -128,7 +196,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
             <span className="text-white font-semibold">Total Price</span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(flight.price)}
+            {formatCurrency(totalPrice)}
           </span>
         </div>
 

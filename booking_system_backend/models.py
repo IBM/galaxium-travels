@@ -17,7 +17,9 @@ class Flight(Base):
     departure_time = Column(String, nullable=False)
     arrival_time = Column(String, nullable=False)
     price = Column(Integer, nullable=False)
-    seats_available = Column(Integer, nullable=False)
+    economy_seats = Column(Integer, nullable=False)
+    business_seats = Column(Integer, nullable=False)
+    galaxium_seats = Column(Integer, nullable=False)
 
 class Booking(Base):
     __tablename__ = 'bookings'
@@ -25,4 +27,5 @@ class Booking(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     flight_id = Column(Integer, ForeignKey('flights.flight_id'), nullable=False)
     status = Column(String, nullable=False)
-    booking_time = Column(String, nullable=False) 
+    booking_time = Column(String, nullable=False)
+    seat_class = Column(String, nullable=False)

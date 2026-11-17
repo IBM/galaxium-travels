@@ -1,6 +1,6 @@
 import type { Flight } from '../../types';
 import { Card, Button } from '../common';
-import { Plane, Clock, DollarSign, Users } from 'lucide-react';
+import { Plane, Clock } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
 import { motion } from 'framer-motion';
 
@@ -9,9 +9,17 @@ interface FlightCardProps {
   onBook: (flight: Flight) => void;
 }
 
+const seatClasses = [
+  { key: 'economy_seats' as const,  label: 'Economy',  multiplier: 1, color: 'text-star-white' },
+  { key: 'business_seats' as const, label: 'Business', multiplier: 2, color: 'text-cosmic-purple' },
+  { key: 'galaxium_seats' as const, label: 'Galaxium', multiplier: 4, color: 'text-solar-orange' },
+] as const;
+
 export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
-  const isLowSeats = flight.seats_available <= 2;
-  const isSoldOut = flight.seats_available === 0;
+  const isFullySoldOut =
+    flight.economy_seats === 0 &&
+    flight.business_seats === 0 &&
+    flight.galaxium_seats === 0;
 
   return (
     <motion.div
@@ -70,31 +78,35 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
             </span>
           </div>
 
-          {/* Price */}
-          <div className="flex items-center gap-2">
-            <DollarSign size={16} className="text-alien-green" />
-            <span className="text-2xl font-bold text-star-white">
-              {formatCurrency(flight.price)}
-            </span>
-            <span className="text-sm text-star-white/60">per seat</span>
-          </div>
-
-          {/* Seats Available */}
-          <div className="flex items-center gap-2">
-            <Users size={16} className={isLowSeats ? 'text-solar-orange' : 'text-star-white/70'} />
-            <span className={`text-sm ${isLowSeats ? 'text-solar-orange font-semibold' : 'text-star-white/70'}`}>
-              {isSoldOut ? 'Sold Out' : `${flight.seats_available} seats available`}
-            </span>
+          {/* Seat-class summary */}
+          <div className="rounded-lg bg-white/5 border border-white/10 divide-y divide-white/10">
+            {seatClasses.map(({ key, label, multiplier, color }) => {
+              const seats = flight[key];
+              const soldOut = seats === 0;
+              return (
+                <div key={key} className="flex items-center justify-between px-3 py-2">
+                  <span className={`text-sm font-medium ${color}`}>{label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-star-white">
+                      {formatCurrency(flight.price * multiplier)}
+                    </span>
+                    <span className={`text-xs ${soldOut ? 'text-solar-orange font-semibold' : 'text-star-white/60'}`}>
+                      {soldOut ? 'Sold out' : `${seats} left`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Book Button */}
         <Button
           onClick={() => onBook(flight)}
-          disabled={isSoldOut}
+          disabled={isFullySoldOut}
           className="w-full"
         >
-          {isSoldOut ? 'Sold Out' : 'Book Now'}
+          {isFullySoldOut ? 'Sold Out' : 'Book Now'}
         </Button>
       </Card>
     </motion.div>

@@ -1,4 +1,4 @@
-import type { Booking, Flight } from '../../types';
+import type { Booking, Flight, SeatClass } from '../../types';
 import { Card, Button } from '../common';
 import { Plane, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { formatDate, formatCurrency } from '../../utils/formatters';
@@ -38,6 +38,21 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
     }
   };
 
+  const getSeatClassStyle = (seatClass: SeatClass) => {
+    switch (seatClass) {
+      case 'economy':
+        return 'bg-white/10 text-star-white border border-white/20';
+      case 'business':
+        return 'bg-cosmic-purple/20 text-cosmic-purple border border-cosmic-purple/40';
+      case 'galaxium':
+        return 'bg-solar-orange/20 text-solar-orange border border-solar-orange/40';
+    }
+  };
+
+  const getSeatClassLabel = (seatClass: SeatClass) => {
+    return seatClass.charAt(0).toUpperCase() + seatClass.slice(1);
+  };
+
   const canCancel = booking.status === 'booked';
 
   return (
@@ -56,10 +71,13 @@ export const BookingCard = ({ booking, flight, onCancel, isCancelling }: Booking
             </div>
             <div>
               <p className="text-sm text-star-white/60">Booking #{booking.booking_id}</p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {getStatusIcon()}
                 <span className={`text-sm font-semibold capitalize ${getStatusColor()}`}>
                   {booking.status}
+                </span>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getSeatClassStyle(booking.seat_class)}`}>
+                  {getSeatClassLabel(booking.seat_class)}
                 </span>
               </div>
             </div>
