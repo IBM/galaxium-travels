@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import type { Flight, ErrorResponse } from '../types';
 import { LoadingSpinner } from '../components/common';
 import { FlightCard } from '../components/flights/FlightCard';
@@ -8,9 +8,16 @@ import { BookingModal } from '../components/bookings/BookingModal';
 import { getFlights } from '../services/api';
 import type { FlightFilters as FlightFiltersType } from '../services/api';
 import { useUser } from '../hooks/useUserContext';
-import { Search } from 'lucide-react';
+import { Search, Orbit, List } from 'lucide-react';
+import { MapErrorBoundary } from '../components/solar/MapErrorBoundary';
+import { isWebGLAvailable } from '../solar/webgl';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+
+// Lazy, so three.js is only downloaded when the map is opened.
+const SolarSystemMap = lazy(() => import('../components/solar/SolarSystemMap'));
+
+type ViewMode = 'map' | 'list';
 
 export const Flights = () => {
   const { user } = useUser();
@@ -21,6 +28,15 @@ export const Flights = () => {
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  // The map is the default view. Without WebGL, or if the scene throws, the list takes over.
+  const [mapAvailable, setMapAvailable] = useState(isWebGLAvailable);
+  const [view, setView] = useState<ViewMode>(() => (mapAvailable ? 'map' : 'list'));
+
+  const handleMapError = useCallback(() => {
+    setMapAvailable(false);
+    setView('list');
+    toast.error('The 3D map is unavailable. Showing the list view.');
+  }, []);
 
   const loadFlights = useCallback(async (retryCount = 0) => {
     const MAX_RETRIES = 3;
@@ -107,6 +123,40 @@ export const Flights = () => {
         </p>
       </motion.div>
 
+      {/* View toggle */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1" role="group" aria-label="Flight view">
+          {([
+            { mode: 'map', label: 'Map', Icon: Orbit },
+            { mode: 'list', label: 'List', Icon: List },
+          ] as const).map(({ mode, label, Icon }) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setView(mode)}
+              disabled={mode === 'map' && !mapAvailable}
+              title={mode === 'map' && !mapAvailable ? '3D map is not available in this browser' : undefined}
+              aria-pressed={view === mode}
+              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+                view === mode ? 'bg-cosmic-purple text-white' : 'text-star-white/70 hover:bg-white/10'
+              }`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Solar system map. Stays mounted while flights refetch so the clock and camera are kept. */}
+      {view === 'map' && (
+        <MapErrorBoundary onError={handleMapError}>
+          <Suspense fallback={<LoadingSpinner size="lg" text="Loading solar system..." />}>
+            <SolarSystemMap flights={displayFlights} onBookFlight={handleBookFlight} />
+          </Suspense>
+        </MapErrorBoundary>
+      )}
+
       {/* Search Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -141,7 +191,7 @@ export const Flights = () => {
       </div>
 
       {/* Flights Grid */}
-      {isLoading ? (
+      {view === 'map' ? null : isLoading ? (
         <LoadingSpinner size="lg" text="Loading flights..." />
       ) : displayFlights.length === 0 ? (
         <motion.div

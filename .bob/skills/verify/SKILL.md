@@ -11,7 +11,7 @@ Run the appropriate test suites for the galaxium-travels repo. Always execute co
 
 | Tier | Suites | Approx. time | When to use |
 |---|---|---|---|
-| **fast** (default) | backend pytest + frontend ESLint | ~15 s | Any verify/validate/test request without further qualification |
+| **fast** (default) | backend pytest + frontend ESLint + frontend vitest | ~15 s | Any verify/validate/test request without further qualification |
 | **standard** | fast + Java unit tests | ~1 min | User says "standard", "including Java", "all unit tests", or Java files changed |
 | **e2e** | standard + native e2e (no Docker) | ~3–5 min | User explicitly asks for e2e, integration, or cross-service testing |
 | **full e2e** | e2e + slow auto-expiry test | ~5–6 min | User explicitly says "full e2e", "including slow", or asks about hold expiry |
@@ -47,7 +47,7 @@ If that also returns nothing, assume all components may be affected.
 **Skipping rules (only apply within the selected tier):**
 - Skip backend pytest if no Python backend files changed AND at least one other component changed.
 - Skip Java unit tests if no Java service files changed AND at least one other component changed.
-- Skip frontend lint if no frontend files changed AND at least one other component changed.
+- Skip frontend lint and vitest if no frontend files changed AND at least one other component changed.
 - Never skip e2e if e2e is in the selected tier — e2e always runs when requested.
 - If only one component has changes, run only its suite(s) (even if the tier would normally include more).
 - If changes span multiple components or the diff is empty, run all suites in the tier.
@@ -75,7 +75,16 @@ cd booking_system_frontend && npm run lint
 - Working directory: `booking_system_frontend/`
 - Requires `node_modules` to be installed. If the command fails with "missing script" or "Cannot find module", first run `npm install` then retry.
 - Report: lint warnings/errors or "no issues found".
-- Note: the frontend has **no unit tests** — ESLint is the only automated check available.
+
+### 3c. Frontend vitest (~1 s)
+
+Run only if frontend is in scope:
+```bash
+cd booking_system_frontend && npm test
+```
+- Runs `vitest run` once (no watch mode). Node environment; no browser or backend needed.
+- Covers the pure modules behind the solar system map in `src/solar/` (orbit maths, flight mapping, simulation clock). React components and the 3D scene have no unit tests.
+- Report: pass/fail count, any failures.
 
 ## Step 4 — Run Java unit tests (standard tier and above)
 
@@ -150,6 +159,7 @@ Suite               | Result  | Duration
 --------------------|---------|----------
 Backend pytest      | ✅ PASS | 8s
 Frontend ESLint     | ✅ PASS | 4s
+Frontend vitest     | ✅ PASS | 1s
 Java unit tests     | ⚠️ SKIP | (no Java files changed)
 ```
 
@@ -170,7 +180,12 @@ Java unit tests     | ⚠️ SKIP | (no Java files changed)
 ### Frontend ESLint
 - **Location**: `booking_system_frontend/`
 - **Command**: `npm run lint`
-- **No unit tests exist** — ESLint is the only automated frontend check
+
+### Frontend vitest
+- **Location**: `booking_system_frontend/src/solar/*.test.ts`
+- **Command**: `npm test`
+- **Files**: `orbits.test.ts` (15 tests), `flights.test.ts` (13 tests)
+- **Scope**: pure TypeScript only; components are checked by `tsc -b` and ESLint
 
 ### Java unit tests
 - **Location**: `booking_system_inventory_hold_service/src/test/`
