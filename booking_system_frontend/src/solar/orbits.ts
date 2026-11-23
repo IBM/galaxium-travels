@@ -96,8 +96,8 @@ interface MoonOrbit {
 }
 
 export const MOON_ORBITS: Record<MoonId, MoonOrbit> = {
-  moon: { parent: 'earth', periodDays: 27.321661, radiusAu: 0.00257, sceneRadius: 1.15, lonAtJ2000: 218.316 },
-  europa: { parent: 'jupiter', periodDays: 3.551181, radiusAu: 0.004486, sceneRadius: 2.1, lonAtJ2000: 0 },
+  moon: { parent: 'earth', periodDays: 27.321661, radiusAu: 0.00257, sceneRadius: 2.0, lonAtJ2000: 218.316 },
+  europa: { parent: 'jupiter', periodDays: 3.551181, radiusAu: 0.004486, sceneRadius: 2.9, lonAtJ2000: 0 },
 };
 
 export const isMoon = (id: BodyId): id is MoonId => id === 'moon' || id === 'europa';

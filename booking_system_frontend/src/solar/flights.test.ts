@@ -5,9 +5,13 @@ import {
   availability,
   bodyIdForName,
   cheapestPrice,
+  dockPosition,
   flightArc,
   flightPhase,
   flightWindow,
+  PACE_ACTION,
+  PACE_IDLE,
+  paceAt,
   shipPosition,
   toMapFlights,
 } from './flights';
@@ -67,7 +71,6 @@ describe('ship path', () => {
   const [f] = toMapFlights([flight()]);
   const arc = flightArc(f);
   const near = (a: readonly number[], b: readonly number[]) => a.forEach((v, n) => expect(v).toBeCloseTo(b[n], 4));
-  const withSlot = (p: readonly number[]) => p.map((v, n) => v + f.slot[n]);
 
   it('reports the phase', () => {
     expect(flightPhase(f, f.departMs - 1)).toBe('docked');
@@ -76,15 +79,22 @@ describe('ship path', () => {
   });
 
   it('starts at the origin and ends at the destination with no jump', () => {
-    near(arcPoint(arc, 0), withSlot(bodyScenePosition('earth', f.departMs)));
-    near(arcPoint(arc, 1), withSlot(bodyScenePosition('mars', f.arriveMs)));
+    near(arcPoint(arc, 0), dockPosition(f, 'earth', f.departMs));
+    near(arcPoint(arc, 1), dockPosition(f, 'mars', f.arriveMs));
     near(shipPosition(f, arc, f.departMs - 1), shipPosition(f, arc, f.departMs));
     near(shipPosition(f, arc, f.arriveMs - 1), shipPosition(f, arc, f.arriveMs));
   });
 
+  it('parks clear of the surface, even at Jupiter', () => {
+    const [j] = toMapFlights([flight({ origin: 'Jupiter', destination: 'Europa' })]);
+    const p = dockPosition(j, 'jupiter', j.departMs);
+    const c = bodyScenePosition('jupiter', j.departMs);
+    expect(Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2])).toBeGreaterThan(1.5);
+  });
+
   it('rides with the body while docked', () => {
-    near(shipPosition(f, arc, f.departMs - 48 * HOUR), withSlot(bodyScenePosition('earth', f.departMs - 48 * HOUR)));
-    near(shipPosition(f, arc, f.arriveMs + 48 * HOUR), withSlot(bodyScenePosition('mars', f.arriveMs + 48 * HOUR)));
+    near(shipPosition(f, arc, f.departMs - 48 * HOUR), dockPosition(f, 'earth', f.departMs - 48 * HOUR));
+    near(shipPosition(f, arc, f.arriveMs + 48 * HOUR), dockPosition(f, 'mars', f.arriveMs + 48 * HOUR));
   });
 });
 
@@ -99,6 +109,24 @@ describe('flightWindow', () => {
       endMs: Date.UTC(2099, 0, 11, 12),
     });
     expect(flightWindow([])).toBeNull();
+  });
+});
+
+describe('paceAt', () => {
+  it('runs slowly during a flight, fast in the gaps, and ramps in between', () => {
+    const mapped = toMapFlights([flight()]);
+    const { departMs, arriveMs } = mapped[0];
+    expect(paceAt(mapped, departMs)).toBe(PACE_ACTION);
+    expect(paceAt(mapped, (departMs + arriveMs) / 2)).toBe(PACE_ACTION);
+    expect(paceAt(mapped, departMs - 12 * HOUR)).toBe(PACE_IDLE);
+    expect(paceAt(mapped, arriveMs + 12 * HOUR)).toBe(PACE_IDLE);
+    expect(paceAt([], departMs)).toBe(PACE_IDLE);
+    let previous = PACE_IDLE;
+    for (let h = 6; h >= 0; h -= 0.5) {
+      const pace = paceAt(mapped, departMs - h * HOUR);
+      expect(pace).toBeLessThanOrEqual(previous);
+      previous = pace;
+    }
   });
 });
 

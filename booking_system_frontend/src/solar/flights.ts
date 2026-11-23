@@ -7,6 +7,7 @@
  */
 import { parseISO } from 'date-fns';
 import type { Flight } from '../types';
+import { BODY_STYLE } from './bodyStyle';
 import { BODY_IDS, bodyScenePosition } from './orbits';
 import type { BodyId, Vec3 } from './orbits';
 
@@ -24,16 +25,26 @@ export interface MapFlight {
   destination: BodyId;
   departMs: number;
   arriveMs: number;
-  /** Parking offset from the body centre, so ships docked at the same body do not overlap. */
+  /** Unit direction of the parking spot from the body centre, so ships docked at the same body do not overlap. */
   slot: Vec3;
 }
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-const SLOT_RADIUS = 0.9;
+/** Gap between a body's surface and its parked ships, scene units. */
+const DOCK_CLEARANCE = 0.4;
 
 const slotFor = (index: number): Vec3 => {
   const a = index * GOLDEN_ANGLE;
-  return [SLOT_RADIUS * Math.cos(a), 0.35, SLOT_RADIUS * Math.sin(a)];
+  const lift = 0.35;
+  const flat = Math.sqrt(1 - lift * lift);
+  return [flat * Math.cos(a), lift, flat * Math.sin(a)];
+};
+
+/** Where a flight's ship parks at a body: just off the surface, in the flight's own slot. */
+export const dockPosition = (f: MapFlight, body: BodyId, tMs: number): Vec3 => {
+  const p = bodyScenePosition(body, tMs);
+  const r = BODY_STYLE[body].radius + DOCK_CLEARANCE;
+  return [p[0] + f.slot[0] * r, p[1] + f.slot[1] * r, p[2] + f.slot[2] * r];
 };
 
 /**
@@ -83,8 +94,6 @@ export const flightPhase = (f: MapFlight, tMs: number): FlightPhase =>
 export const flightProgress = (f: MapFlight, tMs: number): number =>
   Math.min(1, Math.max(0, (tMs - f.departMs) / (f.arriveMs - f.departMs)));
 
-const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-
 export interface FlightArc {
   start: Vec3;
   control: Vec3;
@@ -93,10 +102,10 @@ export interface FlightArc {
 
 /** Quadratic Bezier from the origin at departure to the destination at arrival, lifted out of the ecliptic. */
 export const flightArc = (f: MapFlight): FlightArc => {
-  const start = add(bodyScenePosition(f.origin, f.departMs), f.slot);
-  const end = add(bodyScenePosition(f.destination, f.arriveMs), f.slot);
+  const start = dockPosition(f, f.origin, f.departMs);
+  const end = dockPosition(f, f.destination, f.arriveMs);
   const span = Math.hypot(end[0] - start[0], end[1] - start[1], end[2] - start[2]);
-  const control: Vec3 = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 + 0.35 * span + 0.8, (start[2] + end[2]) / 2];
+  const control: Vec3 = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 + 0.14 * span + 0.5, (start[2] + end[2]) / 2];
   return { start, control, end };
 };
 
@@ -112,8 +121,8 @@ export const arcPoints = (arc: FlightArc, segments = 48): Vec3[] =>
 /** Where the ship is: docked at the origin, on the arc, or docked at the destination. */
 export const shipPosition = (f: MapFlight, arc: FlightArc, tMs: number): Vec3 => {
   const phase = flightPhase(f, tMs);
-  if (phase === 'docked') return add(bodyScenePosition(f.origin, tMs), f.slot);
-  if (phase === 'arrived') return add(bodyScenePosition(f.destination, tMs), f.slot);
+  if (phase === 'docked') return dockPosition(f, f.origin, tMs);
+  if (phase === 'arrived') return dockPosition(f, f.destination, tMs);
   return arcPoint(arc, flightProgress(f, tMs));
 };
 
@@ -137,4 +146,26 @@ export const FEW_SEATS_THRESHOLD = 3;
 export const availability = (flight: Flight): Availability => {
   const seats = seatsLeft(flight);
   return seats === 0 ? 'soldOut' : seats <= FEW_SEATS_THRESHOLD ? 'few' : 'plenty';
+};
+
+/** Playback pace in simulated hours per real second. */
+export const PACE_ACTION = 3;
+export const PACE_IDLE = 28;
+/** Simulated hours over which playback brakes into a flight and accelerates out of it. */
+const PACE_RAMP_HOURS = 5;
+
+/**
+ * Seeded flights last hours and are spread over ten days, so at a constant speed
+ * the scene is either empty or over in a blink. Playback runs slowly while any
+ * ship is in flight and skips quickly through the gaps, ramping smoothly between
+ * the two. It is a pure function of time, so scrubbing never leaves it lagging.
+ */
+export const paceAt = (flights: readonly MapFlight[], tMs: number): number => {
+  let gapHours = Infinity;
+  for (const f of flights) {
+    const gap = tMs < f.departMs ? f.departMs - tMs : tMs > f.arriveMs ? tMs - f.arriveMs : 0;
+    gapHours = Math.min(gapHours, gap / HOUR_MS);
+  }
+  const k = Math.min(1, gapHours / PACE_RAMP_HOURS);
+  return PACE_ACTION + (PACE_IDLE - PACE_ACTION) * k * k * (3 - 2 * k);
 };

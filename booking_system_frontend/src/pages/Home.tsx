@@ -1,10 +1,59 @@
+import { lazy, Suspense, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/common';
-import { Rocket, Globe, Shield, Zap } from 'lucide-react';
+import { Rocket, Globe, Shield, Zap, MousePointerClick } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ALL_DESTINATIONS } from '../data/destinations';
+import { BookingModal } from '../components/bookings/BookingModal';
+import { MapErrorBoundary } from '../components/solar/MapErrorBoundary';
+import { UserIdentification } from '../components/user/UserIdentification';
+import { useUser } from '../hooks/useUserContext';
+import { getFlights } from '../services/api';
+import { isWebGLAvailable } from '../solar/webgl';
+import type { Flight } from '../types';
+
+// Lazy, so three.js loads after the page text is already on screen.
+const SolarSystemMap = lazy(() => import('../components/solar/SolarSystemMap'));
+
+const WIDE_SCREEN = '(min-width: 1024px)';
+const subscribeToWidth = (onChange: () => void) => {
+  const query = window.matchMedia(WIDE_SCREEN);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+};
+const isWideScreen = () => window.matchMedia(WIDE_SCREEN).matches;
+
+// Wide screens: sun right of centre, headline on the left. Narrow screens: sun below the headline.
+const WIDE_SHIFT = { x: 0.17, y: 0 };
+const NARROW_SHIFT = { x: 0, y: 0.2 };
 
 export const Home = () => {
+  const { user } = useUser();
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  // Without WebGL, or if the scene throws, the hero is just the text over the page starfield.
+  const [mapAvailable, setMapAvailable] = useState(isWebGLAvailable);
+  const wide = useSyncExternalStore(subscribeToWidth, isWideScreen);
+
+  // The hero works without flights (planets only), so a failed request is not surfaced here.
+  const loadFlights = useCallback(() => {
+    getFlights()
+      .then(setFlights)
+      .catch((error) => console.warn('Home: could not load flights for the solar map', error));
+  }, []);
+
+  useEffect(() => {
+    loadFlights();
+  }, [loadFlights]);
+
+  const handleBookFlight = (flight: Flight) => {
+    setSelectedFlight(flight);
+    if (user) setShowBookingModal(true);
+    else setShowUserModal(true);
+  };
+
   const features = [
     {
       icon: <Rocket size={32} />,
@@ -30,53 +79,62 @@ export const Home = () => {
 
   return (
     <div className="space-y-20">
-      {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="text-center py-20"
-      >
-        <motion.div
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            <span className="bg-cosmic-gradient bg-clip-text text-transparent">
-              Journey Beyond
-            </span>
-            <br />
-            <span className="text-star-white">The Stars</span>
-          </h1>
-        </motion.div>
+      {/* Hero: the live solar system fills the first screen, edge to edge, under the header. */}
+      <section className="absolute inset-x-0 top-0 h-screen min-h-[640px] overflow-hidden">
+        {mapAvailable && (
+          <MapErrorBoundary onError={() => setMapAvailable(false)}>
+            <Suspense fallback={null}>
+              <SolarSystemMap flights={flights} onBookFlight={handleBookFlight} viewShift={wide ? WIDE_SHIFT : NARROW_SHIFT} />
+            </Suspense>
+          </MapErrorBoundary>
+        )}
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-xl text-star-white/80 mb-8 max-w-2xl mx-auto"
-        >
-          Experience the future of space travel with Galaxium. Book your
-          interplanetary flight and explore the wonders of our solar system.
-        </motion.p>
+        {/* Scrims: keep the headline readable and blend the scene into the page below. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-space-dark/85 via-space-dark/30 via-45% to-transparent lg:bg-gradient-to-r lg:from-space-dark/90 lg:via-space-dark/45 lg:via-35%" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-space-dark to-transparent" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <Link to="/flights">
-            <Button size="lg" className="w-full sm:w-auto">
-              Explore Flights
-            </Button>
-          </Link>
-          <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-            Learn More
-          </Button>
-        </motion.div>
-      </motion.section>
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <div className="container mx-auto flex h-full items-start px-4 pt-36 lg:items-center lg:pt-0">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.3 }}
+              className="mx-auto max-w-xl text-center lg:mx-0 lg:text-left"
+            >
+              <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.35em] text-star-white/60 sm:text-xs md:mb-5">
+                Live departures · January 2099
+              </p>
+              <h1 className="mb-4 text-4xl font-bold leading-[1.05] sm:text-5xl md:mb-6 md:text-7xl">
+                <span className="bg-cosmic-gradient bg-clip-text text-transparent">Journey Beyond</span>
+                <br />
+                <span className="text-star-white">The Stars</span>
+              </h1>
+              <p className="mb-6 text-base text-star-white/75 md:mb-8 md:text-lg">
+                Seven worlds, ten flights, one map. Every light you see moving is a flight you can book.
+              </p>
+              <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
+                <Link to="/flights">
+                  <Button size="lg">Explore Flights</Button>
+                </Link>
+                {mapAvailable && (
+                  <span className="hidden items-center gap-2 text-sm text-star-white/55 sm:flex">
+                    <MousePointerClick size={16} />
+                    Click a ship to book, a planet to explore
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {mapAvailable && (
+          <p className="pointer-events-none absolute bottom-1.5 right-4 z-20 text-[10px] text-star-white/35">
+            Planet positions approximate · distances compressed · routes illustrative
+          </p>
+        )}
+      </section>
+      {/* Reserves the hero's height in the page flow (the section above is absolutely positioned). */}
+      <div aria-hidden className="!mt-0 h-[calc(100vh-6rem)] min-h-[544px]" />
 
       {/* Features Section */}
       <section>
@@ -165,6 +223,9 @@ export const Home = () => {
           </Button>
         </Link>
       </motion.section>
+
+      <UserIdentification isOpen={showUserModal} onClose={() => setShowUserModal(false)} onSuccess={() => setShowBookingModal(true)} />
+      <BookingModal isOpen={showBookingModal} onClose={() => setShowBookingModal(false)} flight={selectedFlight} onSuccess={loadFlights} />
     </div>
   );
 };

@@ -51,7 +51,7 @@ export const BodyPanel = ({ bodyId, mapFlights, onClose, onBookFlight }: BodyPan
     : [];
 
   return (
-    <aside className="absolute bottom-24 right-3 top-3 z-30 flex w-72 max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-xl border border-white/10 bg-space-blue/90 backdrop-blur-md">
+    <aside className="absolute bottom-28 right-4 top-28 z-30 flex w-80 max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-space-dark/75 shadow-2xl shadow-black/60 backdrop-blur-xl lg:right-10">
       <div className="flex items-start justify-between gap-2 border-b border-white/10 p-4">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold text-star-white">
