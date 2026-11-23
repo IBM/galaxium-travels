@@ -9,6 +9,7 @@ import {
   flightArc,
   flightPhase,
   flightWindow,
+  isBookable,
   PACE_ACTION,
   PACE_IDLE,
   paceAt,
@@ -127,6 +128,17 @@ describe('paceAt', () => {
       expect(pace).toBeLessThanOrEqual(previous);
       previous = pace;
     }
+  });
+});
+
+describe('isBookable', () => {
+  it('closes booking at departure and for sold-out flights', () => {
+    const [f] = toMapFlights([flight()]);
+    expect(isBookable(f, f.departMs - 1)).toBe(true);
+    expect(isBookable(f, f.departMs)).toBe(false);
+    expect(isBookable(f, f.arriveMs + HOUR)).toBe(false);
+    const [full] = toMapFlights([flight({ economy_seats_available: 0, business_seats_available: 0, galaxium_seats_available: 0 })]);
+    expect(isBookable(full, full.departMs - HOUR)).toBe(false);
   });
 });
 

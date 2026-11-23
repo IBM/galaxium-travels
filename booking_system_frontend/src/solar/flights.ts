@@ -169,3 +169,12 @@ export const paceAt = (flights: readonly MapFlight[], tMs: number): number => {
   const k = Math.min(1, gapHours / PACE_RAMP_HOURS);
   return PACE_ACTION + (PACE_IDLE - PACE_ACTION) * k * k * (3 - 2 * k);
 };
+
+/** How long before departure a rewind lands, so there is time to book before the ship leaves. */
+export const BOARDING_LEAD_MS = 2 * HOUR_MS;
+
+/**
+ * On the map the simulation clock is "now": a flight can be booked only while its
+ * ship is still docked at the origin. This is a rule of the map, not of the backend.
+ */
+export const isBookable = (f: MapFlight, tMs: number): boolean => flightPhase(f, tMs) === 'docked' && seatsLeft(f.flight) > 0;

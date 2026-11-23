@@ -271,7 +271,8 @@ interface ShipProps {
   mapFlight: MapFlight;
   clock: SimClock;
   glow: CanvasTexture;
-  onBook: (mapFlight: MapFlight) => void;
+  selected: boolean;
+  onSelect: (mapFlight: MapFlight) => void;
   onHover: (flightId: number | null) => void;
 }
 
@@ -290,7 +291,7 @@ const tailColors = (color: string): Tuple3[] => {
   });
 };
 
-const Ship = ({ mapFlight, clock, glow, onBook, onHover }: ShipProps) => {
+const Ship = ({ mapFlight, clock, glow, selected, onSelect, onHover }: ShipProps) => {
   const group = useRef<Group>(null);
   const halo = useRef<SpriteMaterial>(null);
   const route = useRef<ComponentRef<typeof Line>>(null);
@@ -318,10 +319,10 @@ const Ship = ({ mapFlight, clock, glow, onBook, onHover }: ShipProps) => {
     // Keep ships readable when zoomed out, without letting them swamp a planet up close.
     const distance = state.camera.position.distanceTo(g.position);
     const size = Math.min(2.6, Math.max(0.35, distance / 40));
-    g.scale.setScalar(size * (enroute ? 1.5 : 0.6) * (hovered ? 1.4 : 1));
-    if (halo.current) halo.current.opacity = enroute || hovered ? 1 : phase === 'arrived' ? 0.3 : 0.6;
+    g.scale.setScalar(size * (enroute ? 1.5 : 0.6) * (hovered || selected ? 1.4 : 1));
+    if (halo.current) halo.current.opacity = enroute || hovered || selected ? 1 : phase === 'arrived' ? 0.3 : 0.6;
     // Routes stay hidden until they matter: ten idle arcs at once is just clutter.
-    if (route.current) route.current.material.opacity = enroute ? 0.4 : hovered ? 0.5 : 0;
+    if (route.current) route.current.material.opacity = hovered || selected ? 0.55 : enroute ? 0.4 : 0;
 
     const line = tailRef.current;
     if (line) {
@@ -355,7 +356,7 @@ const Ship = ({ mapFlight, clock, glow, onBook, onHover }: ShipProps) => {
         <mesh
           onClick={(e) => {
             e.stopPropagation();
-            onBook(mapFlight);
+            onSelect(mapFlight);
           }}
           onPointerOver={(e) => {
             e.stopPropagation();
@@ -438,9 +439,18 @@ export interface ViewShift {
 
 const FINE_POINTER = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches;
 
+/** Something the camera can fly to and then follow. */
+export interface FocusTarget {
+  /** Changes when the target does; a new key starts a new fly-to. */
+  key: string;
+  /** Camera distance once it has arrived, scene units. */
+  distance: number;
+  position: (tMs: number) => Vec3;
+}
+
 interface CameraRigProps {
   clock: SimClock;
-  focus: BodyId | null;
+  focus: FocusTarget | null;
   /** Shifts the picture by this share of the width and height, so the sun can sit off-centre beside page text. */
   viewShift: ViewShift;
 }
@@ -458,7 +468,7 @@ interface Flight3 {
 
 /**
  * Opens with a slow descent into the resting view, then drifts around the sun.
- * Selecting a body flies to it and follows it; clearing the selection flies back.
+ * Selecting a body or a ship flies to it and follows it; clearing the selection flies back.
  */
 const CameraRig = ({ clock, focus, viewShift }: CameraRigProps) => {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
@@ -466,6 +476,9 @@ const CameraRig = ({ clock, focus, viewShift }: CameraRigProps) => {
   const mounted = useRef(false);
   const size = useThree((s) => s.size);
   const get = useThree((s) => s.get);
+  // Primitives, so a refetch that rebuilds the same target does not restart the fly-to.
+  const focusKey = focus?.key ?? null;
+  const focusDistance = focus?.distance ?? 0;
 
   useEffect(() => {
     const camera = get().camera as PerspectiveCamera;
@@ -493,14 +506,14 @@ const CameraRig = ({ clock, focus, viewShift }: CameraRigProps) => {
       return;
     }
     const fromOffset = c.object.position.clone().sub(c.target);
-    const toOffset = focus ? fromOffset.clone().normalize().multiplyScalar(BODY_STYLE[focus].radius * 5 + 5) : resting;
+    const toOffset = focusKey ? fromOffset.clone().normalize().multiplyScalar(focusDistance) : resting;
     fly.current = { t: 0, seconds: FLY_SECONDS, fromTarget: c.target.clone(), fromOffset, toOffset };
-  }, [focus]);
+  }, [focusKey, focusDistance]);
 
   useFrame((_, delta) => {
     const c = controls.current;
     if (!c) return;
-    const goal = focus ? bodyScenePosition(focus, clock.getState().timeMs) : ([0, 0, 0] as const);
+    const goal = focus ? focus.position(clock.getState().timeMs) : ([0, 0, 0] as const);
     const f = fly.current;
     if (f) {
       f.t = Math.min(1, f.t + delta / f.seconds);
@@ -544,8 +557,9 @@ export interface SolarSceneProps {
   clock: SimClock;
   mapFlights: MapFlight[];
   selectedBody: BodyId | null;
+  selectedFlight: MapFlight | null;
   onSelectBody: (id: BodyId) => void;
-  onBookFlight: (mapFlight: MapFlight) => void;
+  onSelectFlight: (mapFlight: MapFlight) => void;
   labels: LabelRegistry;
   hoveredFlight: MapFlight | null;
   onHoverFlight: (flightId: number | null) => void;
@@ -556,8 +570,9 @@ export const SolarScene = ({
   clock,
   mapFlights,
   selectedBody,
+  selectedFlight,
   onSelectBody,
-  onBookFlight,
+  onSelectFlight,
   labels,
   hoveredFlight,
   onHoverFlight,
@@ -566,6 +581,18 @@ export const SolarScene = ({
   // Orbit shapes barely change over the flight window, so trace them once.
   const [orbitEpochMs] = useState(() => clock.getState().timeMs);
   const glow = useCanvasTexture(paintGlow);
+
+  // Keyed on ids, so a refetch of the same flight does not restart the fly-to.
+  const selectedFlightId = selectedFlight?.flight.flight_id ?? null;
+  const focus = useMemo((): FocusTarget | null => {
+    if (selectedBody) {
+      return { key: `body:${selectedBody}`, distance: BODY_STYLE[selectedBody].radius * 5 + 5, position: (t) => bodyScenePosition(selectedBody, t) };
+    }
+    const mf = mapFlights.find((f) => f.flight.flight_id === selectedFlightId);
+    if (!mf) return null;
+    const arc = flightArc(mf);
+    return { key: `flight:${selectedFlightId}`, distance: 11, position: (t) => shipPosition(mf, arc, t) };
+  }, [selectedBody, selectedFlightId, mapFlights]);
 
   return (
     <>
@@ -585,9 +612,17 @@ export const SolarScene = ({
         <Body key={id} id={id} clock={clock} onSelect={onSelectBody} />
       ))}
       {mapFlights.map((mf) => (
-        <Ship key={mf.flight.flight_id} mapFlight={mf} clock={clock} glow={glow} onBook={onBookFlight} onHover={onHoverFlight} />
+        <Ship
+          key={mf.flight.flight_id}
+          mapFlight={mf}
+          clock={clock}
+          glow={glow}
+          selected={mf.flight.flight_id === selectedFlightId}
+          onSelect={onSelectFlight}
+          onHover={onHoverFlight}
+        />
       ))}
-      <CameraRig clock={clock} focus={selectedBody} viewShift={viewShift} />
+      <CameraRig clock={clock} focus={focus} viewShift={viewShift} />
       {/* After the rig, so labels use this frame's camera. */}
       <LabelProjector clock={clock} labels={labels} hoveredFlight={hoveredFlight} quietLeft={viewShift.x > 0 ? 0.44 : 0} />
       <EffectComposer multisampling={4}>

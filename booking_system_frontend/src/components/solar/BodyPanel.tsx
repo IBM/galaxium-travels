@@ -11,16 +11,16 @@ interface BodyPanelProps {
   bodyId: BodyId;
   mapFlights: MapFlight[];
   onClose: () => void;
-  onBookFlight: (mapFlight: MapFlight) => void;
+  onSelectFlight: (mapFlight: MapFlight) => void;
 }
 
-const FlightRow = ({ mapFlight, onBook }: { mapFlight: MapFlight; onBook: (f: MapFlight) => void }) => {
+const FlightRow = ({ mapFlight, onSelect }: { mapFlight: MapFlight; onSelect: (f: MapFlight) => void }) => {
   const { flight } = mapFlight;
   const price = cheapestPrice(flight);
   return (
     <button
       type="button"
-      onClick={() => onBook(mapFlight)}
+      onClick={() => onSelect(mapFlight)}
       className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left transition-colors hover:bg-white/10"
     >
       <span>
@@ -35,7 +35,7 @@ const FlightRow = ({ mapFlight, onBook }: { mapFlight: MapFlight; onBook: (f: Ma
   );
 };
 
-export const BodyPanel = ({ bodyId, mapFlights, onClose, onBookFlight }: BodyPanelProps) => {
+export const BodyPanel = ({ bodyId, mapFlights, onClose, onSelectFlight }: BodyPanelProps) => {
   const { label, color } = BODY_STYLE[bodyId];
   const destination = getDestinationByName(label);
   const departing = mapFlights.filter((f) => f.origin === bodyId);
@@ -90,7 +90,7 @@ export const BodyPanel = ({ bodyId, mapFlights, onClose, onBookFlight }: BodyPan
             ) : (
               <div className="space-y-2">
                 {list.map((f) => (
-                  <FlightRow key={f.flight.flight_id} mapFlight={f} onBook={onBookFlight} />
+                  <FlightRow key={f.flight.flight_id} mapFlight={f} onSelect={onSelectFlight} />
                 ))}
               </div>
             )}

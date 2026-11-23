@@ -175,7 +175,10 @@ const europa: Painter = ({ x, y, z }) => {
 
 const PAINTERS: Record<BodyId, Painter> = { earth, mars, venus, jupiter, pluto, moon, europa };
 
-export const paintBody = (id: BodyId): HTMLCanvasElement => paint(512, 256, PAINTERS[id]);
+// Painting blocks the main thread, so only bodies that get close-ups worth the detail are painted large.
+const LARGE: readonly BodyId[] = ['earth', 'mars', 'jupiter'];
+
+export const paintBody = (id: BodyId): HTMLCanvasElement => (LARGE.includes(id) ? paint(512, 256, PAINTERS[id]) : paint(256, 128, PAINTERS[id]));
 
 export const paintSun = (): HTMLCanvasElement =>
   paint(256, 128, ({ x, y, z }) => {
@@ -185,7 +188,7 @@ export const paintSun = (): HTMLCanvasElement =>
 
 /** Dim backdrop: a faint band of milky light plus nebula colour from the site palette. */
 export const paintBackdrop = (): HTMLCanvasElement =>
-  paint(1024, 512, ({ x, y, z }) => {
+  paint(640, 320, ({ x, y, z }) => {
     const cloud = fbm(x * 1.7, y * 1.7, z * 1.7, 4, 149);
     const hue = fbm(x * 0.9 + 7, y * 0.9, z * 0.9, 2, 157);
     // Band along a tilted great circle.

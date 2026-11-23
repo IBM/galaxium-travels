@@ -184,7 +184,7 @@ Java unit tests     | ⚠️ SKIP | (no Java files changed)
 ### Frontend vitest
 - **Location**: `booking_system_frontend/src/solar/*.test.ts`
 - **Command**: `npm test`
-- **Files**: `orbits.test.ts` (15 tests), `flights.test.ts` (15 tests)
+- **Files**: `orbits.test.ts` (15 tests), `flights.test.ts` (16 tests)
 - **Scope**: pure TypeScript only; components are checked by `tsc -b` and ESLint
 
 ### Java unit tests

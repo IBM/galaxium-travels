@@ -84,7 +84,12 @@ export const Home = () => {
         {mapAvailable && (
           <MapErrorBoundary onError={() => setMapAvailable(false)}>
             <Suspense fallback={null}>
-              <SolarSystemMap flights={flights} onBookFlight={handleBookFlight} viewShift={wide ? WIDE_SHIFT : NARROW_SHIFT} />
+              <SolarSystemMap
+                flights={flights}
+                onBookFlight={handleBookFlight}
+                viewShift={wide ? WIDE_SHIFT : NARROW_SHIFT}
+                paused={showUserModal || showBookingModal}
+              />
             </Suspense>
           </MapErrorBoundary>
         )}
@@ -110,7 +115,7 @@ export const Home = () => {
                 <span className="text-star-white">The Stars</span>
               </h1>
               <p className="mb-6 text-base text-star-white/75 md:mb-8 md:text-lg">
-                Seven worlds, ten flights, one map. Every light you see moving is a flight you can book.
+                Seven worlds, ten flights, one map. Every light is a scheduled flight: catch one before it leaves.
               </p>
               <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
                 <Link to="/flights">
@@ -119,7 +124,7 @@ export const Home = () => {
                 {mapAvailable && (
                   <span className="hidden items-center gap-2 text-sm text-star-white/55 sm:flex">
                     <MousePointerClick size={16} />
-                    Click a ship to book, a planet to explore
+                    Click a ship or a planet
                   </span>
                 )}
               </div>
