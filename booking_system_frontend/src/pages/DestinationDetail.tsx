@@ -8,6 +8,7 @@ import type { DestinationData } from '../data/destinations';
 import { getFlights } from '../services/api';
 import type { Flight } from '../types';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { PlanetOrb } from '../components/common/PlanetOrb';
 import { formatTime, formatDate, formatCurrency } from '../utils/formatters';
 
 // Animated section wrapper — staggered entrance matching site-wide style
@@ -76,25 +77,23 @@ export const DestinationDetail = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="glass-card p-12 max-w-md"
         >
-          <Rocket size={48} className="mx-auto mb-6 text-cosmic-purple" />
+          <Rocket size={40} className="mx-auto mb-6 text-star-white/50" />
           <h1 className="text-3xl font-bold text-star-white mb-4">
             We haven't charted this world yet
           </h1>
           <p className="text-star-white/70 mb-8">
-            The destination <span className="font-mono text-cosmic-purple">/{slug}</span> doesn't exist in our star charts.
+            The destination <span className="font-mono text-star-white">/{slug}</span> doesn't exist in our star charts.
           </p>
-          <Link to="/">
-            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-cosmic-gradient text-white font-semibold hover:opacity-90 transition-opacity">
-              <ArrowLeft size={18} />
-              Back to Home
-            </button>
+          <Link to="/" className="btn-primary">
+            <ArrowLeft size={14} />
+            Back to Home
           </Link>
         </motion.div>
       </div>
     );
   }
 
-  const { name, tagline, description, facts, hazards, gallery, accentColor, bgAccent, borderAccent } = destination;
+  const { name, tagline, description, facts, hazards, gallery, borderAccent } = destination;
 
   return (
     <div className="space-y-12">
@@ -111,21 +110,20 @@ export const DestinationDetail = () => {
 
       {/* ── 1. Hero ─────────────────────────────────────────────────────────── */}
       <Section delay={0.05}>
-        <div className={`glass-card p-10 ${bgAccent} border ${borderAccent}`}>
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest ${bgAccent} border ${borderAccent} ${accentColor}`}>
-              Destination
-            </span>
+        <div className="flex flex-col-reverse items-start gap-8 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="eyebrow mb-3">Destination</p>
+            <h1 className="mb-3 text-5xl font-semibold tracking-tight text-star-white md:text-6xl">{name}</h1>
+            <p className="mb-4 text-xl text-star-white/70">{tagline}</p>
+            <p className="max-w-3xl leading-relaxed text-star-white/70">{description}</p>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-star-white mb-3">{name}</h1>
-          <p className={`text-xl font-medium mb-4 ${accentColor}`}>{tagline}</p>
-          <p className="text-star-white/80 max-w-3xl leading-relaxed">{description}</p>
+          <PlanetOrb name={name} size={176} className="md:mr-8" />
         </div>
       </Section>
 
       {/* ── 2. Facts ────────────────────────────────────────────────────────── */}
       <Section delay={0.1}>
-        <h2 className="text-2xl font-bold text-star-white mb-6">Quick Facts</h2>
+        <h2 className="eyebrow mb-4">Quick facts</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <FactTile label="Gravity" value={facts.gravity} />
           <FactTile label="Distance from Earth" value={facts.distanceFromEarth} />
@@ -141,7 +139,7 @@ export const DestinationDetail = () => {
         <div className="glass-card p-6 border border-solar-orange/30 bg-solar-orange/5">
           <div className="flex items-center gap-3 mb-5">
             <AlertTriangle size={22} className="text-solar-orange flex-shrink-0" />
-            <h2 className="text-2xl font-bold text-star-white">Hazard Advisory</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-star-white">Hazard advisory</h2>
           </div>
           <ul className="space-y-3">
             {hazards.map((hazard, i) => (
@@ -156,7 +154,7 @@ export const DestinationDetail = () => {
 
       {/* ── 4. Gallery ──────────────────────────────────────────────────────── */}
       <Section delay={0.3}>
-        <h2 className="text-2xl font-bold text-star-white mb-6">Gallery</h2>
+        <h2 className="eyebrow mb-4">Gallery</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {gallery.map((item, i) => (
             <div
@@ -180,7 +178,7 @@ export const DestinationDetail = () => {
       {/* ── 5. Flights departing soon ───────────────────────────────────────── */}
       <Section delay={0.4}>
         <div className="glass-card p-6">
-          <h2 className="text-2xl font-bold text-star-white mb-2">Flights Departing Soon</h2>
+          <h2 className="mb-2 text-xl font-semibold tracking-tight text-star-white">Flights departing soon</h2>
           <p className="text-star-white/60 text-sm mb-6">
             Live availability — up to 5 upcoming departures to {name}
           </p>
@@ -200,7 +198,7 @@ export const DestinationDetail = () => {
               {flights.map((flight) => (
                 <div
                   key={flight.flight_id}
-                  className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg border ${borderAccent} ${bgAccent}`}
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4"
                 >
                   <div>
                     <p className="text-star-white font-semibold">
@@ -213,11 +211,11 @@ export const DestinationDetail = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-xs text-star-white/50">From</p>
-                      <p className={`font-bold ${accentColor}`}>{formatCurrency(flight.economy_price)}</p>
+                      <p className="font-mono font-medium text-star-white">{formatCurrency(flight.economy_price)}</p>
                     </div>
                     <Link
                       to={`/flights?destination=${encodeURIComponent(name)}`}
-                      className="px-4 py-2 rounded-lg bg-cosmic-gradient text-white text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+                      className="btn-primary px-4 py-2 text-[10px]"
                     >
                       Book
                     </Link>

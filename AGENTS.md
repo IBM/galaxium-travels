@@ -139,6 +139,8 @@ scripts/
 
 - Branch naming: no enforced convention observed; recent branches use `restore/`, `feature/` prefixes.
 - **Verification:** use the `verify` skill — it knows which checks are cheap vs. expensive and when e2e is needed.
+- **GitHub issues are managed from [`issues/`](issues/README.md)** — titles, bodies, labels and open/closed state live in `issues/manifest.json` and `issues/bodies/`. Edit them there and run `python3 scripts/issues/sync_issues.py plan`, not on GitHub. After moving or renaming source files, run `python3 scripts/issues/sync_issues.py check`: it fails when an issue names a file that no longer exists.
+=======
 
 ## Issue agent (GitHub Actions)
 

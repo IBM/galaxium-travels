@@ -20,10 +20,13 @@ export const Layout = ({ children }: LayoutProps) => {
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'rgba(10, 25, 41, 0.95)',
+            background: 'rgba(3, 7, 18, 0.85)',
             color: '#F9FAFB',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)',
+            borderRadius: '14px',
+            fontSize: '13px',
+            boxShadow: '0 24px 60px -20px rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(20px)',
           },
           success: {
             iconTheme: {
@@ -33,7 +36,7 @@ export const Layout = ({ children }: LayoutProps) => {
           },
           error: {
             iconTheme: {
-              primary: '#EF4444',
+              primary: '#EC4899',
               secondary: '#F9FAFB',
             },
           },
@@ -44,7 +47,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <Header />
       
       {/* Main content */}
-      <main className="relative z-10 flex-1 pt-24 pb-8">
+      <main className="relative z-10 flex-1 pb-8 pt-36 md:pt-24">
         <div className="container mx-auto px-4">
           {children}
         </div>

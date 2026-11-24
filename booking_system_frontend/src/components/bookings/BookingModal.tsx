@@ -1,144 +1,102 @@
 import { useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import clsx from 'clsx';
 import type { Flight, SeatClass, Quote, Hold } from '../../types';
-import { Modal, Button } from '../common';
-import {
-  Plane,
-  DollarSign,
-  Crown,
-  Rocket,
-  Check,
-  ArrowLeft,
-  Tag,
-  Timer,
-  Zap,
-} from 'lucide-react';
+import { Modal, Button, PlanetOrb } from '../common';
+import { HoldRing } from './HoldRing';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
+import { classSeatText, seatColor, seatOffers } from '../../utils/seatClasses';
 import { createQuote, createHold, confirmHold, releaseHold } from '../../services/api';
 import { storeHold, removeHold } from '../../utils/holdStorage';
+import { useCountdown } from '../../hooks/useCountdown';
 import { useUser } from '../../hooks/useUserContext';
 import toast from 'react-hot-toast';
 
 type Step = 'select' | 'quote' | 'hold';
 
+const STEPS: { id: Step; label: string; title: string }[] = [
+  { id: 'select', label: 'Class', title: 'Choose a cabin class' },
+  { id: 'quote', label: 'Quote', title: 'Your quote' },
+  { id: 'hold', label: 'Hold · 15 min', title: 'Seat held' },
+];
+
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   flight: Flight | null;
+  /** Class preselected when the modal opens, e.g. the one picked on the departure board. */
+  initialClass?: SeatClass;
   onSuccess: () => void;
 }
 
-export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
+export const BookingModal = ({ isOpen, onClose, flight, initialClass = 'economy', onSuccess }: BookingModalProps) => {
   const { user } = useUser();
   const [step, setStep] = useState<Step>('select');
-  const [selectedClass, setSelectedClass] = useState<SeatClass>('economy');
+  const [selectedClass, setSelectedClass] = useState<SeatClass>(initialClass);
   const [isLoading, setIsLoading] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [hold, setHold] = useState<Hold | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
+  const timeLeft = useCountdown(hold?.reservedUntil);
 
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('select');
-      setSelectedClass('economy');
+      setSelectedClass(initialClass);
       setQuote(null);
       setHold(null);
-      setTimeLeft(0);
     }
-  }, [isOpen]);
-
-  // Countdown timer
-  useEffect(() => {
-    if (!hold || step !== 'hold') return;
-
-    const update = () => {
-      const remaining = new Date(hold.reservedUntil).getTime() - Date.now();
-      setTimeLeft(isNaN(remaining) ? 0 : Math.max(0, remaining));
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [hold, step]);
+  }, [isOpen, initialClass]);
 
   if (!flight) return null;
 
-  const seatClasses = [
-    {
-      name: 'Economy',
-      class: 'economy' as SeatClass,
-      price: flight.economy_price,
-      seats: flight.economy_seats_available,
-      icon: Plane,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30',
-      features: ['Standard seating', 'In-flight entertainment', 'Complimentary snacks'],
-    },
-    {
-      name: 'Business',
-      class: 'business' as SeatClass,
-      price: flight.business_price,
-      seats: flight.business_seats_available,
-      icon: Crown,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/30',
-      features: ['Premium seating', 'Priority boarding', 'Gourmet meals', 'Extra legroom'],
-    },
-    {
-      name: 'Galaxium Class',
-      class: 'galaxium' as SeatClass,
-      price: flight.galaxium_price,
-      seats: flight.galaxium_seats_available,
-      icon: Rocket,
-      color: 'text-alien-green',
-      bgColor: 'bg-alien-green/10',
-      borderColor: 'border-alien-green/30',
-      features: ['Luxury pods', 'VIP lounge access', 'Personal concierge', 'Zero-G experience'],
-    },
-  ];
-
-  const selectedClassData = seatClasses.find((sc) => sc.class === selectedClass);
-
-  const minutes = Math.floor(timeLeft / 60000);
-  const seconds = Math.floor((timeLeft % 60000) / 1000);
-  const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const offers = seatOffers(flight);
+  const selected = offers.find((offer) => offer.id === selectedClass) ?? offers[0];
   const isExpired = hold !== null && timeLeft === 0;
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  // The quote from the hold service is the price of record once it exists.
+  const total = quote?.totalPrice ?? selected.price;
+
+  const stepper = (
+    <ol className="flex items-center gap-3">
+      {STEPS.map((s, index) => (
+        <li key={s.id} className={clsx('flex items-center gap-3', index > 0 && 'flex-1')} aria-current={index === stepIndex ? 'step' : undefined}>
+          {index > 0 && <span className={clsx('h-px flex-1', index <= stepIndex ? 'bg-white/40' : 'bg-white/10')} aria-hidden />}
+          <span className={clsx('flex items-center gap-2 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.22em]', index <= stepIndex ? 'text-star-white' : 'text-star-white/35')}>
+            {index === stepIndex && <span className="h-1.5 w-1.5 rounded-full bg-star-white shadow-[0_0_10px_#fff]" aria-hidden />}
+            {s.label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
 
   const flightSummary = (
-    <div className="glass-card p-4 bg-white/5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 rounded-lg bg-cosmic-gradient">
-          <Plane className="text-white" size={20} />
-        </div>
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <PlanetOrb name={flight.destination} size={44} />
         <div>
-          <h3 className="text-lg font-bold text-star-white">
-            {flight.origin} → {flight.destination}
+          <h3 className="text-xl font-semibold tracking-tight text-star-white">
+            {flight.origin} <span className="text-star-white/40">→</span> {flight.destination}
           </h3>
-          <p className="text-xs text-star-white/60">Flight #{flight.flight_id}</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-3 text-sm">
-        <div>
-          <p className="text-xs text-star-white/60 mb-1">Departure</p>
-          <p className="text-star-white font-medium">
-            {formatDate(flight.departure_time, 'MMM dd')}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-star-white/60 mb-1">Arrival</p>
-          <p className="text-star-white font-medium">
-            {formatDate(flight.arrival_time, 'MMM dd')}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-star-white/60 mb-1">Duration</p>
-          <p className="text-star-white font-medium">
-            {calculateDuration(flight.departure_time, flight.arrival_time)}
+          <p className="font-mono text-xs text-star-white/55">
+            {formatDate(flight.departure_time, 'dd MMM yyyy · HH:mm')} · {calculateDuration(flight.departure_time, flight.arrival_time)} transit
           </p>
         </div>
       </div>
+      {user && <p className="eyebrow">Passenger · {user.name}</p>}
+    </div>
+  );
+
+  /** Total on the left, this step's actions on the right. Shown on every step. */
+  const footer = (label: string, actions: ReactNode) => (
+    <div className="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-5">
+      <div>
+        <p className="eyebrow mb-1.5">{label}</p>
+        <p className="font-mono text-3xl font-medium leading-none tabular-nums">{formatCurrency(total)}</p>
+      </div>
+      <div className="flex items-center gap-4">{actions}</div>
     </div>
   );
 
@@ -230,216 +188,130 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
     }
   };
 
-  const getModalTitle = () => {
-    switch (step) {
-      case 'select':
-        return 'Book Your Flight';
-      case 'quote':
-        return 'Your Price Quote';
-      case 'hold':
-        return 'Seat Reserved';
-    }
-  };
-
   // Step 1: Seat class selection
   const renderSelectStep = () => (
-    <div className="space-y-6">
-      {flightSummary}
-
-      <div>
-        <h4 className="text-sm font-semibold text-star-white mb-3">Select Seat Class</h4>
-        <div className="space-y-3">
-          {seatClasses.map((sc) => {
-            const Icon = sc.icon;
-            const isSelected = selectedClass === sc.class;
-            const isSoldOut = sc.seats === 0;
-
-            return (
-              <button
-                key={sc.class}
-                onClick={() => !isSoldOut && setSelectedClass(sc.class)}
-                disabled={isSoldOut}
-                className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                  isSelected
-                    ? `${sc.borderColor} ${sc.bgColor}`
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
-                } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Icon size={20} className={sc.color} />
-                    <span className="font-semibold text-star-white">{sc.name}</span>
-                    {isSelected && <Check size={18} className={sc.color} />}
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-lg font-bold ${sc.color}`}>
-                      {formatCurrency(sc.price)}
-                    </div>
-                    <div className="text-xs text-star-white/60">
-                      {isSoldOut ? 'Sold Out' : `${sc.seats} left`}
-                    </div>
-                  </div>
-                </div>
-                <ul className="text-xs text-star-white/70 space-y-1">
-                  {sc.features.map((f, i) => (
-                    <li key={i}>• {f}</li>
-                  ))}
-                </ul>
-              </button>
-            );
-          })}
-        </div>
+    <>
+      <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Cabin class">
+        {offers.map((offer) => {
+          const isSelected = selectedClass === offer.id;
+          return (
+            <button
+              key={offer.id}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => setSelectedClass(offer.id)}
+              disabled={offer.seats === 0}
+              className={clsx(
+                'flex flex-col gap-2 rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-35',
+                isSelected ? 'border-star-white bg-white/[0.07] ring-1 ring-inset ring-star-white' : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+              )}
+            >
+              <span className="eyebrow">{offer.label}</span>
+              <span className="font-mono text-lg font-medium">{formatCurrency(offer.price)}</span>
+              <ul className="flex-1 space-y-0.5 text-xs text-star-white/55">
+                {offer.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+              <span className="mt-1 flex items-center gap-2 text-xs text-star-white/55">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: seatColor(offer.seats, 1), boxShadow: `0 0 8px ${seatColor(offer.seats, 1)}` }} />
+                {classSeatText(offer.seats)}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {user && (
-        <div className="glass-card p-4 bg-white/5">
-          <h4 className="text-sm font-semibold text-star-white mb-2">Passenger</h4>
-          <p className="text-star-white">{user.name}</p>
-          <p className="text-star-white/60 text-sm">{user.email}</p>
-        </div>
+      {footer(
+        'Total · 1 seat',
+        <>
+          <Button variant="link" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleGetQuote} isLoading={isLoading} disabled={selected.seats === 0}>
+            Get quote
+          </Button>
+        </>
       )}
-
-      <div className="flex gap-3">
-        <Button variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1">
-          Cancel
-        </Button>
-        <Button onClick={handleGetQuote} isLoading={isLoading} className="flex-1">
-          Get Quote →
-        </Button>
-      </div>
-    </div>
+    </>
   );
 
   // Step 2: Quote review
-  const renderQuoteStep = () => {
-    const Icon = selectedClassData?.icon || Plane;
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-cosmic-purple/10 border border-cosmic-purple/30">
-          <Tag size={16} className="text-cosmic-purple" />
-          <span className="text-xs text-star-white/60">Quote ID</span>
-          <span className="font-mono font-bold text-cosmic-purple ml-auto">{quote?.quoteId}</span>
+  const renderQuoteStep = () => (
+    <>
+      <dl className="divide-y divide-white/10 rounded-xl border border-white/10 bg-white/[0.03] text-sm">
+        <div className="flex items-center justify-between gap-4 px-4 py-3">
+          <dt className="text-star-white/55">{selected.label} × 1</dt>
+          <dd className="font-mono">{formatCurrency(quote?.pricePerSeat || 0)}</dd>
         </div>
-
-        {flightSummary}
-
-        <div className="glass-card p-4 bg-white/5 space-y-3">
-          <h4 className="text-sm font-semibold text-star-white">Price Breakdown</h4>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Icon size={16} className={selectedClassData?.color} />
-              <span className="text-sm text-star-white/70">{selectedClassData?.name} × 1</span>
-            </div>
-            <span className="text-star-white font-medium">
-              {formatCurrency(quote?.pricePerSeat || 0)}
-            </span>
-          </div>
-          <div className="border-t border-white/10 pt-3 flex items-center justify-between">
-            <span className="font-semibold text-star-white">Total</span>
-            <span className="text-xl font-bold text-alien-green">
-              {formatCurrency(quote?.totalPrice || 0)}
-            </span>
-          </div>
-          <p className="text-xs text-star-white/50">
-            Quote valid for 24 hours · Price calculated by inventory service
-          </p>
+        <div className="flex items-center justify-between gap-4 px-4 py-3">
+          <dt className="text-star-white/55">Quote ID</dt>
+          <dd className="truncate font-mono text-xs text-star-white/70">{quote?.quoteId}</dd>
         </div>
+      </dl>
+      <p className="text-xs text-star-white/40">Quote valid for 24 hours · Price calculated by inventory service</p>
 
-        <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setStep('select')}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            <ArrowLeft size={16} /> Back
+      {footer(
+        'Quoted total',
+        <>
+          <Button variant="link" onClick={() => setStep('select')} disabled={isLoading}>
+            <ArrowLeft size={13} /> Back
           </Button>
-          <Button onClick={handlePlaceHold} isLoading={isLoading} className="flex-1">
-            <Timer size={16} /> Place Hold →
+          <Button onClick={handlePlaceHold} isLoading={isLoading}>
+            Place hold
           </Button>
-        </div>
-      </div>
-    );
-  };
+        </>
+      )}
+    </>
+  );
 
   // Step 3: Hold active with countdown
   const renderHoldStep = () => (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-alien-green/10 border border-alien-green/30">
-        <Zap size={16} className="text-alien-green" />
-        <span className="text-xs text-star-white/60">Hold ID</span>
-        <span className="font-mono font-bold text-alien-green ml-auto">{hold?.holdId}</span>
-      </div>
-
-      {/* Countdown timer */}
-      <div
-        className={`p-6 text-center rounded-xl border-2 ${
-          isExpired
-            ? 'border-red-500/50 bg-red-500/5'
-            : 'border-solar-orange/50 bg-solar-orange/5'
-        }`}
-      >
-        <p className="text-xs text-star-white/60 mb-2 uppercase tracking-widest">
-          {isExpired ? 'Hold Expired' : 'Time to Confirm'}
-        </p>
-        <div
-          className={`text-5xl font-mono font-bold tabular-nums ${
-            isExpired ? 'text-red-500' : 'text-solar-orange'
-          }`}
-        >
-          {isExpired ? 'EXPIRED' : timerDisplay}
-        </div>
-        {!isExpired && (
-          <p className="text-xs text-star-white/50 mt-2">
-            Seat is reserved — confirm before time runs out
+    <>
+      <div className="flex items-center gap-5 rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <HoldRing msLeft={timeLeft} size={104} />
+        <div className="min-w-0">
+          <p className="eyebrow mb-1.5">{isExpired ? 'Hold expired' : 'Time to confirm'}</p>
+          <p className="text-sm text-star-white/70">
+            {isExpired
+              ? 'The seat has gone back on sale. Start again to get a new quote.'
+              : `Your ${selected.label} seat is reserved. Confirm before the ring runs out.`}
           </p>
-        )}
-      </div>
-
-      {flightSummary}
-
-      <div className="flex items-center justify-between p-4 rounded-xl bg-cosmic-gradient">
-        <div className="flex items-center gap-2">
-          <DollarSign className="text-white" size={20} />
-          <span className="text-white font-semibold">Total</span>
+          <p className="mt-2 truncate font-mono text-[11px] text-star-white/40">Hold {hold?.holdId}</p>
         </div>
-        <span className="text-xl font-bold text-white">
-          {formatCurrency(quote?.totalPrice || 0)}
-        </span>
       </div>
 
-      {isExpired ? (
-        <Button variant="secondary" onClick={onClose} className="w-full">
-          Close
-        </Button>
-      ) : (
-        <>
-          <div className="flex gap-3">
-            <Button
-              variant="danger"
-              onClick={handleReleaseHold}
-              isLoading={isLoading}
-              className="flex-1"
-            >
-              Release Hold
+      {footer(
+        'Total',
+        isExpired ? (
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+        ) : (
+          <>
+            <Button variant="link" onClick={handleReleaseHold} disabled={isLoading}>
+              Release hold
             </Button>
-            <Button onClick={handleConfirmHold} isLoading={isLoading} className="flex-1">
-              Confirm Booking
+            <Button onClick={handleConfirmHold} isLoading={isLoading}>
+              Confirm booking
             </Button>
-          </div>
-          <p className="text-xs text-star-white/50 text-center">
-            Closing keeps your hold active — find it in My Bookings
-          </p>
-        </>
+          </>
+        )
       )}
-    </div>
+      {!isExpired && <p className="text-right text-xs text-star-white/40">Closing keeps your hold active. Find it in My Bookings.</p>}
+    </>
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={getModalTitle()} size="md">
-      {step === 'select' && renderSelectStep()}
-      {step === 'quote' && renderQuoteStep()}
-      {step === 'hold' && renderHoldStep()}
+    <Modal isOpen={isOpen} onClose={onClose} title={STEPS[stepIndex].title} size="md">
+      <div className="space-y-6">
+        {stepper}
+        {flightSummary}
+        {step === 'select' && renderSelectStep()}
+        {step === 'quote' && renderQuoteStep()}
+        {step === 'hold' && renderHoldStep()}
+      </div>
     </Modal>
   );
 };

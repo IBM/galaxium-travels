@@ -10,20 +10,20 @@ export const Input = ({ label, error, className, ...props }: InputProps) => {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-star-white mb-2">
+        <label className="eyebrow mb-2 block">
           {label}
         </label>
       )}
       <input
         className={clsx(
           'input-field',
-          error && 'border-red-500 focus:ring-red-500',
+          error && 'border-nebula-pink/60 focus:border-nebula-pink focus:ring-nebula-pink/40',
           className
         )}
         {...props}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-400">{error}</p>
+        <p className="mt-1 text-xs text-nebula-pink">{error}</p>
       )}
     </div>
   );

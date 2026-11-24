@@ -10,7 +10,8 @@ export const formatDate = (
   formatString: string = 'MMM dd, yyyy HH:mm'
 ): string => {
   try {
-    const date = parseISO(dateString);
+    // The backend sometimes sends both an offset and a Z ("...+00:00Z"), which is not valid ISO.
+    const date = parseISO(dateString.replace(/([+-]\d{2}:\d{2})Z$/, '$1'));
     return format(date, formatString);
   } catch (error) {
     console.error('Error formatting date:', error);
@@ -33,16 +34,17 @@ export const formatTime = (dateString: string): string => {
 };
 
 /**
- * Format currency (USD)
- * @param amount Amount in cents or dollars
+ * Format a price in credits, the one unit the app shows (e.g. "1,000,000 cr")
  */
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount)} cr`;
+};
+
+/**
+ * Short price for dense lists (e.g. "1M", "950K", "2.5M"). The unit is shown next to it.
+ */
+export const formatCompactCredits = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 }).format(amount);
 };
 
 /**

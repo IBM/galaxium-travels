@@ -1,24 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Flight, ErrorResponse } from '../types';
-import { LoadingSpinner } from '../components/common';
-import { FlightCard } from '../components/flights/FlightCard';
+import { useSearchParams } from 'react-router-dom';
+import type { Flight, ErrorResponse, SeatClass } from '../types';
+import { Button } from '../components/common';
+import { FlightBoard } from '../components/flights/FlightBoard';
 import { FlightFilters } from '../components/flights/FlightFilters';
 import { UserIdentification } from '../components/user/UserIdentification';
 import { BookingModal } from '../components/bookings/BookingModal';
 import { getFlights } from '../services/api';
 import type { FlightFilters as FlightFiltersType } from '../services/api';
 import { useUser } from '../hooks/useUserContext';
-import { Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 export const Flights = () => {
   const { user } = useUser();
+  const [searchParams] = useSearchParams();
   const [flights, setFlights] = useState<Flight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  // Destination pages link here with ?destination=Mars.
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('destination') ?? '');
   const [filters, setFilters] = useState<FlightFiltersType>({});
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+  const [selectedClass, setSelectedClass] = useState<SeatClass>('economy');
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
@@ -27,6 +31,7 @@ export const Flights = () => {
     const RETRY_DELAY = 1000; // 1 second
 
     setIsLoading(true);
+    setLoadFailed(false);
     try {
       const data = await getFlights(filters);
       setFlights(data);
@@ -44,6 +49,7 @@ export const Flights = () => {
       } else {
         toast.error('Failed to load flights after multiple attempts');
         console.error('Max retries reached:', error);
+        setLoadFailed(true);
       }
     } finally {
       setIsLoading(false);
@@ -55,8 +61,9 @@ export const Flights = () => {
     loadFlights();
   }, [loadFlights]);
 
-  const handleBookFlight = (flight: Flight) => {
+  const handleBookFlight = (flight: Flight, seatClass: SeatClass) => {
     setSelectedFlight(flight);
+    setSelectedClass(seatClass);
     
     if (!user) {
       // Show user identification modal first
@@ -91,82 +98,51 @@ export const Flights = () => {
       )
     : flights;
 
+  const isEmpty = !isLoading && displayFlights.length === 0;
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <h1 className="text-4xl md:text-5xl font-bold text-star-white mb-4">
-          Available <span className="bg-cosmic-gradient bg-clip-text text-transparent">Flights</span>
-        </h1>
-        <p className="text-star-white/70 text-lg">
-          Choose your destination and embark on an interplanetary adventure
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <p className="eyebrow mb-3" aria-live="polite">
+          Departures
+          {!isLoading && ` · ${displayFlights.length} flight${displayFlights.length !== 1 ? 's' : ''}`}
         </p>
+        <h1 className="text-4xl font-semibold tracking-tight text-star-white md:text-5xl">Flights</h1>
+        <p className="mt-3 max-w-xl text-star-white/55">Pick a departure to see its cabin classes, then hold a seat while you decide.</p>
       </motion.div>
 
-      {/* Search Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card p-6"
-      >
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-star-white/50" size={20} />
-          <input
-            type="text"
-            placeholder="Search by origin or destination..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-star-white placeholder-star-white/50 focus:outline-none focus:ring-2 focus:ring-cosmic-purple"
-          />
-        </div>
+      {/* Search and filters */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <FlightFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          onReset={handleResetFilters}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
       </motion.div>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <FlightFilters filters={filters} onFiltersChange={setFilters} onReset={handleResetFilters} />
-      </motion.div>
-
-      {/* Results Count */}
-      <div className="text-center text-star-white/70">
-        Showing {displayFlights.length} flight{displayFlights.length !== 1 ? 's' : ''}
-      </div>
-
-      {/* Flights Grid */}
-      {isLoading ? (
-        <LoadingSpinner size="lg" text="Loading flights..." />
-      ) : displayFlights.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <p className="text-star-white/70 text-lg">
-            No flights found matching your criteria
+      {/* Departure board */}
+      {isEmpty ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel px-6 py-16 text-center">
+          <p className="eyebrow mb-3">{loadFailed ? 'Schedule unavailable' : 'No departures'}</p>
+          <p className="mb-6 text-star-white/70">
+            {loadFailed ? 'The flight schedule could not be loaded.' : 'No flights match your search and filters.'}
           </p>
+          {loadFailed ? (
+            <Button variant="secondary" onClick={() => loadFlights()}>
+              Try again
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={handleResetFilters}>
+              Reset filters
+            </Button>
+          )}
         </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {displayFlights.map((flight) => (
-            <FlightCard
-              key={flight.flight_id}
-              flight={flight}
-              onBook={handleBookFlight}
-            />
-          ))}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+          <FlightBoard flights={displayFlights} isLoading={isLoading} onBook={handleBookFlight} />
         </motion.div>
       )}
 
@@ -182,6 +158,7 @@ export const Flights = () => {
         isOpen={showBookingModal}
         onClose={() => setShowBookingModal(false)}
         flight={selectedFlight}
+        initialClass={selectedClass}
         onSuccess={handleBookingSuccess}
       />
     </div>

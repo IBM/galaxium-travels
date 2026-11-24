@@ -1,0 +1,270 @@
+{
+ "time": "2026-11-10T15:06:19Z",
+ "files": {
+  "docs/requirements/price-quote-consistency.md": "# PRD: Unified Pricing & Quote-Booking Consistency\n\n**Document Slug:** `price-quote-consistency`  \n**Status:** Draft  \n**Author:** Product Owner  \n**Target Services:** `booking_system_backend`, `booking_system_inventory_hold_service`, `booking_system_frontend`  \n\n---\n\n## 1. Problem Statement\n\nGalaxium Travels currently calculates and displays flight prices inconsistently across the customer booking journey:\n\n1. **Explore vs. Quote Price Mismatch:** On the Explore page (`/flights`), the frontend displays seat class prices computed by the Python backend via [`_flight_to_out()`](booking_system_backend/services/flight.py:10) (e.g. Flight #1 Business = $2,500,000). When the user clicks \"Get Quote\", the Java Inventory Hold Service calculates a disconnected price via [`PricingService.calculatePrice()`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/service/PricingService.java:19) using hardcoded base amounts and an arbitrary flight ID modulo multiplier ($2,500,000 \u00d7 1.1 = $2,750,000).\n2. **Domain Model Desynchronization:** The Java hold service uses legacy seat class terminology (`\"economy\"`, `\"business\"`, `\"first\"`) and lacks support for `\"galaxium\"` class, causing Galaxium class quotes to fall back to the default economy base price ($500,000).\n3. **Quoted Price Not Honored at Booking:** When a held quote is confirmed, [`HoldService.confirmHold()`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/service/HoldService.java:104) calls Python's `/internal/bookings/from-hold` without passing the quoted price. Python re-derives `price_paid` using its own formula via [`booking.book_flight()`](booking_system_backend/services/booking.py:116), writing a price to the database that differs from what was quoted and held.\n\nThis undermines customer trust, violates pricing predictability, and creates an unmaintainable split-brain pricing architecture across services.\n\n---\n\n## 2. Goals and Non-Goals\n\n### Goals\n- **Single Source of Truth for Base Pricing:** Establish a canonical pricing authority so that catalog browse, quote generation, and booking confirmation always evaluate to the exact same price for any given flight and seat class.\n- **Seat Class Harmonization:** Align all services (Frontend, Python backend, Java hold service) to the canonical seat class domain: `economy`, `business`, `galaxium`.\n- **Guaranteed Quote Price Honoring:** Ensure the exact price quoted and accepted during a hold is persisted and honored when the booking is finalized in Python.\n- **Dynamic Pricing Extensibility:** Allow pricing rules (e.g., peak demand multipliers, promotional discounts) to be introduced in one designated service without causing cross-service discrepancies.\n\n### Non-Goals\n- Real-time dynamic surge pricing engines based on real-time market feeds or complex machine learning models (out of scope for this refactor).\n- Multi-currency conversion or localized tax engines (prices remain in standard Galaxium Credits/USD).\n- Redesigning the quote/hold expiration lifecycle (15-minute hold window and background expiry scheduler remain as-is).\n\n---\n\n## 3. Current vs. Target Behaviour\n\n### Current Architecture & Flow\n\n```mermaid\nsequenceDiagram\n    autonumber\n    actor User\n    participant FE as Frontend (React)\n    participant PY as Python Backend (FastAPI)\n    participant DB as SQLite DB\n    participant JV as Java Hold Service\n\n    User->>FE: View Flights (/flights)\n    FE->>PY: GET /flights\n    PY->>DB: Query base_price\n    Note over PY: Multiplies base_price by [1.0, 2.5, 5.0]\n    PY-->>FE: Flight {economy_price, business_price, galaxium_price}\n    FE-->>User: Displays Flight #1 Business: $2,500,000\n\n    User->>FE: Click \"Get Quote\" (Business)\n    FE->>PY: POST /quotes {flightId: 1, seatClass: \"business\"}\n    PY->>JV: Proxy to POST /api/v1/quotes\n    Note over JV: Hardcoded Map + (flightId % 3 * 0.1)<br/>Base $2.5M \u00d7 1.1 = $2.75M\n    JV-->>PY: Quote {pricePerSeat: 2750000, totalPrice: 2750000}\n    PY-->>FE: Returns quote\n    FE-->>User: Displays Quote: $2,750,000 (Mismatch!)\n\n    User->>FE: Place Hold & Confirm\n    FE->>PY: POST /holds/{id}/confirm\n    PY->>JV: Proxy to POST /api/v1/holds/{id}/confirm\n    Note over JV: Ommits price in payload!\n    JV->>PY: POST /internal/bookings/from-hold {travelerId, flightId, seatClass}\n    Note over PY: Re-calculates price: base_price \u00d7 2.5 = $2,500,000\n    PY->>DB: INSERT booking (price_paid = $2,500,000)\n    PY-->>JV: Booking response\n    JV-->>FE: Confirmed\n```\n\n### Target Architecture & Flow\n\nThe Python backend acts as the authoritative system of record for flight definitions and base prices. When the Java service generates a quote, it either fetches the canonical flight pricing from Python or delegates pricing validation, ensuring seamless consistency. The finalized quote price is then explicitly passed and locked upon booking.\n\n```mermaid\nsequenceDiagram\n    autonumber\n    actor User\n    participant FE as Frontend (React)\n    participant PY as Python Backend (FastAPI)\n    participant DB as SQLite DB\n    participant JV as Java Hold Service\n\n    User->>FE: View Flights (/flights)\n    FE->>PY: GET /flights\n    PY->>DB: Query flight & seat prices\n    PY-->>FE: Flight {economy_price, business_price, galaxium_price}\n    FE-->>User: Displays Flight #1 Business: $2,500,000\n\n    User->>FE: Click \"Get Quote\" (Business)\n    FE->>PY: POST /quotes {flightId: 1, seatClass: \"business\"}\n    PY->>JV: Proxy to POST /api/v1/quotes\n    Note over JV: Queries Python GET /flights/{id} or uses shared formula\n    JV->>PY: GET /flights/1\n    PY-->>JV: Flight #1 {base_price: 1000000, business_price: 2500000}\n    Note over JV: Computes/validates canonical quote price: $2,500,000\n    JV-->>PY: Quote {pricePerSeat: 2500000, totalPrice: 2500000}\n    PY-->>FE: Returns quote\n    FE-->>User: Displays Quote: $2,500,000 (Match!)\n\n    User->>FE: Place Hold & Confirm\n    FE->>PY: POST /holds/{id}/confirm\n    PY->>JV: Proxy to POST /api/v1/holds/{id}/confirm\n    Note over JV: Includes locked quote price in booking request\n    JV->>PY: POST /internal/bookings/from-hold {flightId: 1, seatClass: \"business\", pricePaid: 2500000, quoteId: \"...\"}\n    Note over PY: Validates & records exact price_paid: $2,500,000\n    PY->>DB: INSERT booking (price_paid = 2,500,000, quote_id = \"...\")\n    PY-->>JV: Booking response\n    JV-->>FE: Confirmed\n```\n\n---\n\n## 4. Detailed Requirements & Specifications\n\n### 4.1 Canonical Seat Class Taxonomy\nAll services must standardize on three seat class identifiers:\n- `economy`: Multiplier 1.0\u00d7\n- `business`: Multiplier 2.5\u00d7\n- `galaxium`: Multiplier 5.0\u00d7\n\n*Deprecated:* `\"first\"` in Java [`PricingService`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/service/PricingService.java:16) must be removed or aliased to `\"galaxium\"`.\n\n### 4.2 Python Backend Service Updates\n1. **Flight Detail API:** Ensure `GET /flights/{flight_id}` is exposed and returns the resolved seat class prices (`economy_price`, `business_price`, `galaxium_price`) as defined in [`FlightOut`](booking_system_backend/schemas.py:33).\n2. **Internal Booking From Hold API:** Update [`create_booking_from_hold()`](booking_system_backend/server.py:242) and [`book_flight()`](booking_system_backend/services/booking.py:64) to:\n   - Accept an optional `price_paid: int` and `quote_id: str` parameter.\n   - If `price_paid` is supplied from an authorized hold, record that exact amount in [`Booking.price_paid`](booking_system_backend/models.py:39) rather than recomputing it.\n   - Maintain backward compatibility for direct instant bookings by falling back to the standard multiplier calculation when `price_paid` is omitted.\n\n### 4.3 Java Inventory Hold Service Updates\n1. **Dynamic Price Resolution in [`PricingService`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/service/PricingService.java:10):**\n   - Replace static `BASE_PRICES` map and `flightId % 3` formula with dynamic retrieval of flight base pricing via [`PythonBackendClient`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/client/PythonBackendClient.java:15).\n   - Support `economy`, `business`, and `galaxium` seat classes.\n2. **Forwarding Price on Hold Confirmation:**\n   - Update [`HoldService.confirmHold()`](booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/service/HoldService.java:104) to include `pricePaid: quote.getTotalPrice()` and `quoteId: quote.getQuoteId()` in the payload sent to `/internal/bookings/from-hold`.\n\n### 4.4 React Frontend Updates\n1. **Interface Contract Verification:** Ensure [`types/index.ts`](booking_system_frontend/src/types/index.ts:5) reflects consistent seat class naming (`economy` | `business` | `galaxium`).\n2. **Visual Consistency:** Verify that the price displayed on [`FlightCard.tsx`](booking_system_frontend/src/components/flights/FlightCard.tsx:14) matches the total on [`BookingModal.tsx`](booking_system_frontend/src/components/bookings/BookingModal.tsx:314) and [`HoldCard.tsx`](booking_system_frontend/src/components/bookings/HoldCard.tsx:94).\n\n---\n\n## 5. Edge Cases & Failure Modes\n\n1. **Backend Connectivity Failure During Quote Creation:** If Java fails to reach Python to fetch the flight's base price when creating a quote, it must return a clean `503 Service Unavailable` or structured proxy error rather than falling back to an inaccurate hardcoded price.\n2. **Base Price Change While Hold is Active:** If an administrator updates a flight's base price while a customer holds an active quote, the locked price on the `Quote` entity must be honored upon confirmation up until quote expiry (`reservedUntil`).\n3. **Quantity Multipliers:** For multi-seat bookings (`quantity > 1`), `totalPrice` must strictly equal `pricePerSeat * quantity`. Both must be consistent between quote and confirmed booking.\n4. **Invalid / Unknown Seat Class:** Submitting an unrecognized seat class must return a descriptive `400 Bad Request` with `INVALID_SEAT_CLASS`.\n\n---\n\n## 6. Acceptance Criteria\n\n- [ ] **AC-1 (Price Parity):** For any flight in the catalog, the price shown on the Explore page for Economy, Business, and Galaxium classes exactly matches the `totalPrice` shown in the \"Price Breakdown\" modal upon quote generation.\n- [ ] **AC-2 (Galaxium Class Support):** Creating a quote for seat class `\"galaxium\"` calculates 5.0\u00d7 the flight's base price and does not default to economy or fail.\n- [ ] **AC-3 (Booking Price Fidelity):** When confirming a hold, the `price_paid` recorded in the `bookings` database table matches the `total_price` recorded in the Java `quotes` table for that `quote_id`.\n- [ ] **AC-4 (No Flight-ID Modulo Jitter):** Quotes for flights with `flightId % 3 != 0` do not have arbitrary 10% or 20% markups applied unless driven by an explicit business rule shared across services.\n- [ ] **AC-5 (End-to-End Test Suite):** Existing E2E tests in [`e2e/test_holds.py`](e2e/test_holds.py:1) and [`e2e/test_smoke.py`](e2e/test_smoke.py:1) pass with zero pricing regressions.\n\n---\n\n## 7. Dependencies & Impact Analysis\n\n- **Service Dependencies:**\n  - `booking_system_backend`: Changes to internal booking endpoint schema and flight fetching logic.\n  - `booking_system_inventory_hold_service`: Dependency on Python backend client for flight pricing data; domain entity updates.\n  - `booking_system_frontend`: API model validation and UI display verification.\n- **Database Migrations:** No destructive schema changes required. `quote_id` can be optionally added to `bookings` table as a nullable foreign reference.\n- **Breaking Changes:** No public REST breaking changes for frontend clients; internal contracts between Java and Python are extended with backward-compatible optional fields.\n\n---\n\n## 8. Open Questions\n\n1. **Caching Strategy:** Should the Java hold service cache flight base prices locally (e.g. 60-second in-memory cache) to avoid an extra network round-trip on every quote request, or is direct real-time fetch preferred for consistency?\n2. **Dynamic Pricing Ownership:** In future milestones, if surge pricing or route-based discounts are introduced, should that logic live exclusively in the Python backend or be isolated into a dedicated pricing microservice?\n"
+ },
+ "issues": {
+  "151": {
+   "labels": [
+    "agent:needs-human",
+    "area/fullstack",
+    "bug",
+    "roadmap",
+    "tier-1"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "149": {
+   "labels": [
+    "agent:pr-open"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "148": {
+   "labels": [
+    "security"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "120": {
+   "labels": [],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "113": {
+   "labels": [],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "44": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "43": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "42": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-3",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "41": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    26,
+    34
+   ]
+  },
+  "40": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-3",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    25,
+    31
+   ]
+  },
+  "39": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    25,
+    32
+   ]
+  },
+  "38": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-3",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    25
+   ]
+  },
+  "37": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "36": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "35": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-3"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "34": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-2"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "33": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-2",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "32": {
+   "labels": [
+    "area/frontend",
+    "enhancement",
+    "roadmap",
+    "tier-2"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "31": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-2",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "30": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "roadmap",
+    "tier-2",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "29": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "release:v1",
+    "roadmap",
+    "tier-1",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "28": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "release:v1",
+    "roadmap",
+    "tier-1",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    27
+   ]
+  },
+  "27": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "release:v1",
+    "roadmap",
+    "tier-1",
+    "touches-schema"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "26": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "release:v1",
+    "roadmap",
+    "tier-1"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  },
+  "25": {
+   "labels": [
+    "area/fullstack",
+    "enhancement",
+    "release:v1",
+    "roadmap",
+    "tier-1"
+   ],
+   "assignees": [],
+   "blocked_by": []
+  }
+ }
+}

@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Booking, Flight, StoredHold, ErrorResponse } from '../types';
-import { LoadingSpinner, Modal, Button } from '../components/common';
+import { LoadingSpinner, Modal, Button, PlanetOrb } from '../components/common';
 import { BookingCard } from '../components/bookings/BookingCard';
 import { HoldCard } from '../components/bookings/HoldCard';
 import { getUserBookings, getFlights, cancelBooking, getHold, isErrorResponse } from '../services/api';
 import { getStoredHolds, removeHold } from '../utils/holdStorage';
 import { useUser } from '../hooks/useUserContext';
-import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -137,17 +136,10 @@ export const MyBookings = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <h1 className="text-4xl md:text-5xl font-bold text-star-white mb-4">
-          My <span className="bg-cosmic-gradient bg-clip-text text-transparent">Bookings</span>
-        </h1>
-        <p className="text-star-white/70 text-lg">
-          Manage your space travel reservations
-        </p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <p className="eyebrow mb-3">Passenger · {user.name}</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-star-white md:text-5xl">My Bookings</h1>
+        <p className="mt-3 max-w-xl text-star-white/55">Your boarding passes, and any seats you are holding.</p>
       </motion.div>
 
       {isLoading ? (
@@ -161,15 +153,10 @@ export const MyBookings = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-2xl font-bold text-solar-orange">
-                  Pending Holds ({activeHolds.length})
-                </h2>
-                <span className="text-xs text-star-white/50 bg-solar-orange/10 border border-solar-orange/30 px-2 py-1 rounded-full">
-                  Confirm before time runs out
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <h2 className="eyebrow mb-4">
+                Pending holds · {activeHolds.length} · Confirm before time runs out
+              </h2>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {activeHolds.map((hold) => (
                   <HoldCard
                     key={hold.holdId}
@@ -187,16 +174,12 @@ export const MyBookings = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-card p-12 text-center"
+              className="panel flex flex-col items-center px-6 py-16 text-center"
             >
-              <AlertCircle className="mx-auto mb-4 text-star-white/50" size={48} />
-              <h3 className="text-xl font-semibold text-star-white mb-2">
-                No bookings yet
-              </h3>
-              <p className="text-star-white/70 mb-6">
-                Start your space adventure by booking your first flight!
-              </p>
-              <Button onClick={() => navigate('/flights')}>Browse Flights</Button>
+              <PlanetOrb name="Earth" size={72} className="mb-6" />
+              <p className="eyebrow mb-3">No bookings yet</p>
+              <p className="mb-6 text-star-white/70">You are still on Earth. Pick a departure to change that.</p>
+              <Button onClick={() => navigate('/flights')}>Browse flights</Button>
             </motion.div>
           )}
 
@@ -207,10 +190,8 @@ export const MyBookings = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-2xl font-bold text-star-white mb-4">
-                Active Bookings ({activeBookings.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <h2 className="eyebrow mb-4">Active bookings · {activeBookings.length}</h2>
+              <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
                 {activeBookings.map((booking) => (
                   <BookingCard
                     key={booking.booking_id}
@@ -231,10 +212,8 @@ export const MyBookings = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-2xl font-bold text-star-white mb-4">
-                Past Bookings ({pastBookings.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <h2 className="eyebrow mb-4">Past bookings · {pastBookings.length}</h2>
+              <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
                 {pastBookings.map((booking) => (
                   <BookingCard
                     key={booking.booking_id}
@@ -257,19 +236,15 @@ export const MyBookings = () => {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-star-white/70">
+          <p className="text-sm text-star-white/70">
             Are you sure you want to cancel this booking? This action cannot be undone.
           </p>
-          <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => setShowCancelModal(false)}
-              className="flex-1"
-            >
-              Keep Booking
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+              Keep booking
             </Button>
-            <Button variant="danger" onClick={handleConfirmCancel} className="flex-1">
-              Cancel Booking
+            <Button variant="danger" onClick={handleConfirmCancel}>
+              Cancel booking
             </Button>
           </div>
         </div>

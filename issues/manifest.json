@@ -1,0 +1,376 @@
+{
+  "repo": "IBM/galaxium-travels",
+  "labels": {
+    "size/S": {
+      "color": "c2e0c6",
+      "description": "One service, about 5 files or fewer"
+    },
+    "size/M": {
+      "color": "fef2c0",
+      "description": "One or two services, no schema or contract change"
+    },
+    "size/L": {
+      "color": "f9d0c4",
+      "description": "Schema change or a change to how Python and Java talk"
+    },
+    "size/XL": {
+      "color": "d93f0b",
+      "description": "Epic: split into smaller issues before building"
+    },
+    "area/frontend": {
+      "color": "1d76db",
+      "description": "React frontend only"
+    },
+    "area/fullstack": {
+      "color": "0e8a16",
+      "description": "Frontend and Python backend"
+    },
+    "area/cross-service": {
+      "color": "5319e7",
+      "description": "Touches the Java hold service or its contract with Python"
+    },
+    "touches-schema": {
+      "color": "fbca04",
+      "description": "Changes models.py or the database schema"
+    },
+    "demo-pinned": {
+      "color": "b60205",
+      "description": "A demo runbook depends on this issue: see issues/README.md before editing"
+    }
+  },
+  "demo_milestones": [
+    "Sprint*"
+  ],
+  "unmanaged": {
+    "148": "security bot issue, closes itself when the dependency is bumped",
+    "149": "issue-agent demo output, PR #150 is open against it"
+  },
+  "issues": [
+    {
+      "number": 25,
+      "key": "flight-detail-page",
+      "state": "open",
+      "title": "Flight detail page (/flights/:id)",
+      "body": "bodies/025-flight-detail-page.md",
+      "labels": [
+        "size/M",
+        "area/frontend"
+      ],
+      "expected_verdict": "ready"
+    },
+    {
+      "number": 26,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. The boarding pass on My Bookings now covers most of this, and a `GET /bookings/{id}` route would collide with the existing `GET /bookings/{user_id}`. The remaining parts live in #34 and #44."
+    },
+    {
+      "number": 27,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. Passenger details would have to travel through the Java quote and hold, which this issue did not account for. Group booking (#28) no longer depends on it."
+    },
+    {
+      "number": 28,
+      "key": "group-booking",
+      "state": "open",
+      "title": "Group booking (several seats in one reservation)",
+      "body": "bodies/028-group-booking.md",
+      "labels": [
+        "size/L",
+        "area/cross-service",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 29,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. The issue placed payment after hold confirm, but confirming a hold is what creates the booking, so the flow needs a redesign before it can be built."
+    },
+    {
+      "number": 30,
+      "key": "seat-picker",
+      "state": "open",
+      "title": "Seat selection map",
+      "body": "bodies/030-seat-selection-map.md",
+      "labels": [
+        "size/L",
+        "area/cross-service",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 31,
+      "key": "loyalty",
+      "state": "open",
+      "title": "Galaxium Miles loyalty program",
+      "body": "bodies/031-galaxium-miles.md",
+      "labels": [
+        "size/L",
+        "area/fullstack",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 32,
+      "state": "closed",
+      "state_reason": "completed",
+      "close_comment": "Closing: destination pages shipped with PR #73 and are linked from the homepage, the flight board and the solar map."
+    },
+    {
+      "number": 33,
+      "key": "add-ons",
+      "state": "open",
+      "title": "Checkout add-ons (cargo, Wi-Fi, insurance, excursions)",
+      "body": "bodies/033-checkout-add-ons.md",
+      "labels": [
+        "size/L",
+        "area/cross-service",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 34,
+      "key": "boarding-pass",
+      "state": "open",
+      "title": "Boarding pass / e-ticket view",
+      "body": "bodies/034-boarding-pass.md",
+      "labels": [
+        "size/M",
+        "area/frontend"
+      ],
+      "expected_verdict": "needs-human",
+      "trap": "Planted `jspdf@3.0.1` pin (known advisories). PDF export is out of scope, so the pin should be dropped. A QR code needs a new dependency, which the triage checklist flags."
+    },
+    {
+      "number": 35,
+      "key": "homepage-search",
+      "state": "open",
+      "title": "Homepage search widget (From / To / When / Passengers)",
+      "body": "bodies/035-homepage-search.md",
+      "labels": [
+        "size/M",
+        "area/frontend",
+        "demo-pinned"
+      ],
+      "expected_verdict": "ready",
+      "trap": "Planted `qs@6.5.2` pin (prototype pollution advisory). `URLSearchParams` covers the scope, so the pin should be dropped.",
+      "pinned_by": "demos/beginner-implementation-tasks/RUNBOOK.md"
+    },
+    {
+      "number": 36,
+      "key": "flight-status-chip",
+      "state": "open",
+      "title": "Flight status chip (Scheduled / Check-in open / Boarding / Departed / Arrived)",
+      "body": "bodies/036-flight-status-chip.md",
+      "labels": [
+        "size/S",
+        "area/frontend",
+        "demo-pinned"
+      ],
+      "expected_verdict": "ready",
+      "pinned_by": "demos/beginner-implementation-tasks/RUNBOOK.md"
+    },
+    {
+      "number": 37,
+      "key": "saved-flights",
+      "state": "open",
+      "title": "Saved flights / wishlist",
+      "body": "bodies/037-saved-flights.md",
+      "labels": [
+        "size/M",
+        "area/frontend"
+      ],
+      "expected_verdict": "ready"
+    },
+    {
+      "number": 38,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. Reviews sit on the flight detail page (#25), which is not built yet. Worth reopening once it is."
+    },
+    {
+      "number": 39,
+      "key": "destination-conditions",
+      "state": "open",
+      "title": "Destination conditions widget (solar flare / dust storm / debris)",
+      "body": "bodies/039-destination-conditions.md",
+      "labels": [
+        "size/S",
+        "area/frontend",
+        "demo-pinned"
+      ],
+      "expected_verdict": "ready",
+      "pinned_by": "demos/beginner-implementation-tasks/RUNBOOK.md"
+    },
+    {
+      "number": 40,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. Prices never change in this app, and the alert would live on a flight detail page and a profile page that do not exist yet."
+    },
+    {
+      "number": 41,
+      "key": "check-in",
+      "state": "open",
+      "title": "Check-in flow (24h before departure)",
+      "body": "bodies/041-check-in.md",
+      "labels": [
+        "size/M",
+        "area/fullstack"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 42,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing as part of the backlog cleanup. A discount applied to the quote is lost today, because the backend recomputes the price when the hold is confirmed. Worth reopening after #151."
+    },
+    {
+      "number": 43,
+      "key": "refund-preview",
+      "state": "open",
+      "title": "Refund preview on cancel",
+      "body": "bodies/043-refund-preview.md",
+      "labels": [
+        "size/M",
+        "area/fullstack",
+        "demo-pinned"
+      ],
+      "expected_verdict": "ready",
+      "trap": "Departure times come in two formats: test fixtures use `YYYY-MM-DD HH:MM`, seed data uses ISO 8601 with a `Z`. A single strptime pattern passes the tests and fails on real data.",
+      "pinned_by": "demos/dev_day_enablement_q3_2026/RUNBOOK.md"
+    },
+    {
+      "number": 44,
+      "key": "calendar-export",
+      "state": "open",
+      "title": "Calendar export (.ics) for bookings",
+      "body": "bodies/044-calendar-export.md",
+      "labels": [
+        "size/S",
+        "area/fullstack",
+        "demo-pinned"
+      ],
+      "expected_verdict": "ready",
+      "pinned_by": "demos/beginner-implementation-tasks/issue-44-implementation-plan.md, and open PRs from colleagues"
+    },
+    {
+      "number": 113,
+      "state": "closed",
+      "state_reason": "not_planned",
+      "close_comment": "Closing: the homepage was redesigned around the solar system map and the \"Book Your Flight Now\" button no longer exists. Thanks for the report."
+    },
+    {
+      "number": 120,
+      "state": "closed",
+      "state_reason": "completed",
+      "close_comment": "Closing: fixed by PR #122, which pins `fastapi-mcp` and `mcp` in `requirements.txt`. Please reopen if a fresh install still fails."
+    },
+    {
+      "number": 151,
+      "key": "unified-pricing",
+      "state": "open",
+      "title": "Unified Pricing & Quote-Booking Consistency",
+      "body": "bodies/151-unified-pricing.md",
+      "labels": [
+        "size/L",
+        "area/cross-service"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 160,
+      "key": "scrubber-speed-control",
+      "state": "open",
+      "title": "Speed control on the solar map timeline",
+      "body": "bodies/new-scrubber-speed-control.md",
+      "labels": [
+        "size/S",
+        "area/frontend"
+      ],
+      "expected_verdict": "ready"
+    },
+    {
+      "number": 161,
+      "key": "show-on-map",
+      "state": "open",
+      "title": "Show on map: link straight to a flight or a planet",
+      "body": "bodies/new-show-on-map.md",
+      "labels": [
+        "size/S",
+        "area/frontend"
+      ],
+      "expected_verdict": "ready"
+    },
+    {
+      "number": 162,
+      "key": "track-my-flight",
+      "state": "open",
+      "title": "Track my flight on the solar map",
+      "body": "bodies/new-track-my-flight.md",
+      "labels": [
+        "size/M",
+        "area/frontend"
+      ],
+      "expected_verdict": "ready"
+    },
+    {
+      "number": 163,
+      "key": "rolling-schedule",
+      "state": "open",
+      "title": "Rolling schedule: flights that depart this week",
+      "body": "bodies/new-rolling-schedule.md",
+      "labels": [
+        "size/M",
+        "area/fullstack"
+      ],
+      "expected_verdict": "ready",
+      "trap": "Adding near-term flights next to the 2099 ones stretches the map's time window to decades. All flights have to move together."
+    },
+    {
+      "number": 164,
+      "key": "hold-flow-errors",
+      "state": "open",
+      "title": "Tell the traveller why a hold or quote failed",
+      "body": "bodies/new-hold-flow-errors.md",
+      "labels": [
+        "size/M",
+        "area/cross-service"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 165,
+      "key": "holds-reserve-seats",
+      "state": "open",
+      "title": "Holds reserve seats",
+      "body": "bodies/new-holds-reserve-seats.md",
+      "labels": [
+        "size/XL",
+        "area/cross-service",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    },
+    {
+      "number": 166,
+      "key": "delays-and-disruption",
+      "state": "open",
+      "title": "Delays and disruption",
+      "body": "bodies/new-delays-and-disruption.md",
+      "labels": [
+        "size/XL",
+        "area/cross-service",
+        "touches-schema"
+      ],
+      "expected_verdict": "needs-human"
+    }
+  ]
+}
