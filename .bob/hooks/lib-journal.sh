@@ -44,6 +44,16 @@ use_supported_java() {
   return 1
 }
 
+# quality_hooks_off -> true when this run switched the quality checks off
+# (check-edit.sh, gate-commit.sh) with BOB_QUALITY_HOOKS=off. Only the headless
+# issue agent (.github/workflows/bob-issue-agent.yml) sets it, because it runs
+# the verify skill itself and every change still goes through a reviewed PR.
+# IDE and terminal sessions leave it unset, so nothing changes there. Safety
+# and journaling hooks ignore it.
+quality_hooks_off() {
+  [ "${BOB_QUALITY_HOOKS:-on}" = "off" ]
+}
+
 # hook_fired <session_id> <hook-name> <outcome>
 # Lets the receipt list which hooks ran and what each one decided, including
 # the quiet outcomes ("not a commit", "nothing pending") that leave no other trace.

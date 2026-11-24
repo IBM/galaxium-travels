@@ -17,6 +17,7 @@ input=$(cat)
 path=$(printf '%s' "$input" | jq -r '.input.path // .tool_input.path // .tool_input.file_path // empty')
 sid=$(printf '%s' "$input" | jq -r '.session_id // "unknown"')
 if [ -z "$path" ]; then hook_fired "$sid" check-edit "skipped: no file path"; exit 0; fi
+if quality_hooks_off; then hook_fired "$sid" check-edit "skipped: BOB_QUALITY_HOOKS=off"; exit 0; fi
 
 root="$hook_root"
 state="$hook_state"

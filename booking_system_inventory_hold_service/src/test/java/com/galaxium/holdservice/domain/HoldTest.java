@@ -254,18 +254,22 @@ class HoldTest {
     void testEqualsAndHashCode() {
         // Arrange
         String holdId = "hold-100";
+        // One shared instant: equals() compares reservedUntil, and two separate
+        // Instant.now() calls differ by nanoseconds on Linux (macOS's coarser
+        // clock usually hid this, so the test only failed in CI).
+        Instant reservedUntil = Instant.now().plusSeconds(900);
         Hold hold1 = Hold.builder()
                 .holdId(holdId)
                 .quoteId("quote-200")
                 .status(Hold.HoldStatus.HELD)
-                .reservedUntil(Instant.now().plusSeconds(900))
+                .reservedUntil(reservedUntil)
                 .build();
 
         Hold hold2 = Hold.builder()
                 .holdId(holdId)
                 .quoteId("quote-200")
                 .status(Hold.HoldStatus.HELD)
-                .reservedUntil(Instant.now().plusSeconds(900))
+                .reservedUntil(reservedUntil)
                 .build();
 
         // Act & Assert
