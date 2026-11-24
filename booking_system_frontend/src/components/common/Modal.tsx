@@ -45,29 +45,29 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="fixed inset-0 z-40 bg-space-dark/70 backdrop-blur-sm"
           />
           
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`bg-space-dark/95 backdrop-blur-xl border-2 border-cosmic-purple/30 rounded-2xl shadow-2xl shadow-cosmic-purple/20 w-full ${sizeClasses[size]} my-8 p-6`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              className={`panel w-full bg-space-dark/90 ${sizeClasses[size]} my-8 p-6`}
               role="dialog"
               aria-modal="true"
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-cosmic-purple/20">
-                  <h2 className="text-2xl font-bold bg-cosmic-gradient bg-clip-text text-transparent">{title}</h2>
+                <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
+                  <h2 className="text-xl font-semibold tracking-tight text-star-white">{title}</h2>
                   <button
                     onClick={onClose}
-                    className="text-star-white/70 hover:text-cosmic-purple transition-colors p-1 hover:bg-white/5 rounded-lg"
+                    className="text-star-white/60 transition-colors hover:text-star-white"
                     aria-label="Close modal"
                   >
-                    <X size={24} />
+                    <X size={18} />
                   </button>
                 </div>
               )}

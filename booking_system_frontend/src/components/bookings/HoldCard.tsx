@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Flight, StoredHold } from '../../types';
-import { Card, Button } from '../common';
-import { Zap, Plane, Crown, Rocket, Timer, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '../common';
+import { HoldRing } from './HoldRing';
+import { AVAILABILITY_COLOR } from '../../solar/bodyStyle';
 import { formatCurrency } from '../../utils/formatters';
+import { seatClassLabel } from '../../utils/seatClasses';
 import { confirmHold, releaseHold } from '../../services/api';
 import { removeHold } from '../../utils/holdStorage';
+import { useCountdown } from '../../hooks/useCountdown';
 import { useUser } from '../../hooks/useUserContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -17,49 +20,13 @@ interface HoldCardProps {
 
 export const HoldCard = ({ storedHold, flight, onAction }: HoldCardProps) => {
   const { user } = useUser();
-  const [timeLeft, setTimeLeft] = useState(0);
+  const timeLeft = useCountdown(storedHold.reservedUntil);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
 
-  useEffect(() => {
-    const update = () => {
-      const remaining = new Date(storedHold.reservedUntil).getTime() - Date.now();
-      setTimeLeft(isNaN(remaining) ? 0 : Math.max(0, remaining));
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [storedHold.reservedUntil]);
-
-  const minutes = Math.floor(timeLeft / 60000);
-  const seconds = Math.floor((timeLeft % 60000) / 1000);
-  const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   const isExpired = timeLeft === 0;
-
   const isLoading = isConfirming || isReleasing;
-
-  const getSeatIcon = () => {
-    switch (storedHold.seatClass) {
-      case 'business':
-        return <Crown size={16} className="text-purple-400" />;
-      case 'galaxium':
-        return <Rocket size={16} className="text-alien-green" />;
-      default:
-        return <Plane size={16} className="text-blue-400" />;
-    }
-  };
-
-  const getSeatClassName = () => {
-    switch (storedHold.seatClass) {
-      case 'business':
-        return 'Business';
-      case 'galaxium':
-        return 'Galaxium Class';
-      default:
-        return 'Economy';
-    }
-  };
+  const color = isExpired ? AVAILABILITY_COLOR.soldOut : AVAILABILITY_COLOR.few;
 
   const handleConfirm = async () => {
     if (!user) return;
@@ -92,99 +59,47 @@ export const HoldCard = ({ storedHold, flight, onAction }: HoldCardProps) => {
   };
 
   return (
-    <motion.div
+    <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      className="panel grid gap-5 p-6"
     >
-      <Card className={`border ${isExpired ? 'border-red-500/30' : 'border-solar-orange/30'}`}>
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2 rounded-lg ${
-                isExpired ? 'bg-red-500/20' : 'bg-solar-orange/20'
-              }`}
-            >
-              <Zap
-                className={isExpired ? 'text-red-400' : 'text-solar-orange'}
-                size={20}
-              />
-            </div>
-            <div>
-              <p className="text-xs text-star-white/60 font-mono">{storedHold.holdId}</p>
-              <div className="flex items-center gap-2 mt-1">
-                {isExpired ? (
-                  <>
-                    <XCircle className="text-red-500" size={16} />
-                    <span className="text-sm font-semibold text-red-500">Expired</span>
-                  </>
-                ) : (
-                  <>
-                    <Timer className="text-solar-orange" size={16} />
-                    <span className="text-sm font-semibold text-solar-orange">
-                      Held · {timerDisplay}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="eyebrow">Pending hold</span>
+        <span
+          className="flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em]"
+          style={{ color, borderColor: `${color}66`, backgroundColor: `${color}1a` }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
+          {isExpired ? 'Expired' : 'Held'}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-5">
+        <HoldRing msLeft={timeLeft} />
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold tracking-tight text-star-white">
+            {flight ? (
+              <>
+                {flight.origin} <span className="text-star-white/40">→</span> {flight.destination}
+              </>
+            ) : (
+              `Flight #${storedHold.flightId}`
+            )}
+          </h3>
+          <p className="mt-1 text-xs text-star-white/55">
+            {seatClassLabel(storedHold.seatClass)} · {isExpired ? 'The seat is back on sale.' : 'Seat reserved for you.'}
+          </p>
+          <p className="mt-2 truncate font-mono text-[11px] text-star-white/40">Hold {storedHold.holdId}</p>
         </div>
+      </div>
 
-        {/* Flight details */}
-        <div className="space-y-3 mb-4">
-          {flight ? (
-            <div>
-              <h3 className="text-xl font-bold text-star-white mb-1">
-                {flight.origin} → {flight.destination}
-              </h3>
-              <p className="text-sm text-star-white/60">Flight #{flight.flight_id}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-star-white/60">Flight #{storedHold.flightId}</p>
-          )}
-
-          <div className="flex items-center justify-between pt-2 border-t border-white/10">
-            <div className="flex items-center gap-2">
-              {getSeatIcon()}
-              <span className="text-sm text-star-white/70">{getSeatClassName()}</span>
-            </div>
-            <span className="text-lg font-bold text-star-white">
-              {storedHold.totalPrice != null && !isNaN(storedHold.totalPrice)
-                ? formatCurrency(storedHold.totalPrice)
-                : '—'}
-            </span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        {!isExpired && (
-          <div className="flex gap-2">
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleRelease}
-              isLoading={isReleasing}
-              disabled={isLoading}
-              className="flex-1"
-            >
-              Release
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirm}
-              isLoading={isConfirming}
-              disabled={isLoading}
-              className="flex-1"
-            >
-              <CheckCircle size={14} /> Confirm
-            </Button>
-          </div>
-        )}
-
-        {isExpired && (
+      <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-4">
+        <span className="font-mono text-base tabular-nums">
+          {storedHold.totalPrice != null && !isNaN(storedHold.totalPrice) ? formatCurrency(storedHold.totalPrice) : '—'}
+        </span>
+        {isExpired ? (
           <Button
             variant="secondary"
             size="sm"
@@ -192,13 +107,21 @@ export const HoldCard = ({ storedHold, flight, onAction }: HoldCardProps) => {
               if (user) removeHold(user.user_id, storedHold.holdId);
               onAction();
             }}
-            className="w-full"
           >
             Dismiss
           </Button>
+        ) : (
+          <div className="flex items-center gap-4">
+            <Button variant="link" onClick={handleRelease} isLoading={isReleasing} disabled={isLoading}>
+              Release
+            </Button>
+            <Button size="sm" onClick={handleConfirm} isLoading={isConfirming} disabled={isLoading}>
+              Confirm
+            </Button>
+          </div>
         )}
-      </Card>
-    </motion.div>
+      </div>
+    </motion.article>
   );
 };
 

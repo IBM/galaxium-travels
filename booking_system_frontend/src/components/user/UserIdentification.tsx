@@ -101,7 +101,7 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
         <Input
           label="Name"
           type="text"
-          placeholder="John Doe"
+          placeholder="Ada Lovelace"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -110,7 +110,7 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
         <Input
           label="Email"
           type="email"
-          placeholder="john@example.com"
+          placeholder="ada@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -124,7 +124,7 @@ export const UserIdentification = ({ isOpen, onClose, onSuccess }: UserIdentific
           <button
             type="button"
             onClick={() => setIsNewUser(!isNewUser)}
-            className="text-sm text-cosmic-purple hover:text-nebula-pink transition-colors"
+            className="text-link self-center"
           >
             {isNewUser
               ? 'Already have an account? Sign in'

@@ -5,7 +5,7 @@
  */
 import type { BodyId } from './orbits';
 
-type Rgb = readonly [number, number, number];
+export type Rgb = readonly [number, number, number];
 
 const hex = (value: string): Rgb => {
   const n = parseInt(value.slice(1), 16);
@@ -64,7 +64,7 @@ const fbm = (x: number, y: number, z: number, octaves: number, seed: number): nu
   return sum / total;
 };
 
-interface Sample {
+export interface Sample {
   /** Unit vector on the sphere. */
   x: number;
   y: number;
@@ -174,6 +174,9 @@ const europa: Painter = ({ x, y, z }) => {
 };
 
 const PAINTERS: Record<BodyId, Painter> = { earth, mars, venus, jupiter, pluto, moon, europa };
+
+/** Surface colour of a body at one point on its sphere. Used by the 2D planet images outside the map. */
+export const sampleBody = (id: BodyId, sample: Sample): Rgb => PAINTERS[id](sample);
 
 // Painting blocks the main thread, so only bodies that get close-ups worth the detail are painted large.
 const LARGE: readonly BodyId[] = ['earth', 'mars', 'jupiter'];

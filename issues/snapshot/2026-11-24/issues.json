@@ -1,0 +1,1079 @@
+[
+ {
+  "number": 3,
+  "title": "Test Issue",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "Max-Jesch",
+  "created_at": "2026-03-26T09:54:11Z",
+  "updated_at": "2026-03-26T09:54:29Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "This is a test issue to verify credentials. It will be deleted automatically.",
+  "comment_count": 0
+ },
+ {
+  "number": 4,
+  "title": "Feature: Trip Builder for Multi-Leg Itineraries",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-03-26T10:08:34Z",
+  "updated_at": "2026-04-17T12:50:29Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "# Feature: Trip Builder for Multi-Leg Itineraries\n\n**Problem:**\nThe current booking process only supports searching for and booking single flights. Users cannot create complex, multi-leg trips, view combined transit details, or see a consolidated price breakdown for an entire itinerary. This limits the platform's utility for users planning anything beyond simple one-way or round-trip journeys.\n\n**Proposed Solution:**\nIntroduce a \"Trip Builder\" or \"My Itinerary\" feature. This would allow users to select and combine multiple flight legs into a single trip plan. The interface should display aggregated trip information, including total travel time, layover durations between legs, and a clear, itemized price breakdown for the entire itinerary before proceeding to payment.\n\n**Acceptance Criteria:**\n- Users can search for and add multiple individual flights to an itinerary.\n- The itinerary view displays a list of all selected flight legs in chronological order.\n- The UI shows the total transit time for the entire trip.\n- The UI displays the duration of each layover between connecting flights.\n- A consolidated price breakdown is visible, showing the cost of each leg and the total price.\n- Users can proceed to a single payment step for the entire itinerary.\n- Users can remove flights from the itinerary before booking.\n\n---\n\n## README alignment\n\nThis request matches the **multi-leg / itinerary** direction called out in the consolidated roadmap:\n\n- **[README §5 — Booking Wizard and Digital Boarding Pass](https://github.com/IBM/galaxium-travels/blob/main/README.md#5-booking-wizard-and-digital-boarding-pass)** — multi-step journey, review, and confirmation fit a trip-builder flow.\n- **[README §13 — Travel Agency Mode](https://github.com/IBM/galaxium-travels/blob/main/README.md#13-travel-agency-mode)** — explicitly mentions a path toward **multi-segment trips** alongside multi-seat booking.\n\nKeep issue titles and acceptance criteria here as the working spec; treat the README sections above as the high-level product framing so planning stays consistent.\n\n---\n\n## Related GitHub issues\n\n- #15 — [Feature: Booking Wizard and Digital Boarding Pass](https://github.com/IBM/galaxium-travels/issues/15)\n- #6 — [Feature: Travel agency mode and multi-seat booking](https://github.com/IBM/galaxium-travels/issues/6) (multi-segment direction)\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 5,
+  "title": "Feature: Traveler Profile and Preferences",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-03-26T10:14:01Z",
+  "updated_at": "2026-04-17T12:50:32Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "# Feature: Traveler Profile and Preferences\n\n**Problem:**\nThe booking process is repetitive and impersonal. Users must re-enter common information like their home planet, seat preferences, and other personal details for every new booking. This makes the process slower and less user-friendly than it could be.\n\n**Proposed Solution:**\nIntroduce a \"Traveler Profile\" page where users can save their personal information and travel preferences. This would create a centralized location for managing details that do not change often, making future bookings faster and more personalized.\n\nThe profile should store:\n\n- Home Planet (for pre-filling departure/arrival searches)\n- Default Seat Class (e.g., Economy, Business, Galaxium Class)\n- Dietary and accessibility notes (to be included with bookings)\n- Emergency contact information\n\n**Acceptance Criteria:**\n\n- Users can navigate to a dedicated \"Profile\" page.\n- Users can input, save, and update their home planet, default seat class, dietary/accessibility notes, and an emergency contact.\n- When a user makes a new booking, saved preferences (like seat class) are automatically applied as defaults.\n- All personal information is stored securely.\n- The booking confirmation includes any relevant dietary or accessibility notes.\n\n---\n\n## README alignment\n\nThis is not a standalone numbered item in **[Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)**, but it fits naturally next to:\n\n- **[README §5 — Booking Wizard and Digital Boarding Pass](https://github.com/IBM/galaxium-travels/blob/main/README.md#5-booking-wizard-and-digital-boarding-pass)** — saved profile data can pre-fill wizard steps.\n- **[README §7 — Enterprise Authentication, Roles, and Support Workspace](https://github.com/IBM/galaxium-travels/blob/main/README.md#7-enterprise-authentication-roles-and-support-workspace)** — richer identity and traveler records align with enterprise auth and support tooling later.\n\nUse this issue for traveler-centric persistence; use §7 issues for org-wide identity and roles.\n\n---\n\n## Related GitHub issues\n\n- #15 — [Feature: Booking Wizard and Digital Boarding Pass](https://github.com/IBM/galaxium-travels/issues/15)\n- #17 — [Feature: Enterprise Authentication, Roles, and Support Workspace](https://github.com/IBM/galaxium-travels/issues/17)\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 6,
+  "title": "Feature: Travel agency mode and multi-seat booking",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-03-26T10:33:32Z",
+  "updated_at": "2026-04-17T12:50:35Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "# Feature: Travel agency mode and multi-seat booking\n\n**Canonical framing:** [README.md — §13. Travel Agency Mode](https://github.com/IBM/galaxium-travels/blob/main/README.md#13-travel-agency-mode)\n\nExtend the booking experience beyond individual travelers so registered agencies can act on behalf of clients: maintain a client list, book under the correct passenger names, and reserve **multiple seats in one go** (same flight and class, with a path toward groups and multi-segment trips).\n\n- **Why it matters:** Today the product assumes you are booking for yourself; agencies need delegation, batch seat purchases, and clear separation between the **billing agency** and each **traveling passenger**.\n- **What it demonstrates:** Distinct actor types (traveler vs agency), passenger manifests, multi-seat and bulk booking APIs, inventory checks across quantity, optional agency–client approvals, and reporting sliced by agency and by client.\n- **Possible UX:** Agency profile and dashboard, “Book for a client” flow with passenger details and seat count, cart-style review before confirm, per-client booking history, and confirmations that list every passenger on the reservation.\n\n**Demo-first priority:** Listed as **#6** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n---\n\n## Consumer scenario: family and group travel\n\nThe following remains a concrete, consumer-facing slice of the same **multi-seat manifest** problem (one primary booker, many passengers on one flight).\n\n**Problem:** Users can only book individual seats one at a time. Families and groups need a streamlined way to book multiple seats on the same flight in a single transaction.\n\n**Proposed solution (summary):**\n\n1. Select a flight and specify the number of passengers (e.g. 2–10 travelers).\n2. Enter passenger details for each traveler in the group.\n3. Book all seats together in a single transaction.\n4. Ensure seat availability for the entire group before confirming.\n5. One primary booker manages the group reservation.\n\n### Technical approach (historical notes)\n\n**Backend (conceptual):**\n\n- Extend booking model to support group bookings with a `group_id` field.\n- Add `group_size` (or derive from manifest rows).\n- Adjust booking service to handle multiple passengers atomically.\n- Validate sufficient seats for the whole group.\n\n**Frontend (conceptual):**\n\n- Passenger count selector on the booking flow.\n- Multi-step form for each passenger.\n- Group summary before confirmation.\n- “My Bookings” shows grouped members.\n\n### Acceptance criteria\n\n- [ ] Users can select multiple passengers when booking a flight (within agreed limits).\n- [ ] System validates that sufficient seats are available for the entire group.\n- [ ] All passenger details can be entered in a single flow.\n- [ ] Group bookings are created atomically (all succeed or all fail).\n- [ ] Group bookings are visually grouped on the \"My Bookings\" page.\n- [ ] Canceling a group booking cancels all associated bookings (or defines clear partial rules).\n- [ ] Backend API supports multi-passenger / group creation.\n- [ ] Frontend surfaces clear errors when group booking fails.\n- [ ] Tests cover success, partial availability, and validation paths.\n\n### Later / out of scope for an initial slice\n\n- Payment splitting among group members.\n- Add/remove passengers after booking.\n- Seat map selection so groups sit together (see README §4 — seat selection and holds).\n- Per-passenger notification flows.\n\n### Related README sections\n\n- **[README §4 — Seat Selection, Holds, and Concurrency Safety](https://github.com/IBM/galaxium-travels/blob/main/README.md#4-seat-selection-holds-and-concurrency-safety)** — seat map and holds interact with multi-seat checkout.\n\n---\n\n## Related GitHub issues\n\n- #11–#22 — other **Feature:** backlog items that map to README §1–§12 ([§1](https://github.com/IBM/galaxium-travels/issues/11) … [§12](https://github.com/IBM/galaxium-travels/issues/22))\n- #14 — [Feature: Seat Selection, Holds, and Concurrency Safety](https://github.com/IBM/galaxium-travels/issues/14)\n- #4 — [Trip Builder for Multi-Leg Itineraries](https://github.com/IBM/galaxium-travels/issues/4)\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 11,
+  "title": "Feature: AI Travel Agent Copilot",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:44:58Z",
+  "updated_at": "2026-04-17T12:50:37Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§1 — AI Travel Agent Copilot](https://github.com/IBM/galaxium-travels/blob/main/README.md#1-ai-travel-agent-copilot) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nAdd an in-app assistant that helps users search flights, compare tradeoffs, complete bookings, explain prices, rebook disrupted trips, and summarize itineraries using the existing MCP tooling.\n\n- **Why it matters:** This is the most compelling showcase of an AI-native IDE building AI-powered product functionality.\n- **What it demonstrates:** MCP tool calling, conversational workflows, confirmation steps, auditability, action traces, and agent orchestration.\n- **Possible UX:** Slide-out chat panel, streaming responses, rich flight cards, inline booking actions, and visible tool execution history.\n\n---\n\n**Demo-first priority:** Listed as **#1** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 12,
+  "title": "Feature: Mission Control and Real-Time Operations Center",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:44:59Z",
+  "updated_at": "2026-04-17T12:50:39Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§2 — Mission Control and Real-Time Operations Center](https://github.com/IBM/galaxium-travels/blob/main/README.md#2-mission-control-and-real-time-operations-center) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nCreate a live operations dashboard for flights across the solar system, showing departures, arrivals, booking velocity, cancellations, seat burn-down, and service alerts.\n\n- **Why it matters:** It gives the demo an instantly recognizable enterprise command-center feel.\n- **What it demonstrates:** WebSockets or SSE, async backend workflows, background jobs, telemetry, operational monitoring, and role-based admin experiences.\n- **Possible UX:** Split-flap flight boards, animated KPI panels, route activity indicators, and system health widgets.\n\n---\n\n**Demo-first priority:** Listed as **#2** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 13,
+  "title": "Feature: Interactive Solar System Route Intelligence Map",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:00Z",
+  "updated_at": "2026-04-17T12:50:42Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§3 — Interactive Solar System Route Intelligence Map](https://github.com/IBM/galaxium-travels/blob/main/README.md#3-interactive-solar-system-route-intelligence-map) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nBuild an interactive map of the solar system with planets, routes, popularity, delay risk, and price bands. Users can filter and book directly from the visualization.\n\n- **Why it matters:** This is likely the most visually memorable frontend enhancement.\n- **What it demonstrates:** Advanced visualization, state-driven UI, animation performance, data transformation, and rich interaction design.\n- **Possible UX:** Animated orbital routes, glowing planets, route heatmaps, and active-booking particle trails.\n\n---\n\n**Demo-first priority:** Listed as **#3** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 14,
+  "title": "Feature: Seat Selection, Holds, and Concurrency Safety",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:01Z",
+  "updated_at": "2026-04-17T12:50:44Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§4 — Seat Selection, Holds, and Concurrency Safety](https://github.com/IBM/galaxium-travels/blob/main/README.md#4-seat-selection-holds-and-concurrency-safety) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nExpand booking with a spacecraft seat map, temporary seat holds, checkout timers, idempotent booking APIs, and conflict-aware inventory updates.\n\n- **Why it matters:** It solves one of the classic enterprise reliability problems while making booking more interactive.\n- **What it demonstrates:** Transaction safety, optimistic locking, retries, inventory consistency, and graceful conflict resolution.\n- **Possible UX:** Visual seat maps, hold countdowns, real-time seat release, and “seat just taken” recovery suggestions.\n\n---\n\n**Demo-first priority:** Listed as **#4** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 15,
+  "title": "Feature: Booking Wizard and Digital Boarding Pass",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:02Z",
+  "updated_at": "2026-04-17T12:50:47Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§5 — Booking Wizard and Digital Boarding Pass](https://github.com/IBM/galaxium-travels/blob/main/README.md#5-booking-wizard-and-digital-boarding-pass) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nReplace the simple booking flow with a multi-step journey for class selection, seat choice, extras, review, and confirmation, ending with a downloadable boarding pass.\n\n- **Why it matters:** It turns the core conversion flow into a polished, demo-worthy customer experience.\n- **What it demonstrates:** Form orchestration, validation, pricing logic, transaction boundaries, QR generation, and document creation.\n- **Possible UX:** Step transitions, add-on pricing, animated confirmation states, and a premium space-themed boarding pass.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 16,
+  "title": "Feature: Disruption Management and Auto-Rebooking",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:03Z",
+  "updated_at": "2026-04-17T12:50:50Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§6 — Disruption Management and Auto-Rebooking](https://github.com/IBM/galaxium-travels/blob/main/README.md#6-disruption-management-and-auto-rebooking) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nIntroduce delays, cancellations, missed connections, and alternate-flight recommendations, with one-click rebooking for travelers and support staff.\n\n- **Why it matters:** It makes the system feel operationally realistic instead of just transactional.\n- **What it demonstrates:** Rules engines, dependency handling, exception flows, timeline state changes, and AI-assisted recovery workflows.\n- **Possible UX:** Alert banners, trip timeline changes, alternate-route cards, and recovery recommendations.\n\n---\n\n**Demo-first priority:** Listed as **#5** in [Suggested Demo-First Priority](https://github.com/IBM/galaxium-travels/blob/main/README.md#suggested-demo-first-priority).\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 17,
+  "title": "Feature: Enterprise Authentication, Roles, and Support Workspace",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:04Z",
+  "updated_at": "2026-04-17T12:50:52Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§7 — Enterprise Authentication, Roles, and Support Workspace](https://github.com/IBM/galaxium-travels/blob/main/README.md#7-enterprise-authentication-roles-and-support-workspace) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nEvolve the simple name/email flow into enterprise auth with roles such as traveler, support agent, finance reviewer, and operations admin, plus a back-office support console.\n\n- **Why it matters:** It makes the application feel like a real business system instead of a consumer-only demo.\n- **What it demonstrates:** SSO or JWT-based auth, RBAC, protected routes, permission-aware controls, admin tooling, and safe operational actions.\n- **Possible UX:** Org-aware navigation, protected admin pages, customer lookup tools, refund/rebooking controls, and support case notes.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 18,
+  "title": "Feature: Multi-Tenant Corporate Travel Portal",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:05Z",
+  "updated_at": "2026-04-17T12:50:54Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§8 — Multi-Tenant Corporate Travel Portal](https://github.com/IBM/galaxium-travels/blob/main/README.md#8-multi-tenant-corporate-travel-portal) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nAllow one company to manage employees, budgets, travel policies, approval chains, and cost centers within isolated tenant boundaries.\n\n- **Why it matters:** This is a strong enterprise differentiator and naturally expands the domain.\n- **What it demonstrates:** Tenant scoping, policy enforcement, approval workflows, administrative dashboards, and scoped analytics.\n- **Possible UX:** Company dashboards, traveler directories, approval queues, budget views, and policy alerts.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 19,
+  "title": "Feature: Dynamic Pricing, Forecasting, and Loyalty",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:07Z",
+  "updated_at": "2026-04-17T12:50:57Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§9 — Dynamic Pricing, Forecasting, and Loyalty](https://github.com/IBM/galaxium-travels/blob/main/README.md#9-dynamic-pricing-forecasting-and-loyalty) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nEvolve pricing from static multipliers into a demand-aware pricing engine, and pair it with price history, alerts, and a loyalty program with tiered rewards.\n\n- **Why it matters:** It adds richer business logic and gives users a stronger sense of a living commercial system.\n- **What it demonstrates:** Pricing algorithms, scheduled jobs, simulation logic, time-series data, perk calculation, and progression systems.\n- **Possible UX:** Sparklines on flight cards, “price rising” signals, drop alerts, loyalty tiers, and reward progress indicators.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 20,
+  "title": "Feature: Payments, Refunds, and Finance Ledger",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:08Z",
+  "updated_at": "2026-04-17T12:50:59Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§10 — Payments, Refunds, and Finance Ledger](https://github.com/IBM/galaxium-travels/blob/main/README.md#10-payments-refunds-and-finance-ledger) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nIntroduce checkout, payment authorization, refund workflows, invoices, and finance reporting.\n\n- **Why it matters:** It completes the commercial lifecycle and creates realistic back-office finance scenarios.\n- **What it demonstrates:** Idempotency, provider integrations, reconciliation, financial state machines, and reporting workflows.\n- **Possible UX:** Checkout states, refund timelines, invoice downloads, payment status chips, and finance views.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 21,
+  "title": "Feature: Observability, Audit Trail, and Health Operations",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:09Z",
+  "updated_at": "2026-04-17T12:51:01Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§11 — Observability, Audit Trail, and Health Operations](https://github.com/IBM/galaxium-travels/blob/main/README.md#11-observability-audit-trail-and-health-operations) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nAdd structured logging, correlation IDs, tracing, health checks, and an internal audit explorer for bookings, cancellations, policy decisions, and administrative actions.\n\n- **Why it matters:** This is a major enterprise credibility layer, especially in live demos.\n- **What it demonstrates:** OpenTelemetry patterns, structured logs, traceability, compliance-oriented design, and production diagnostics.\n- **Possible UX:** Searchable audit feed, trace-linked actions, JSON log viewer, and system readiness panels.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 22,
+  "title": "Feature: Quality, Globalization, and Demo Readiness",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T10:45:10Z",
+  "updated_at": "2026-04-17T12:51:03Z",
+  "labels": [
+   "roadmap"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "**README:** [§12 — Quality, Globalization, and Demo Readiness](https://github.com/IBM/galaxium-travels/blob/main/README.md#12-quality-globalization-and-demo-readiness) (see also [Consolidated Implementation Ideas](https://github.com/IBM/galaxium-travels/blob/main/README.md#consolidated-implementation-ideas)).\n\nImprove enterprise polish with end-to-end tests, CI pipelines, internationalization, and multi-currency support.\n\n- **Why it matters:** These features are less flashy individually, but they strongly reinforce production-readiness.\n- **What it demonstrates:** Automated quality gates, deployment confidence, localization pipelines, locale-aware formatting, and broader market readiness.\n- **Possible UX:** Language picker, localized prices and dates, CI badges, and stable end-to-end demo flows.\n\n---\n\n**Demo-first priority:** *Not in the current README top-6 demo priority list.*\n\n",
+  "comment_count": 1
+ },
+ {
+  "number": 23,
+  "title": "MCP permission test",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-16T11:19:31Z",
+  "updated_at": "2026-04-17T12:18:52Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "Temporary test issue to verify GitHub MCP create permission. Please ignore.",
+  "comment_count": 0
+ },
+ {
+  "number": 25,
+  "title": "Flight detail page (/flights/:id)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:52:05Z",
+  "updated_at": "2026-11-10T15:28:36Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "release:v1",
+   "roadmap",
+   "tier-1"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 1",
+  "body": "> Tier 1, item 1 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nMake flight cards clickable. The detail page has a route header, ship info, per-class amenities grid, baggage and cancellation policies, and a mission timeline (launch → transfer burn → orbital insertion → landing) with a prominent \"Book this flight\" CTA.\n\n### Gap\nCards aren't clickable today. There is nowhere for amenities, policies, or any richer flight context to live.\n\n### Scope\n- New route + page.\n- Amenities and policies live as static config keyed by class.\n- Mission-timeline milestones computed from `departure_time` and `arrival_time`.\n- **Out of scope:** editable content, per-flight amenity overrides.\n\n### Touches\n- New `booking_system_frontend/src/pages/FlightDetail.tsx`\n- Router in `booking_system_frontend/src/App.tsx`\n- Link from `booking_system_frontend/src/components/flights/FlightCard.tsx`\n- Optional ship/aircraft fields in `booking_system_backend/models.py`\n\n### Size\n~2–3 hours\n\n### Acceptance criteria\n- [ ] Flight cards on `/flights` are clickable and navigate to `/flights/:id`\n- [ ] Detail page shows full route header (origin → destination, dates, duration)\n- [ ] Per-class amenities grid renders for Economy, Business, and Galaxium\n- [ ] Baggage and cancellation policy sections visible\n- [ ] Mission timeline shows at least 4 milestones with relative times\n- [ ] \"Book this flight\" CTA opens the existing booking modal\n- [ ] Direct navigation to `/flights/:id` for a non-existent ID shows a friendly not-found state",
+  "comment_count": 0
+ },
+ {
+  "number": 26,
+  "title": "\"My Trip\" detail page (/bookings/:id)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:52:06Z",
+  "updated_at": "2026-11-10T15:28:40Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "release:v1",
+   "roadmap",
+   "tier-1"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 1",
+  "body": "> Tier 1, item 2 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nClicking a booking in My Bookings opens the full itinerary: passenger list, seat numbers, a prominently displayed booking reference, a QR code, \"Add to calendar,\" and a refund breakdown.\n\n### Gap\nBooking cards aren't clickable. The `externalBookingReference` from the hold service is shown in a toast and then lost. There's no single place that represents the trip itself.\n\n### Scope\n- New route + page.\n- QR encodes the trip URL.\n- **Out of scope:** `.ics` download (covered by #44), PDF export.\n\n### Touches\n- New `booking_system_frontend/src/pages/TripDetail.tsx`\n- Link from `booking_system_frontend/src/components/bookings/BookingCard.tsx`\n- Backend `GET /bookings/{id}` (verify or add)\n- Reuse existing user/flight endpoints for hydration\n\n### Size\n~2–3 hours\n\n### Acceptance criteria\n- [ ] Booking cards on `/my-bookings` are clickable and navigate to `/bookings/:id`\n- [ ] Page renders booking reference prominently (copyable)\n- [ ] QR code visible, encodes the current URL\n- [ ] Passenger list, seat numbers (when available), class, and total price shown\n- [ ] Refund breakdown visible for bookings still eligible for cancellation\n- [ ] Cancellation action available from this page with same guardrails as My Bookings\n- [ ] Unauthorized access (someone else's booking) returns 403 from backend",
+  "comment_count": 0
+ },
+ {
+  "number": 27,
+  "title": "Real passenger details in booking flow",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:52:08Z",
+  "updated_at": "2026-11-10T15:28:45Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "release:v1",
+   "roadmap",
+   "tier-1",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 1",
+  "body": "> Tier 1, item 3 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nAdd a \"Passenger details\" step to the booking modal: full legal name, DOB, passport/ID number, contact phone, emergency contact, dietary preference.\n\n### Gap\nEvery booking today carries only `user.name` and `user.email`. A multi-million-credit interplanetary flight with no ID collection feels wrong the moment anyone looks at the flow.\n\n### Scope\n- New step between \"select class\" and \"quote\" in `BookingModal.tsx`.\n- Stored on the booking as a `passenger_details` JSON column *or* in a new `Passenger` table — the latter is preferred because it sets up #28.\n- Required fields validated client-side (name, DOB, passport, phone).\n- **Out of scope:** verification against a real ID provider.\n\n### Touches\n- `booking_system_frontend/src/components/bookings/BookingModal.tsx` (new step)\n- `booking_system_backend/models.py` (`Passenger` table or column)\n- `booking_system_backend/services/booking.py`\n- Schema seeding\n\n### Size\n~2 hours\n\n### Acceptance criteria\n- [ ] New \"Passenger details\" step appears before the quote step\n- [ ] Fields: full legal name, DOB, passport/ID number, contact phone, emergency contact (name + phone), dietary preference\n- [ ] Client-side validation blocks Continue until required fields are valid\n- [ ] Passenger details persist to DB and round-trip to My Trip (#26)\n- [ ] Existing bookings without passenger details still render without error\n- [ ] Unit tests cover the new service-layer paths",
+  "comment_count": 0
+ },
+ {
+  "number": 28,
+  "title": "Multi-passenger booking (up to 6 per reservation)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:52:10Z",
+  "updated_at": "2026-11-10T15:28:48Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "release:v1",
+   "roadmap",
+   "tier-1",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 1, item 4 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nExpose the hold service's existing `quantity` field. \"Add passenger\" in the modal adds another passenger-details form; the price total updates live; one booking covers up to 6 passengers.\n\n### Gap\nUsers can only book one seat at a time. No family trips, no group travel. The backend hold service already accepts a quantity — the frontend just doesn't use it.\n\n### Scope\n- Up to 6 passengers per booking, all in the same class.\n- **Out of scope:** mixed-class bookings, per-passenger seat picks (covered by #30), mid-booking passenger removal after confirm.\n\n### Touches\n- `booking_system_frontend/src/components/bookings/BookingModal.tsx`\n- `booking_system_backend/services/booking.py` (one booking → N `Passenger` rows)\n- `booking_system_frontend/src/services/api.ts` (wire `quantity` through quote call)\n- `booking_system_backend/models.py` (`Passenger` table, introduced in #27)\n\n### Size\n~3 hours\n\n### Depends on\n- #27 (passenger details structure)\n\n### Acceptance criteria\n- [ ] \"Add passenger\" button visible in booking modal up to 6 passengers\n- [ ] \"Remove passenger\" available per row (min 1)\n- [ ] Quote reflects `quantity` passed to the hold service\n- [ ] Total price updates live as passengers are added/removed\n- [ ] Hold and confirm flow work end-to-end for multi-passenger bookings\n- [ ] My Trip page (#26) lists all passengers on a multi-passenger booking\n- [ ] Cancel cancels the whole booking atomically",
+  "comment_count": 0,
+  "blocked_by": [
+   27,
+   151
+  ]
+ },
+ {
+  "number": 29,
+  "title": "Mock payment step at end of booking flow",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:52:12Z",
+  "updated_at": "2026-11-10T15:29:04Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "release:v1",
+   "roadmap",
+   "tier-1",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 1, item 5 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nA credit-card form at the end of the booking flow with Luhn check, expiry and CVV validation, and a billing ZIP. Fake \"Processing…\" spinner, fake authorization code, store last-4 and card brand on the booking.\n\n### Gap\nUsers currently click \"Confirm Booking\" and own a reservation. There is no payment step at all — the single most jarring omission for a new user.\n\n### Scope\n- Client-side validation (Luhn, expiry in future, CVV format by brand).\n- Backend `POST /payments/authorize` stub that always succeeds after a 1–2s delay.\n- Store `payment_last4`, `payment_brand`, `payment_auth_code`, `paid_at` on booking.\n- **Out of scope:** real PSP integration, 3DS, saved cards, refund-side flows.\n\n### Touches\n- New `booking_system_frontend/src/components/bookings/PaymentStep.tsx`\n- New `booking_system_backend/services/payment.py` (stub)\n- `booking_system_backend/models.py` (payment columns on Booking)\n\n### Size\n~2–3 hours\n\n### Acceptance criteria\n- [ ] Payment step appears after hold confirm, before final booking confirmation\n- [ ] Form fields: card number, cardholder name, expiry (MM/YY), CVV, billing ZIP\n- [ ] Luhn check blocks invalid card numbers\n- [ ] Expiry must be a future date\n- [ ] Brand (Visa / Mastercard / Amex) auto-detected and displayed\n- [ ] Successful authorization stores last-4 + brand on the booking\n- [ ] Payment metadata visible on the My Trip page (#26)\n- [ ] Simulated failure path (\"4000...\") produces a user-facing error and doesn't create a booking",
+  "comment_count": 0
+ },
+ {
+  "number": 30,
+  "title": "Seat selection map",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:11Z",
+  "updated_at": "2026-11-10T15:29:13Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-2",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 2, item 6 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nA 2D cabin layout for the selected class. Click to pick a seat; taken seats disabled; the chosen seat stored on the booking.\n\n### Gap\nUsers pick a *class* today, not a *seat*. Every airline app has a seat picker, and it's one of the most recognizable interactions in the category.\n\n### Scope\n- Per-class cabin layouts defined as static config (rows × cols).\n- First cut: one passenger = one seat.\n- **Out of scope:** multi-passenger seat picks (follow-up), exit rows / upgrade seats, concurrency-safe locking beyond the existing hold.\n\n### Touches\n- New `booking_system_frontend/src/components/bookings/SeatMap.tsx`\n- `seat_number` column on `Booking` (or per-passenger seat if Passenger table exists)\n- `booking_system_backend/services/booking.py` — validate seat not already taken for that flight/class\n\n### Size\n~3 hours\n\n### Acceptance criteria\n- [ ] Seat map visible as a step in the booking modal for the selected class\n- [ ] Taken seats disabled and visually distinct\n- [ ] Selected seat highlighted\n- [ ] Chosen seat number persists and appears on booking confirmation\n- [ ] Backend rejects a seat already taken for that flight/class (race condition handled)\n- [ ] Seat number visible on the My Trip page (#26) and boarding pass (#34)",
+  "comment_count": 0
+ },
+ {
+  "number": 31,
+  "title": "Galaxium Miles loyalty program",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:13Z",
+  "updated_at": "2026-11-10T15:28:59Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-2",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 2, item 7 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nA profile page showing tier (Meteor → Comet → Nova → Nebula), miles balance, next-tier progress bar, and a ledger of per-booking earnings. Each confirmed booking earns miles proportional to distance × class multiplier.\n\n### Gap\nThere is no profile page, no loyalty program, no reason to come back. Every real airline has this and it's a core part of what makes travel apps feel commercial.\n\n### Scope\n- Compute miles on booking confirm.\n- Seed tier thresholds in code.\n- Show tier badge in header.\n- **Out of scope:** redemption, partner programs, status match, expiry rules.\n\n### Touches\n- New `booking_system_frontend/src/pages/Profile.tsx`\n- `booking_system_backend/models.py` — `miles_ledger` table\n- `booking_system_backend/services/booking.py` — emit ledger entry on confirm\n- `booking_system_frontend/src/components/layout/Header.tsx` — tier badge + link\n\n### Size\n~3 hours\n\n### Acceptance criteria\n- [ ] `/profile` route shows current tier, miles balance, and next-tier progress\n- [ ] Ledger lists per-booking earnings with date, flight, and miles awarded\n- [ ] Header shows tier badge next to the user name\n- [ ] Miles formula documented in code (distance × class multiplier)\n- [ ] Confirming a new booking creates a ledger entry and updates the balance\n- [ ] Cancelling a booking reverses the ledger entry",
+  "comment_count": 0
+ },
+ {
+  "number": 32,
+  "title": "Destination detail pages (/destinations/:slug)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:14Z",
+  "updated_at": "2026-11-10T15:30:20Z",
+  "labels": [
+   "agent:needs-human",
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-2"
+  ],
+  "assignees": [
+   "galaxium-bob-agent"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 2, item 8 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nPer-planet/moon page with facts (gravity, orbital distance, typical transit time), hazards, a small gallery, and a \"flights departing soon\" list.\n\n### Gap\nThe app sells trips to Jupiter and tells you literally nothing about Jupiter. Every travel site has destination content.\n\n### Scope\n- Static content file keyed by destination name.\n- Upcoming flights queried from the existing list endpoint with a destination filter.\n- **Out of scope:** user-generated content, interactive 3D maps, reviews (covered by #38).\n\n### Touches\n- New `booking_system_frontend/src/pages/DestinationDetail.tsx`\n- New `booking_system_frontend/src/data/destinations.ts`\n- Router in `booking_system_frontend/src/App.tsx`\n- Featured-destinations row on `booking_system_frontend/src/pages/Home.tsx`\n\n### Size\n~2 hours\n\n### Acceptance criteria\n- [ ] One destination page per existing flight destination\n- [ ] Each page shows: name, facts block (gravity, distance, transit time), hazards, gallery\n- [ ] \"Flights departing soon\" pulls from the real flight list\n- [ ] Destination links from flight cards and the homepage work\n- [ ] Unknown slug renders a friendly not-found state",
+  "comment_count": 1,
+  "comments": [
+   {
+    "id": 6771466389,
+    "author": "galaxium-bob-agent",
+    "created_at": "2026-11-10T15:29:49Z",
+    "body": "<!-- galaxium-bob-agent:status -->\n### ✔️ Looks like this is already done\n\n**Evidence:** PR #73 (\"Destination info demo\", merged), commit `52f2f94`:\n- `booking_system_frontend/src/data/destinations.ts` has static content for Earth, Mars, Moon, Venus, Jupiter, Europa and Pluto. Each entry has a slug, facts, hazards and a gallery. This covers every destination in the seed flights.\n- `booking_system_frontend/src/pages/DestinationDetail.tsx` shows facts, hazards, a gallery and \"Flights departing soon\". The flights come from `getFlights({ destination })`, which uses the real flight list.\n- `booking_system_frontend/src/App.tsx:20` has the `/destinations/:slug` route.\n- `booking_system_frontend/src/pages/Home.tsx:126-134` has the destinations grid linking to each page. `booking_system_frontend/src/components/flights/FlightCard.tsx:17-20` links the destination name.\n- `booking_system_frontend/src/pages/DestinationDetail.tsx:71-93` shows a friendly \"We haven't charted this world yet\" state for an unknown slug.\n\nI'd suggest closing this issue. If something is still broken, add a comment with what you see.\n\n---\n<sub>Galaxium Bob Agent · running on Bob Shell in GitHub Actions · [run](https://github.com/IBM/galaxium-travels/actions/runs/42844668960)</sub>\n"
+   }
+  ]
+ },
+ {
+  "number": 33,
+  "title": "Checkout add-ons (baggage, meals, Wi-Fi, insurance, zero-G)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:15Z",
+  "updated_at": "2026-11-10T15:28:52Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-2",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 2, item 9 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nAn \"Extras\" step before payment: extra baggage, gourmet meals, Wi-Fi, travel insurance, zero-G session. Each priced; total updates live.\n\n### Gap\nReal travel-site checkout is 70% upsell. Ours is 0%.\n\n### Scope\n- Static add-on catalog with fixed prices.\n- Selections stored as a JSON column on the booking.\n- First cut: add-ons apply to the whole booking, not per passenger.\n- **Out of scope:** per-passenger variance, availability limits per flight, dynamic pricing.\n\n### Touches\n- New `booking_system_frontend/src/components/bookings/AddOnsStep.tsx`\n- New `booking_system_frontend/src/data/addOns.ts`\n- `booking_system_backend/models.py` (`addons` JSON column on Booking)\n- Total calculation on both backend (authoritative) and frontend (preview)\n\n### Size\n~2 hours\n\n### Acceptance criteria\n- [ ] Extras step appears between hold and payment steps\n- [ ] At least 5 add-ons available with clear names, descriptions, and prices\n- [ ] Total updates live as add-ons are toggled\n- [ ] Selected add-ons persist with the booking\n- [ ] Backend recomputes the total and rejects tampering with prices\n- [ ] Add-ons visible on My Trip page (#26)\n\n\n\n\nProposed Add-ons Catalog\nHere's a demo-friendly catalog of 7 space-themed add-ons for the checkout flow:\n\n1. 💼 Extra Cargo Allowance - $150\nAdditional 20kg cargo allowance for moon rocks and souvenirs\n\n2. 🍽️ Gourmet Space Meal - $85\nChef-prepared zero-gravity cuisine with asteroid-aged wine\n\n3. 📡 Interstellar Wi-Fi - $45\nHigh-speed quantum-entangled connectivity throughout your journey\n\n4. 🛡️ Cosmic Travel Insurance - $200\nComprehensive coverage including meteor strikes and alien encounters\n\n5. 🚀 Zero-G Experience Package - $500\n30-minute guided zero-gravity experience with certified instructor\n\n6. 🪟 Window Seat Upgrade - $120\nGuaranteed panoramic viewport for Earth/Mars views\n\n7. 👑 Spaceport Lounge Access - $95\nPre-departure access to luxury orbital lounge with anti-gravity bar\n\nPrice Range: $45 - $500\nTotal if all selected: $1,195\n\nImplementation Notes:\n\nAdd-ons will be selected during hold confirmation (step 3), not as a separate step\nJava hold service remains unchanged\nPython backend handles validation and stores selections as JSON in booking\nFrontend adds checkbox UI to existing hold step with live total calculation",
+  "comment_count": 3,
+  "comments": [
+   {
+    "id": 4302563237,
+    "author": "Max-Jesch",
+    "created_at": "2026-04-23T07:42:50Z",
+    "body": "## Proposed Add-ons Catalog\n\nHere's a demo-friendly catalog of 7 space-themed add-ons for the checkout flow:\n\n### 1. 💼 Extra Cargo Allowance - **$150**\nAdditional 20kg cargo allowance for moon rocks and souvenirs\n\n### 2. 🍽️ Gourmet Space Meal - **$85**\nChef-prepared zero-gravity cuisine with asteroid-aged wine\n\n### 3. 📡 Interstellar Wi-Fi - **$45**\nHigh-speed quantum-entangled connectivity throughout your journey\n\n### 4. 🛡️ Cosmic Travel Insurance - **$200**\nComprehensive coverage including meteor strikes and alien encounters\n\n### 5. 🚀 Zero-G Experience Package - **$500**\n30-minute guided zero-gravity experience with certified instructor\n\n### 6. 🪟 Window Seat Upgrade - **$120**\nGuaranteed panoramic viewport for Earth/Mars views\n\n### 7. 👑 Spaceport Lounge Access - **$95**\nPre-departure access to luxury orbital lounge with anti-gravity bar\n\n---\n\n**Price Range:** $45 - $500  \n**Total if all selected:** $1,195\n\n**Implementation Notes:**\n- Add-ons will be selected during hold confirmation (step 3), not as a separate step\n- Java hold service remains unchanged\n- Python backend handles validation and stores selections as JSON in booking\n- Frontend adds checkbox UI to existing hold step with live total calculation\n"
+   },
+   {
+    "id": 4307418044,
+    "author": "Max-Jesch",
+    "created_at": "2026-04-23T19:48:22Z",
+    "body": "## ✅ Implementation Complete\n\nThis issue has been fully implemented and is ready for review in PR #46.\n\n### What Was Delivered\n\n**All 6 acceptance criteria have been met:**\n\n✅ Add-ons integrated into hold confirmation step (not a separate step, as specified in implementation notes)\n✅ 7 space-themed add-ons available with clear names, descriptions, prices, and icons\n✅ Total updates live as add-ons are toggled in the UI\n✅ Selected add-ons persist with booking in JSON column\n✅ Backend validates prices and rejects tampering attempts\n✅ Add-ons visible on My Bookings page with icon badges\n\n### Implementation Highlights\n\n**Backend (Python)**\n- Added `addons` JSON column to Booking model\n- Created static catalog with all 7 proposed add-ons\n- Implemented comprehensive price validation and tampering detection\n- Added `/addons` endpoint for catalog retrieval\n- Enhanced booking service with add-ons support\n\n**Frontend (React)**\n- Integrated add-ons selection into existing hold step UI\n- Live price calculation showing base fare + add-ons breakdown\n- Visual display of selected add-ons on booking cards\n- Comprehensive error handling for backend validation failures\n\n**Java Hold Service**\n- Updated to accept and pass add-ons through to Python backend\n- Refactored pricing to use actual flight base prices\n- Added audit logging for add-on selections\n\n**Testing**\n- Backend: 7 new tests covering validation, tampering detection, and storage\n- Frontend: 6 tests for UI interaction and API integration\n- Java: 2 tests for add-ons passthrough\n- Integration: Comprehensive test suite script for all services\n\n### Testing Instructions\n\nRun the full test suite:\n```bash\n./deployment_scripts/local/run_addons_test_suite.sh\n```\n\n### Database Migration Note\n\n⚠️ The new `addons` JSON column requires database recreation for development:\n```bash\nrm booking_system_backend/bookings.db\n# Restart backend to recreate schema\n```\n\n### Review PR\n\n👉 **Pull Request:** #46 \n📊 **Files Changed:** 20 files (+3,169 lines, -98 lines)\n🧪 **Test Coverage:** 15 new tests across all services\n\nReady for review and merge!"
+   },
+   {
+    "id": 6770773945,
+    "author": "Max-Jesch",
+    "created_at": "2026-11-10T15:02:14Z",
+    "body": "Correction: PR #46 was closed without merging, so checkout add-ons are **not implemented** yet. The \"Implementation complete\" comment above refers to that unmerged PR."
+   }
+  ],
+  "blocked_by": [
+   151
+  ]
+ },
+ {
+  "number": 34,
+  "title": "Boarding pass / e-ticket view",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:17Z",
+  "updated_at": "2026-11-10T15:29:41Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-2"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 2, item 10 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nA styled boarding pass shown as the final step of booking and as a permanent link from the My Trip page: passenger name, flight, seat, pod/gate, QR code, barcode strip.\n\nMake sure to use jspdf@3.0.1 \n\n### Gap\nThe confirmation today is a transient toast. There is no artifact to screenshot, download, or keep.\n\n### Scope\n- In-browser HTML view with print styling.\n- **Out of scope:** PDF export (nice-to-have follow-up), Apple Wallet / Google Wallet passes.\n\n### Touches\n- New `booking_system_frontend/src/pages/BoardingPass.tsx` (or modal variant)\n- `booking_system_frontend/src/utils/qr.ts`\n- Data hydrated from existing booking endpoint (same as #26)\n\n### Size\n~2 hours\n\n### Depends on\n- #26 (My Trip page) and #30 (seat number) both contribute data but aren't hard blockers\n\n### Acceptance criteria\n- [ ] Boarding pass shown as final step after successful booking confirm\n- [ ] Permanent link from My Trip page (#26) opens the same view\n- [ ] Passenger name, flight, seat (if assigned), departure time, boarding time all visible\n- [ ] QR code encodes the booking reference\n- [ ] Print CSS produces a clean one-page printout\n- [ ] Works for multi-passenger bookings (one pass per passenger or paged view)",
+  "comment_count": 1,
+  "comments": [
+   {
+    "id": 6771463291,
+    "author": "Max-Jesch",
+    "created_at": "2026-11-10T15:29:41Z",
+    "body": "PO note: the `jspdf@3.0.1` pin should not be copied into the plan. OSV.dev lists 11 advisories for it, including two critical ones (GHSA-f8cm-6447-x5h2, GHSA-wfv2-pwc8-crg5). The first fixed release is 4.2.1. `jspdf` is not in `booking_system_frontend/package.json`, and PDF export is out of scope here. Drop the pin unless PDF export is added. If it is, use a patched version (>= 4.2.1). This issue is not eligible for `agent:triage` until this is settled."
+   }
+  ]
+ },
+ {
+  "number": 35,
+  "title": "Homepage search widget (From / To / When / Passengers)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:53:59Z",
+  "updated_at": "2026-11-10T15:29:43Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 3, item 11 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nFrom/To/When/Passengers on the hero section; deep-links to `/flights?...` with URL params.\n\nMake sure to use this qs@6.5.2 . This is important. \n\n### Gap\nEvery real travel site leads with a search box on the homepage. Today users have to navigate to a separate page to even start.\n\n### Scope\n- Add search form to `Home.tsx` hero.\n- Update filter parsing in `Flights.tsx` to read URL params.\n- **Out of scope:** autocomplete, recent searches.\n\n### Touches\n- `booking_system_frontend/src/pages/Home.tsx`\n- `booking_system_frontend/src/pages/Flights.tsx` (URL param reading)\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] Search widget on homepage hero with From, To, Date, Passengers\n- [ ] Submit navigates to `/flights?from=...&to=...&date=...&passengers=...`\n- [ ] Flights page reads URL params and pre-applies filters\n- [ ] URL is the source of truth — direct links with params work",
+  "comment_count": 1,
+  "comments": [
+   {
+    "id": 6771464048,
+    "author": "Max-Jesch",
+    "created_at": "2026-11-10T15:29:43Z",
+    "body": "PO note: the `qs@6.5.2` pin should not be copied into the plan. OSV.dev lists a high-severity prototype pollution advisory (GHSA-hrpp-h998-j3pp) and two DoS advisories for it. `qs` is not in `booking_system_frontend/package.json`, and `URLSearchParams` covers the scope here. Drop the pin. If a library is needed, use `qs` >= 6.16.0. This issue is not eligible for `agent:triage` until this is settled."
+   }
+  ]
+ },
+ {
+  "number": 36,
+  "title": "Flight status chip (On time / Boarding / Departed / Delayed)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:00Z",
+  "updated_at": "2026-04-17T12:54:00Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "> Tier 3, item 12 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nStatus chip on flight cards and booking cards, derived from `departure_time` vs. current time.\n\n### Gap\nReal airline apps always show flight status. Today the app never tells you whether a flight is about to depart, already departed, or on time.\n\n### Scope\n- Pure frontend, derived from timestamps.\n- States: Scheduled (>24h), Check-in Open (24h–2h), Boarding (2h–0h), Departed (past departure, before arrival), Arrived (past arrival).\n- **Out of scope:** real delays / operational data.\n\n### Touches\n- New `booking_system_frontend/src/utils/flightStatus.ts`\n- `booking_system_frontend/src/components/flights/FlightCard.tsx`\n- `booking_system_frontend/src/components/bookings/BookingCard.tsx`\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] Status chip visible on flight cards and booking cards\n- [ ] Color coding: scheduled (neutral), check-in (blue), boarding (orange), departed (purple), arrived (green)\n- [ ] Status updates without a page reload (re-renders on timer or on nav)",
+  "comment_count": 0
+ },
+ {
+  "number": 37,
+  "title": "Saved flights / wishlist",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:02Z",
+  "updated_at": "2026-11-10T15:03:08Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "> Tier 3, item 13 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nHeart icon on flight cards; new \"Saved\" tab with the list. Local-storage first; promote to server-side later if needed.\n\n### Gap\nUsers can't come back to a flight they were thinking about. Every travel site has a wishlist.\n\n### Scope\n- Store saved flight IDs in `localStorage` under `galaxium_saved_${userId}`.\n- Show count badge in nav.\n- **Out of scope:** cross-device sync, price-drop alerts (covered by #40).\n\n### Touches\n- `booking_system_frontend/src/components/flights/FlightCard.tsx` (heart icon)\n- New `booking_system_frontend/src/pages/Saved.tsx`\n- New `booking_system_frontend/src/utils/savedStorage.ts`\n- `booking_system_frontend/src/components/layout/Header.tsx`\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] Heart icon visible on flight cards, toggles saved state\n- [ ] Saved tab in nav with count badge\n- [ ] Saved page lists all saved flights with unsave action\n- [ ] State persists across reloads for the logged-in user",
+  "comment_count": 0
+ },
+ {
+  "number": 38,
+  "title": "Reviews & ratings on flight detail pages",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:03Z",
+  "updated_at": "2026-11-10T15:29:16Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-3",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 3, item 14 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\n5-star ratings and comments on flight detail pages. Seed demo reviews on known flights.\n\n### Gap\nEvery travel site shows social proof. This one has none.\n\n### Scope\n- New `reviews` table: id, flight_id, user_id, rating (1-5), comment, created_at.\n- Read-only in first cut; any user can post exactly one review per booked flight.\n- Seed demo reviews with the initial data.\n- **Out of scope:** moderation, reactions, photos.\n\n### Touches\n- New `reviews` table in `booking_system_backend/models.py`\n- New `booking_system_backend/services/review.py`\n- Endpoints: `GET /flights/{id}/reviews`, `POST /flights/{id}/reviews`\n- Review block on `FlightDetail.tsx` (#25)\n\n### Size\n~1.5 hours\n\n### Depends on\n- #25 (flight detail page)\n\n### Acceptance criteria\n- [ ] Review list shown on flight detail page with rating distribution\n- [ ] Users who have a confirmed booking on a flight can leave one review\n- [ ] Average rating and count visible on flight cards too\n- [ ] Seed data includes reviews on at least 5 flights",
+  "comment_count": 0,
+  "blocked_by": [
+   25
+  ]
+ },
+ {
+  "number": 39,
+  "title": "Destination conditions widget (solar flare / dust storm / debris)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:05Z",
+  "updated_at": "2026-11-10T15:29:20Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 3, item 15 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nSolar flare index, dust-storm forecast, orbital debris risk on destination and flight detail pages. Mocked data with a daily seed so it's stable within a day.\n\n### Gap\nThe app lets you book a trip to Mars and tells you nothing about current conditions. Adds character and grounds the sci-fi theme.\n\n### Scope\n- Pure frontend, mocked data seeded by `(destination, YYYY-MM-DD)`.\n- **Out of scope:** real space weather APIs.\n\n### Touches\n- New `booking_system_frontend/src/data/destinationConditions.ts`\n- New `booking_system_frontend/src/components/common/ConditionsWidget.tsx`\n- Used on `DestinationDetail.tsx` (#32) and `FlightDetail.tsx` (#25)\n\n### Size\n~1 hour\n\n### Depends on\n- #25 and #32 (surfaces where this lives)\n\n### Acceptance criteria\n- [ ] Widget shows 3 indicators with qualitative labels (Low / Moderate / High)\n- [ ] Values stable within a day for a given destination\n- [ ] Visual styling matches the cosmic theme",
+  "comment_count": 0,
+  "blocked_by": [
+   25,
+   32
+  ]
+ },
+ {
+  "number": 40,
+  "title": "Price alerts (\"notify me if this drops below X\")",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:44Z",
+  "updated_at": "2026-11-10T15:29:24Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-3",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 3, item 16 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\n\"Notify me if this drops below X\" button on flight detail; stored server-side, listed in profile. No real notifications in the first cut.\n\n### Gap\nPrice tracking is a travel-site staple. Gives users a reason to come back.\n\n### Scope\n- New `price_alerts` table: id, user_id, flight_id, threshold, created_at, triggered_at.\n- UI button on flight detail; list view on profile.\n- **Out of scope:** actual email / push notifications; dynamic pricing (the price doesn't change yet).\n\n### Touches\n- `booking_system_backend/models.py`, `booking_system_backend/services/price_alert.py` (new)\n- `FlightDetail.tsx` (#25) and `Profile.tsx` (#31)\n\n### Size\n~1.5 hours\n\n### Depends on\n- #25 and #31 (surfaces where this lives)\n\n### Acceptance criteria\n- [ ] \"Set price alert\" button on flight detail page, opens modal with threshold input\n- [ ] Alerts listed on profile page with unsubscribe action\n- [ ] Backend stores and returns a user's price alerts\n- [ ] Duplicate alert for same flight prompts to update, not create",
+  "comment_count": 0,
+  "blocked_by": [
+   25,
+   31
+  ]
+ },
+ {
+  "number": 41,
+  "title": "Check-in flow (24h before departure)",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:46Z",
+  "updated_at": "2026-11-10T15:29:27Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 3",
+  "body": "> Tier 3, item 17 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\n\"Check in\" action becomes available 24h before departure; issues the boarding pass from #34 and flips the booking to `CHECKED_IN`.\n\n### Gap\nCheck-in is a canonical travel-app moment. Missing entirely today.\n\n### Scope\n- New booking status `CHECKED_IN`.\n- Action only available in the 24h window before `departure_time`.\n- **Out of scope:** seat changes at check-in, passenger document verification.\n\n### Touches\n- `booking_system_backend/models.py` (status value)\n- `booking_system_backend/services/booking.py` (check-in endpoint)\n- `TripDetail.tsx` (#26) — check-in button\n- `BoardingPass.tsx` (#34) — only available once checked in, OR both states look the same\n\n### Size\n~2 hours\n\n### Depends on\n- #26 (trip detail page) and #34 (boarding pass)\n\n### Acceptance criteria\n- [ ] Check-in button visible on My Trip page only within 24h of departure\n- [ ] Clicking check-in flips status to CHECKED_IN and issues the boarding pass\n- [ ] Already-checked-in shows a \"Checked in\" chip instead of the button\n- [ ] Backend rejects check-in outside the valid window",
+  "comment_count": 0,
+  "blocked_by": [
+   26,
+   34
+  ]
+ },
+ {
+  "number": 42,
+  "title": "Promo codes at checkout",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:47Z",
+  "updated_at": "2026-11-10T15:28:55Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-3",
+   "touches-schema"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 2",
+  "body": "> Tier 3, item 18 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nInput field at checkout; backend validates against a small code table (`SPACE20` → 20% off).\n\n### Gap\nPromo code fields are everywhere in real e-commerce. Small but conspicuous when absent.\n\n### Scope\n- New `promo_codes` table: code, percent_off, valid_from, valid_until, max_uses.\n- Seed 2–3 demo codes (SPACE20, MARS10, FIRSTRIDE).\n- **Out of scope:** per-user codes, stackable codes.\n\n### Touches\n- `booking_system_backend/models.py` and new service\n- `BookingModal.tsx` quote step — input + apply button\n- Quote/booking total logic\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] Promo input visible on the quote step\n- [ ] Valid code applies discount and shows the savings line\n- [ ] Invalid code shows a clear error without blocking the flow\n- [ ] Expired or over-used codes rejected\n- [ ] Discount persists through hold and confirm",
+  "comment_count": 0,
+  "blocked_by": [
+   151
+  ]
+ },
+ {
+  "number": 43,
+  "title": "Refund preview on cancel",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:49Z",
+  "updated_at": "2026-11-09T11:21:37Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "> Tier 3, item 19 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\nThe cancel modal shows \"$X refund, $Y fee, $Z kept as travel credit\" before confirming, with real cancellation-policy wording.\n\nStandard travel-site tiers:\n- 7+ days out → full refund\n- 3–6 days → 75% refund + 10% fee + 15% travel credit\n- 1–2 days → no refund + 25% fee + 25% travel credit\n- same-day → no refund, no fee, no credit (total forfeit)\n\n### Gap\nToday's cancel modal just says \"are you sure?\" Real travel sites always show you what you'll get back before you confirm.\n\n### Scope\n- Backend-owned policy logic via a new \\`GET /bookings/{id}/cancellation-preview\\` endpoint; frontend fetches and displays the breakdown.\n- **Out of scope:** actual refund processing (payment system is a stub).\n\n### Touches\n- \\`MyBookings.tsx\\` cancel modal\n- New backend service function + \\`GET /bookings/{id}/cancellation-preview\\` endpoint + MCP tool\n- \\`booking_system_frontend/src/services/api.ts\\` (new \\`getCancellationPreview\\` call)\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] Cancel modal shows refund / fee / credit breakdown before confirm\n- [ ] Breakdown varies by days-to-departure per documented policy\n- [ ] Wording is clear and product-appropriate\n- [ ] Policy helper is unit-tested in the backend\n\n### Design notes\nThe breakdown block should feel like a real travel site, not a debug dump. A few things that help:\n- A **policy tier badge** (e.g. \"Full Refund ✓\" or \"Non-refundable\") at the top of the block so the user knows their situation at a glance before reading the numbers\n- A **segmented proportion bar** showing refund / fee / credit as colour-coded bands across the full price — makes the split visually immediate without arithmetic\n- A **\"You'll receive back\" summary row** at the bottom, separated by a divider, showing the net cash refund so the user doesn't have to add it up themselves\n- **Per-row icons** (e.g. arrow-return for refund, x-circle for fee, ticket for credit) to make each line scannable\n\n### Implementation notes\n- Departure time format varies by data source — test fixtures use \\`\"YYYY-MM-DD HH:MM\"\\` but the live DB stores ISO 8601 with a UTC suffix (\\`\"YYYY-MM-DDTHH:MM:SSZ\"\\`). The preview service must handle both; a single \\`strptime\\` pattern will silently break on real data. At minimum handle: \\`%Y-%m-%d %H:%M\\`, \\`%Y-%m-%dT%H:%M:%S\\`, \\`%Y-%m-%dT%H:%M:%SZ\\`. Write at least one test using the exact format from \\`seed.py\\`.\n- \\`GET /bookings/{id}/cancellation-preview\\` must be registered in \\`server.py\\` **before** the existing \\`GET /bookings/{user_id}\\` route — FastAPI matches in registration order and the wildcard will shadow the two-segment path otherwise.",
+  "comment_count": 1,
+  "comments": [
+   {
+    "id": 6738796465,
+    "author": "Max-Jesch",
+    "created_at": "2026-11-09T11:21:37Z",
+    "body": "# Refund Preview on Cancel — Reviewed Plan (Issue #43)\n\nStatus: Draft · Reviewed. Source plan: [`REFUND_PREVIEW_PLAN.md`](REFUND_PREVIEW_PLAN.md).\n\n## Summary\n\nThe cancel modal in `MyBookings.tsx` will show an **estimated** refund / fee / travel-credit breakdown, fetched from a new `GET /bookings/{booking_id}/cancellation-preview` endpoint. The backend owns the policy, and the endpoint is auto-exposed as an MCP tool. If the preview fails to load, the modal shows an inline error and still lets the user cancel. `cancel_booking` is unchanged and no money moves, so refund processing is a follow-up issue. All seed flights are in 2099, so unit tests inject \"now\" and the demo seed gains one or two near-term flights to show the other tiers.\n\n## Key Decisions\n\n| Decision | Choice | Rationale |\n|---|---|---|\n| Preview fetch failure in the modal | Show an inline error and still allow cancelling | A preview bug (network, unparseable `departure_time`) must never trap a user in a booking |\n| Preview vs. actual cancel | Label the breakdown \"Estimated\". Leave `cancel_booking` unchanged. Log refund processing as a follow-up issue | Payment is a stub, so the UI must not imply money moves. This also keeps the change minimal |\n| Demonstrating and testing non-\"Full refund\" tiers | Unit tests inject `now`. Seed one or two near-term flights (e.g. +2 and +5 days) for the demo | Seed flights are all in 2099, so the live UI would only ever show \"Full refund\" |\n| 1–2 day tier percentages | 0% refund / 50% fee / 50% credit | The issue's 25%/25% adds up to only 50%, so it is treated as a typo and every tier sums to 100% |\n| Policy location | Backend helper plus service function; frontend only renders | One tested source of truth, and the MCP tool gets the same logic |\n| Departure-time parsing | Accept `%Y-%m-%d %H:%M`, `%Y-%m-%dT%H:%M:%S` and `...Z`. Treat naive values as UTC | The seed uses `Z` ISO strings, tests use space-separated strings, and the only existing parser would fail on seed data |\n\n## Open Items\n\n- Seeding near-term flights changes demo data. Check that `seed.py` and any tests or e2e flows that count flights or assume 2099 dates still pass.\n- Seeded near-term flights will age: \"+2 days\" is relative to seed time, and `SEED_DEMO_DATA=true` re-seeds on every start. Confirm the seed computes dates relative to now rather than hardcoding them.\n- Wording for the tier badge labels and policy text is a draft and needs a review in the UI.\n- Whether the modal needs to grow from `sm` to fit the breakdown block.\n- Refund and credit processing (real payment, recording amounts on the booking) is out of scope. File a follow-up issue.\n- The frontend has no unit-test runner, so the UI is verified by typecheck, lint, build and a manual browser check.\n\n## Next Steps\n\n1. Backend: add the `CancellationPreview` schema, the departure-time parser, the policy helper and `get_cancellation_preview(db, booking_id, now=None)` in `services/booking.py`. Return `ErrorResponse` for `BOOKING_NOT_FOUND`, `ALREADY_CANCELLED` and an invalid date.\n2. Backend tests: tier boundaries (7, 6, 3, 2, 1 days, same day and already departed), parts summing to `price_paid`, all three date formats, service error cases, and REST 200/404/409 tests.\n3. Backend endpoint: add `GET /bookings/{booking_id}/cancellation-preview` in `server.py` above `get_user_bookings` and above `FastApiMCP(app)`. Set the response model and a docstring that states the policy tiers.\n4. Seed: add one or two near-term flights (about +2 and +5 days) to `seed.py` so the partial and non-refundable tiers show up in the demo.\n5. Frontend types and API: add the `CancellationPreview` type and `getCancellationPreview` in `api.ts`.\n6. Frontend UI: add a `CancellationBreakdown` component with a tier badge, a segmented bar, per-row icons, a \"You'll receive back\" row and an \"Estimated\" label. Handle loading and error states, still allow cancelling on error, and reset state on close.\n7. Verify with the `verify` skill (ruff, mypy, pytest, `tsc -b`, eslint, build), then check the modal manually against `./start.sh`.\n8. Open a follow-up issue for actual refund processing.\n"
+   }
+  ]
+ },
+ {
+  "number": 44,
+  "title": "Calendar export (.ics) for bookings",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-04-17T12:54:50Z",
+  "updated_at": "2026-07-30T07:36:05Z",
+  "labels": [
+   "area/fullstack",
+   "enhancement",
+   "roadmap",
+   "tier-3"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "> Tier 3, item 20 of the [Product Backlog](https://github.com/IBM/galaxium-travels/blob/main/README.md#-product-backlog).\n\n`GET /bookings/{id}.ics` endpoint + \"Add to calendar\" button on the trip detail page.\n\n### Gap\nA real-world integration users actually use. Missing from My Bookings today.\n\n### Scope\n- Backend endpoint returns a valid iCalendar file with VEVENT for departure.\n- Add-to-calendar button inside `BookingCard.tsx` (alongside the Cancel button, gated on `status === 'booked'`).\n- **Out of scope:** Google Calendar deep-links, multi-VEVENT itineraries for multi-leg trips.\n\n### Touches\n- `booking_system_backend/services/booking.py` — new service functions\n- `booking_system_backend/server.py` — new endpoint + matching MCP tool\n- `booking_system_backend/tests/` — unit + REST tests\n- `booking_system_frontend/src/components/bookings/BookingCard.tsx` — \"Add to Calendar\" button\n\n### Implementation notes\n- No third-party library needed — iCalendar is a plain-text format (RFC 5545).\n- Endpoint returns `Content-Type: text/calendar` with `Content-Disposition: attachment`; 404 if booking not found.\n- Frontend triggers download via a temporary `<a download>` element, not Axios.\n- MCP tool must be added alongside the REST endpoint (project convention).\n\n### Size\n~1 hour\n\n### Acceptance criteria\n- [ ] `GET /bookings/{id}/export.ics` returns HTTP 200 with `Content-Type: text/calendar` and a valid iCalendar body\n- [ ] `GET /bookings/{id}/export.ics` returns HTTP 404 when booking ID does not exist\n- [ ] Event contains `SUMMARY`, `LOCATION` (origin → destination), `DTSTART`, `DTEND`, `DESCRIPTION`, `UID`\n- [ ] Matching MCP tool added alongside the REST endpoint\n- [ ] \"Add to Calendar\" button on active booking cards triggers a browser file download\n- [ ] File opens correctly in Apple Calendar and Google Calendar\n- [ ] `cd booking_system_backend && pytest` passes with new tests included\n\n\nNote: Ensure the backend is running with real seed data before demoing — flight times are stored in ISO 8601 format (2099-01-01T09:00:00Z) and the calendar export handles this correctly.",
+  "comment_count": 0
+ },
+ {
+  "number": 47,
+  "title": "Low-seat urgency copy on flight cards",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "Max-Jesch",
+  "created_at": "2026-04-27T15:16:45Z",
+  "updated_at": "2026-04-27T15:32:28Z",
+  "labels": [
+   "area/frontend",
+   "enhancement",
+   "tier-3"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "A tiny UX polish for flight cards: when a seat class has very few seats remaining, make the availability message feel more urgent and travel-site-like.\n\n### Gap\nThe UI already highlights scarce availability visually, but the copy still reads like ordinary inventory. Real booking sites usually make low availability explicit so users understand the urgency at a glance.\n\n### Scope\n- Update flight card availability text for low remaining seats.\n- Keep existing sold-out and normal availability behavior intact.\n- **Out of scope:** changing booking rules, pricing, availability calculations, or backend APIs.\n\n### Touches\n- `booking_system_frontend/src/components/flights/FlightCard.tsx`\n\n### Size\n~5 minutes\n\n### Acceptance criteria\n- [ ] Low remaining seats use clearer urgency-oriented copy on flight cards\n- [ ] Sold-out classes still show the existing sold-out state\n- [ ] Normal availability remains simple and unchanged\n- [ ] Styling continues to match the current cosmic theme",
+  "comment_count": 0
+ },
+ {
+  "number": 66,
+  "title": "Add the folder .venv/ to your gitignore",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "thomassuedbroecker",
+  "created_at": "2026-06-24T07:46:59Z",
+  "updated_at": "2026-07-01T07:43:58Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": null,
+  "comment_count": 1
+ },
+ {
+  "number": 89,
+  "title": "Mejorar el mensaje de error del email",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "AndreuRul",
+  "created_at": "2026-07-07T11:04:25Z",
+  "updated_at": "2026-08-18T07:10:25Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "Cuando el email no es válido, el mensaje no explica el formato esperado (usuario@dominio.com). Mostrar un mensaje claro",
+  "comment_count": 0
+ },
+ {
+  "number": 95,
+  "title": "No contact us found",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "dhruvilhybrid-cell",
+  "created_at": "2026-07-21T01:41:08Z",
+  "updated_at": "2026-08-18T07:10:26Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "The website does not contain Contact Us webpage. ",
+  "comment_count": 0
+ },
+ {
+  "number": 97,
+  "title": "Replace `type=\"email\"` with `type=\"text\"` for email field in `bob-learning-path-branch` branch.",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "sl-at-ibm",
+  "created_at": "2026-07-22T21:28:47Z",
+  "updated_at": "2026-08-18T07:10:26Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "The first exercise (\"Literate coding mode\", add email validation) should start with a login/register form that accepts any input for the email.\n\nHowever, in the email input box in `UserIdentification.tsx`, the `type=\"email\"` tips the browser off. Modern browsers (seen on Chrome and Firefox) go ahead and do their basic email validation, so even before doing the exercise a non-email input is caught and marked as wrong by the browser with a dropdown warning on the input box - thereby making it hard for the learner to figure out what's going on.\n\nSuggestion: `type=\"text\"`: this does not tip the browser, which does no validation. The learner has a clear picture of their task and can immediately see the difference in action on the web app.\n",
+  "comment_count": 0
+ },
+ {
+  "number": 113,
+  "title": "Book Your Flight Now button should be centered.",
+  "state": "open",
+  "state_reason": null,
+  "author": "ahmed-azraq",
+  "created_at": "2026-08-25T11:35:16Z",
+  "updated_at": "2026-08-25T11:35:16Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "In the home page, currently \"Book Your Flight Now\" button is left aligned, need to have it be centered.\n\n\n<img width=\"774\" height=\"187\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/226ca7e4-99f1-4fb1-bcf3-166082d03a55\" />",
+  "comment_count": 0
+ },
+ {
+  "number": 118,
+  "title": "🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "security-ops-bot[bot]",
+  "created_at": "2026-09-10T21:24:51Z",
+  "updated_at": "2026-09-29T06:36:11Z",
+  "labels": [
+   "security"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "## 🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels\n\n> **Action required:** Remediate the alerts listed below before their SLA deadline.\n> This issue will be closed automatically once all alerts are resolved.\n>\n> **SLA policy:** critical = 7 days, high = 30 days, medium = 90 days, low = no deadline.\n> Alerts at or above medium severity will trigger a warning comment before the deadline and\n> repo archiving if unresolved. Low-severity alerts are tracked here for visibility only —\n> they will never trigger warnings or archiving.\n>\n> 💡 **Tip:** To have Dependabot automatically open fix PRs for dependency alerts, enable\n> **Dependabot security updates** in your repo settings:\n> Settings → Advanced Security → Dependabot security updates → Enable.\n>\n> 📖 **New to this issue?** See the [Security Issue Guide](https://ibm.github.io/security-ops-bot/security-issue-guide.html#what-you-should-do) for a full explanation of what this issue means and what you need to do.\n\nAttention: @Max-Jesch\n\n### Dependabot Alerts\n\n| Severity | CVE/GHSA | Package | Affected | Patched | Deadline | Fix PR |\n|---|---|---|---|---|---|---|\n| 🟠 high | CVE-2026-25639 | axios | >= 1.0.0, <= 1.13.4 | 1.13.5 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-27606 | rollup | >= 4.0.0, < 4.59.0 | 4.59.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-27903 | minimatch | >= 9.0.0, < 9.0.7 | 9.0.7 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-33228 | flatted | <= 3.4.1 | 3.4.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-39364 | vite | >= 7.1.0, <= 7.3.1 | 7.3.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-39363 | vite | >= 7.0.0, <= 7.3.1 | 7.3.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42264 | axios | >= 1.0.0, < 1.15.2 | 1.15.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42043 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42035 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42033 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-33245 | react-router | >= 7.7.0, < 7.13.2 | 7.13.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42211 | react-router | >= 7.0.0, <= 7.14.1 | 7.14.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-42342 | react-router | >= 7.0.0, < 7.15.0 | 7.15.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-34077 | react-router | >= 7.0.0, < 7.14.0 | 7.14.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44494 | axios | >= 1.0.0, < 1.16.0 | 1.16.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44495 | axios | >= 1.0.0, < 1.15.2 | 1.15.2 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44486 | axios | >= 1.0.0, < 1.16.0 | 1.16.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44487 | axios | >= 1.0.0, < 1.16.0 | 1.16.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44488 | axios | >= 1.7.0, < 1.16.0 | 1.16.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-44496 | axios | >= 1.0.0, < 1.16.0 | 1.16.0 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-53571 | vite | >= 7.0.0, <= 7.3.4 | 7.3.5 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-12143 | form-data | >= 4.0.0, < 4.0.6 | 4.0.6 | 2026-10-24 | — |\n| 🟠 high | CVE-2026-59869 | js-yaml | >= 4.0.0, < 4.3.0 | 4.3.0 | 2026-10-16 | — |\n| 🟠 high | CVE-2026-55685 | react-router | >= 7.0.0, < 7.18.0 | 7.18.0 | 2026-10-16 | — |\n| 🟠 high | CVE-2026-13149 | brace-expansion | < 1.1.16 | 1.1.16 | 2026-10-16 | — |\n| 🟠 high | CVE-2026-45623 | postcss | <= 8.5.11 | 8.5.12 | 2026-10-16 | — |\n| 🟠 high | CVE-2026-73646 | postcss | <= 8.5.17 | 8.5.18 | 2026-10-16 | — |\n| 🟠 high | GHSA-qwww-vcr4-c8h2 | react-router | >= 7.12.0, < 7.18.2 | 7.18.2 | 2026-10-16 | — |\n| 🟠 high | GHSA-5p4m-2wfm-xmqj | js-yaml | >= 4.0.0, < 4.3.1 | 4.3.1 | 2026-10-16 | — |\n| 🟠 high | CVE-2026-73086 | nanoid | < 3.3.12 | 3.3.12 | 2026-10-10 | — |\n| 🟠 high | CVE-2026-73088 | browserslist | <= 4.28.6 | 4.28.7 | 2026-10-10 | — |\n| 🟠 high | CVE-2026-84375 | js-yaml | >= 4.0.0, < 4.3.2 | 4.3.2 | 2026-10-14 | — |\n| 🟡 medium | CVE-2026-33672 | picomatch | >= 4.0.0, < 4.0.4 | 4.0.4 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-39365 | vite | >= 7.0.0, <= 7.3.1 | 7.3.2 | 2026-12-23 | — |\n| 🟡 medium | GHSA-r4q5-vmmm-2653 | follow-redirects | <= 1.15.11 | 1.16.0 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-40175 | axios | >= 1.0.0, < 1.15.0 | 1.15.0 | 2026-12-23 | — |\n| 🟡 medium | CVE-2025-62718 | axios | >= 1.0.0, < 1.15.0 | 1.15.0 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-41305 | postcss | < 8.5.10 | 8.5.10 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42044 | axios | >= 1.0.0, < 1.15.2 | 1.15.2 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42041 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42042 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42036 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42034 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42039 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42038 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-42037 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-33244 | react-router | >= 7.5.1, < 7.13.2 | 7.13.2 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-40181 | react-router | >= 7.0.0, < 7.14.1 | 7.14.1 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-44490 | axios | >= 1.0.0, < 1.16.0 | 1.16.0 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-53632 | vite | >= 7.0.0, <= 7.3.4 | 7.3.5 | 2026-12-23 | — |\n| 🟡 medium | CVE-2026-53550 | js-yaml | >= 4.0.0, <= 4.1.1 | 4.2.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67318 | axios | >= 1.13.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67317 | axios | >= 1.7.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67312 | axios | >= 1.0.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67313 | axios | >= 1.0.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-53667 | react-router | >= 7.11.0, < 7.18.0 | 7.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-53668 | react-router | >= 7.9.6, <= 7.12.0 | 7.13.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67316 | axios | >= 1.0.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-67319 | axios | >= 1.0.0, < 1.18.0 | 1.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-53666 | react-router | >= 6.4.0, < 7.18.0 | 7.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-53669 | react-router | >= 6.0.0, < 7.18.0 | 7.18.0 | 2026-12-15 | — |\n| 🟡 medium | CVE-2026-69153 | postcss | <= 8.5.22 | 8.5.23 | 2026-12-15 | — |\n| 🟡 medium | GHSA-p498-v437-472g | @humanfs/node | < 0.16.8 | 0.16.8 | 2026-12-09 | — |\n| 🟡 medium | CVE-2026-45819 | baseline-browser-mapping | >= 2.0.0, < 2.11.0 | 2.11.0 | 2026-12-09 | — |\n| 🔵 low | CVE-2026-42040 | axios | >= 1.0.0, < 1.15.1 | 1.15.1 | — | — |\n| 🔵 low | CVE-2026-53663 | react-router | >= 7.12.0, < 7.15.1 | 7.15.1 | — | — |\n| 🔵 low | CVE-2026-49356 | @babel/core | <= 7.29.0 | 7.29.6 | — | — |\n| 🔵 low | CVE-2026-9358 | postcss-selector-parser | >= 6.1.0, < 6.1.3 | 6.1.3 | — | — |\n\n### Code Scanning Alerts\n\n_No open code scanning alerts._\n\n\n### Secret Scanning Alerts\n\n_No open secret scanning alerts._\n\n---\n<!-- cve-meta:CVE-2026-25639:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-27606:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-27903:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-33228:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-33672:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-39364:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-39365:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-39363:high:2026-09-24 -->\n<!-- cve-meta:GHSA-r4q5-vmmm-2653:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-40175:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2025-62718:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-41305:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42040:low:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42264:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42044:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42043:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42041:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42042:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42035:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42033:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42036:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42034:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42039:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42038:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42037:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-33245:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-33244:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42211:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-40181:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-42342:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-34077:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44490:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44494:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44495:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44486:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44487:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44488:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-44496:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-53663:low:2026-09-24 -->\n<!-- cve-meta:CVE-2026-49356:low:2026-09-24 -->\n<!-- cve-meta:CVE-2026-53571:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-53632:medium:2026-09-24 -->\n<!-- cve-meta:CVE-2026-12143:high:2026-09-24 -->\n<!-- cve-meta:CVE-2026-53550:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67318:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67317:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67312:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67313:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-53667:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-53668:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67316:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-67319:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-59869:high:2026-09-16 -->\n<!-- cve-meta:CVE-2026-55685:high:2026-09-16 -->\n<!-- cve-meta:CVE-2026-53666:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-53669:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-13149:high:2026-09-16 -->\n<!-- cve-meta:CVE-2026-45623:high:2026-09-16 -->\n<!-- cve-meta:CVE-2026-73646:high:2026-09-16 -->\n<!-- cve-meta:GHSA-qwww-vcr4-c8h2:high:2026-09-16 -->\n<!-- cve-meta:GHSA-5p4m-2wfm-xmqj:high:2026-09-16 -->\n<!-- cve-meta:CVE-2026-69153:medium:2026-09-16 -->\n<!-- cve-meta:CVE-2026-9358:low:2026-09-10 -->\n<!-- cve-meta:GHSA-p498-v437-472g:medium:2026-09-10 -->\n<!-- cve-meta:CVE-2026-73086:high:2026-09-10 -->\n<!-- cve-meta:CVE-2026-73088:high:2026-09-10 -->\n<!-- cve-meta:CVE-2026-45819:medium:2026-09-10 -->\n<!-- cve-meta:CVE-2026-84375:high:2026-09-14 -->\n",
+  "comment_count": 7
+ },
+ {
+  "number": 120,
+  "title": "Backend server does not start",
+  "state": "open",
+  "state_reason": null,
+  "author": "thanosz",
+  "created_at": "2026-09-20T18:16:21Z",
+  "updated_at": "2026-10-05T12:08:57Z",
+  "labels": [],
+  "assignees": [],
+  "milestone": null,
+  "body": "```\n./start.sh\n🚀 Starting Galaxium Travels...\n\n📡 Starting Backend Server...\n❌ Backend failed to start. Check backend.log for errors:\nTraceback (most recent call last):\n  File \"/Users/than/depot/repos/ibm/galaxium-travels/booking_system_backend/server.py\", line 336, in <module>\n    mcp = FastApiMCP(app)\n  File \"/Users/than/depot/repos/ibm/galaxium-travels/booking_system_backend/.venv/lib/python3.14/site-packages/fastapi_mcp/server.py\", line 124, in __init__\n    self.setup_server()\n    ~~~~~~~~~~~~~~~~~^^\n  File \"/Users/than/depot/repos/ibm/galaxium-travels/booking_system_backend/.venv/lib/python3.14/site-packages/fastapi_mcp/server.py\", line 144, in setup_server\n    mcp_server: Server = Server(self.name, self.description)\n                         ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: Server.__init__() takes 2 positional arguments but 3 were given\n\n```\nBob assessment:\n\n```\nRoot cause: fastmcp==4.0.5 pulled in mcp==2.2.0 as a transitive dependency. The mcp 2.x release introduced a breaking change: Server.__init__() no longer accepts a description argument. fastapi-mcp==0.4.0 still calls Server(self.name, se\n  lf.description) (two positional args), which crashes at startup.\n  \nFix: Downgraded mcp to 1.30.0 (the latest 1.x release, which fastapi-mcp>=0.4.0 requires) and added mcp<2.0.0 to requirements.txt to prevent the constraint from regressing on future installs. fastmcp itself doesn't depend on mcp directly\n   — it uses mcp-types — so there's no conflict.\n\n```",
+  "comment_count": 2,
+  "comments": [
+   {
+    "id": 5893148412,
+    "author": "axbuglak",
+    "created_at": "2026-09-29T15:17:29Z",
+    "body": "@thanosz \nI have the same issue\nThe reason is that requirements.txt has no version pins for fastmcp/fastapi-mcp, so pip installs incompatible versions. One of the is too new and another too old.\n Fix:\n```\n  cd booking_system_backend\n  pip install \"fastapi-mcp>=0.4.0\" \"fastmcp>=2.3.4,<2.6\" --force-reinstall\n``` \nThen pin them permanently in requirements.txt to prevent recurrence:\n\n  fastapi-mcp>=0.4.0\n  fastmcp>=2.3.4,<2.6"
+   },
+   {
+    "id": 5994139780,
+    "author": "axbuglak",
+    "created_at": "2026-10-05T12:08:57Z",
+    "body": "#122 "
+   }
+  ]
+ },
+ {
+  "number": 125,
+  "title": "🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "security-ops-bot[bot]",
+  "created_at": "2026-10-19T06:27:27Z",
+  "updated_at": "2026-10-23T06:29:18Z",
+  "labels": [
+   "security"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "## 🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels\n\n> **Action required:** Remediate the alerts listed below before their SLA deadline.\n> This issue will be closed automatically once all alerts are resolved.\n>\n> **SLA policy:** critical = 7 days, high = 30 days, medium = 90 days.\n> Alerts at or above medium severity will trigger a warning comment before the deadline and\n> repo archiving if unresolved.\n>\n> 💡 **Tip:** To have Dependabot automatically open fix PRs for dependency alerts, enable\n> **Dependabot security updates** in your repo settings:\n> Settings → Advanced Security → Dependabot security updates → Enable.\n>\n> 📖 **New to this issue?** See the [Security Issue Guide](https://ibm.github.io/security-ops-bot/security-issue-guide.html#what-you-should-do) for a full explanation of what this issue means and what you need to do.\n\nAttention: @Max-Jesch @cjobermaier\n\n### Dependabot Alerts\n\n| Severity | CVE/GHSA | Package | Affected | Patched | Deadline | Fix PR |\n|---|---|---|---|---|---|---|\n| 🟠 high | CVE-2026-93749 | source-map-js | >= 1.0.0, < 1.2.2 | 1.2.2 | 2026-11-18 | [PR](https://github.com/IBM/galaxium-travels/pull/124) |\n| 🟠 high | CVE-2026-111755 | follow-redirects | >= 1.16.0, < 1.16.1 | 1.16.1 | 2026-11-21 | [PR](https://github.com/IBM/galaxium-travels/pull/128) |\n| 🟠 high | CVE-2026-111756 | follow-redirects | >= 1.16.0, < 1.16.1 | 1.16.1 | 2026-11-21 | [PR](https://github.com/IBM/galaxium-travels/pull/128) |\n| 🟡 medium | CVE-2026-104844 | postcss-selector-parser | < 7.1.6 | 7.1.6 | 2027-01-18 | [PR](https://github.com/IBM/galaxium-travels/pull/126) |\n\n### Code Scanning Alerts\n\n_No open code scanning alerts._\n\n\n### Secret Scanning Alerts\n\n_No open secret scanning alerts._\n\n---\n<!-- cve-meta:CVE-2026-93749:high:2026-10-19 -->\n<!-- cve-meta:CVE-2026-104844:medium:2026-10-20 -->\n<!-- cve-meta:CVE-2026-111755:high:2026-10-22 -->\n<!-- cve-meta:CVE-2026-111756:high:2026-10-22 -->\n",
+  "comment_count": 3
+ },
+ {
+  "number": 130,
+  "title": "🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "security-ops-bot[bot]",
+  "created_at": "2026-10-26T06:28:41Z",
+  "updated_at": "2026-11-05T06:22:25Z",
+  "labels": [
+   "security"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "## 🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels\n\n> **Action required:** Remediate the alerts listed below before their SLA deadline.\n> This issue will be closed automatically once all alerts are resolved.\n>\n> **SLA policy:** critical = 7 days, high = 30 days, medium = 90 days.\n> Alerts at or above medium severity will trigger a warning comment before the deadline and\n> repo archiving if unresolved.\n>\n> 💡 **Tip:** To have Dependabot automatically open fix PRs for dependency alerts, enable\n> **Dependabot security updates** in your repo settings:\n> Settings → Advanced Security → Dependabot security updates → Enable.\n>\n> 📖 **New to this issue?** See the [Security Issue Guide](https://ibm.github.io/security-ops-bot/security-issue-guide.html#what-you-should-do) for a full explanation of what this issue means and what you need to do.\n\nAttention: @Max-Jesch @cjobermaier\n\n### Dependabot Alerts\n\n| Severity | CVE/GHSA | Package | Affected | Patched | Deadline | Fix PR |\n|---|---|---|---|---|---|---|\n| 🟠 high | CVE-2026-93749 | source-map-js | >= 1.0.0, < 1.2.2 | 1.2.2 | 2026-11-26 | [PR](https://github.com/IBM/galaxium-travels/pull/124) |\n| 🟠 high | CVE-2026-112942 | vite | >= 7.0.0, <= 7.3.6 | 7.3.7 | 2026-11-25 | [PR](https://github.com/IBM/galaxium-travels/pull/129) |\n| 🟠 high | CVE-2026-116689 | follow-redirects | >= 1.16.0, <= 1.16.1 | 1.16.2 | 2026-12-03 | [PR](https://github.com/IBM/galaxium-travels/pull/134) |\n| 🟡 medium | CVE-2026-112943 | vite | >= 7.0.0, <= 7.3.6 | 7.3.7 | 2027-01-24 | [PR](https://github.com/IBM/galaxium-travels/pull/129) |\n| 🟡 medium | CVE-2026-112944 | vite | >= 7.0.0, <= 7.3.6 | 7.3.7 | 2027-01-24 | [PR](https://github.com/IBM/galaxium-travels/pull/129) |\n| 🟡 medium | CVE-2026-112946 | vite | >= 7.0.0, <= 7.3.6 | 7.3.7 | 2027-01-25 | [PR](https://github.com/IBM/galaxium-travels/pull/129) |\n| 🟡 medium | CVE-2026-104844 | postcss-selector-parser | < 6.1.5 | 6.1.5 | 2027-02-01 | [PR](https://github.com/IBM/galaxium-travels/pull/133) |\n| 🟡 medium | CVE-2026-118764 | minimatch | < 11.0.1 | 11.0.1 | 2027-02-01 | — |\n\n### Code Scanning Alerts\n\n_No open code scanning alerts._\n\n\n### Secret Scanning Alerts\n\n_No open secret scanning alerts._\n\n---\n<!-- cve-meta:CVE-2026-93749:high:2026-10-27 -->\n<!-- cve-meta:CVE-2026-112943:medium:2026-10-26 -->\n<!-- cve-meta:CVE-2026-112942:high:2026-10-26 -->\n<!-- cve-meta:CVE-2026-112944:medium:2026-10-26 -->\n<!-- cve-meta:CVE-2026-112946:medium:2026-10-27 -->\n<!-- cve-meta:CVE-2026-104844:medium:2026-11-03 -->\n<!-- cve-meta:CVE-2026-116689:high:2026-11-03 -->\n<!-- cve-meta:CVE-2026-118764:medium:2026-11-03 -->\n",
+  "comment_count": 3
+ },
+ {
+  "number": 139,
+  "title": "Add GET /flights/{flight_id} to fetch a single flight",
+  "state": "closed",
+  "state_reason": "completed",
+  "author": "Max-Jesch",
+  "created_at": "2026-11-06T14:11:52Z",
+  "updated_at": "2026-11-06T14:27:32Z",
+  "labels": [
+   "agent:needs-human"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "Right now the only way to get one flight is to call `GET /flights` and look through the list. The flight detail page (#25) will need a direct lookup, and agents using our MCP server would benefit from one too.\n\n**What**\nAdd a `GET /flights/{flight_id}` endpoint that returns that flight, in the same shape as one item of `GET /flights` (`FlightOut`).\n\n**Acceptance criteria**\n- `GET /flights/{flight_id}` returns the flight as `FlightOut`.\n- An unknown id returns 404 with the usual `ErrorResponse` body and the error code `FLIGHT_NOT_FOUND`, following the same pattern as `GET /user`.\n- Tests cover both cases.\n- No frontend changes.",
+  "comment_count": 2
+ },
+ {
+  "number": 141,
+  "title": "Add GET /flights/{flight_id} to fetch a single flight",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-11-06T14:27:47Z",
+  "updated_at": "2026-11-10T15:02:01Z",
+  "labels": [
+   "agent:needs-human"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "Right now the only way to get one flight is to call GET /flights and look through the list. The flight detail page (#25) will need a direct lookup, and agents using our MCP server would benefit from one too.\n\nWhat\nAdd a GET /flights/{flight_id} endpoint that returns that flight, in the same shape as one item of GET /flights (FlightOut).\n\nAcceptance criteria\n\nGET /flights/{flight_id} returns the flight as FlightOut.\nAn unknown id returns 404 with the usual ErrorResponse body and the error code FLIGHT_NOT_FOUND, following the same pattern as GET /user.\nTests cover both cases.\nNo frontend changes.",
+  "comment_count": 3
+ },
+ {
+  "number": 142,
+  "title": "Add GET /flights/{flight_id} to fetch a single flight",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-11-06T14:33:16Z",
+  "updated_at": "2026-11-10T15:02:04Z",
+  "labels": [
+   "agent:pr-open"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "Right now the only way to get one flight is to call GET /flights and look through the list. The flight detail page (#25) will need a direct lookup, and agents using our MCP server would benefit from one too.\n\nWhat\nAdd a GET /flights/{flight_id} endpoint that returns that flight, in the same shape as one item of GET /flights (FlightOut).\n\nAcceptance criteria\n\nGET /flights/{flight_id} returns the flight as FlightOut.\nAn unknown id returns 404 with the usual ErrorResponse body and the error code FLIGHT_NOT_FOUND, following the same pattern as GET /user.\nTests cover both cases.\nNo frontend changes.",
+  "comment_count": 3
+ },
+ {
+  "number": 144,
+  "title": "Add GET /flights/{flight_id} to fetch a single flight",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "author": "Max-Jesch",
+  "created_at": "2026-11-06T14:47:00Z",
+  "updated_at": "2026-11-10T15:02:07Z",
+  "labels": [
+   "agent:pr-open"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "Right now the only way to get one flight is to call GET /flights and look through the list. The flight detail page (#25) will need a direct lookup, and agents using our MCP server would benefit from one too.\n\nWhat\nAdd a GET /flights/{flight_id} endpoint that returns that flight, in the same shape as one item of GET /flights (FlightOut).\n\nAcceptance criteria\n\nGET /flights/{flight_id} returns the flight as FlightOut.\nAn unknown id returns 404 with the usual ErrorResponse body and the error code FLIGHT_NOT_FOUND, following the same pattern as GET /user.\nTests cover both cases.\nNo frontend changes.",
+  "comment_count": 3
+ },
+ {
+  "number": 148,
+  "title": "🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels",
+  "state": "open",
+  "state_reason": null,
+  "author": "security-ops-bot[bot]",
+  "created_at": "2026-11-10T06:30:27Z",
+  "updated_at": "2026-11-10T07:06:04Z",
+  "labels": [
+   "security"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "## 🔒 [IBM OSPO Security Notification] — IBM/galaxium-travels\n\n> **Action required:** Remediate the alerts listed below before their SLA deadline.\n> This issue will be closed automatically once all alerts are resolved.\n>\n> **SLA policy:** critical = 7 days, high = 30 days, medium = 90 days.\n> Alerts at or above medium severity will trigger a warning comment before the deadline and\n> repo archiving if unresolved.\n>\n> 💡 **Tip:** To have Dependabot automatically open fix PRs for dependency alerts, enable\n> **Dependabot security updates** in your repo settings:\n> Settings → Advanced Security → Dependabot security updates → Enable.\n>\n> 📖 **New to this issue?** See the [Security Issue Guide](https://ibm.github.io/security-ops-bot/security-issue-guide.html#what-you-should-do) for a full explanation of what this issue means and what you need to do.\n\nAttention: @Max-Jesch @cjobermaier\n\n### Dependabot Alerts\n\n| Severity | CVE/GHSA | Package | Affected | Patched | Deadline | Fix PR |\n|---|---|---|---|---|---|---|\n| 🟡 medium | CVE-2026-118764 | minimatch | >= 7.0.0, < 11.0.1 | 11.0.1 | 2027-02-08 | — |\n\n### Code Scanning Alerts\n\n_No open code scanning alerts._\n\n\n### Secret Scanning Alerts\n\n_No open secret scanning alerts._\n\n---\n<!-- cve-meta:CVE-2026-118764:medium:2026-11-10 -->\n",
+  "comment_count": 0
+ },
+ {
+  "number": 149,
+  "title": "Add GET /flights/{flight_id} to fetch a single flight",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-11-10T08:58:10Z",
+  "updated_at": "2026-11-10T09:01:10Z",
+  "labels": [
+   "agent:pr-open"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "body": "Right now the only way to get one flight is to call GET /flights and look through the list. The flight detail page (https://github.com/IBM/galaxium-travels/issues/25) will need a direct lookup, and agents using our MCP server would benefit from one too.\n\nWhat\nAdd a GET /flights/{flight_id} endpoint that returns that flight, in the same shape as one item of GET /flights (FlightOut).\n\nAcceptance criteria\n\nGET /flights/{flight_id} returns the flight as FlightOut.\nAn unknown id returns 404 with the usual ErrorResponse body and the error code FLIGHT_NOT_FOUND, following the same pattern as GET /user.\nTests cover both cases.\nNo frontend changes.",
+  "comment_count": 2,
+  "comments": [
+   {
+    "id": 6763238798,
+    "author": "galaxium-bob-agent",
+    "created_at": "2026-11-10T08:58:33Z",
+    "body": "<!-- galaxium-bob-agent:status -->\n### ✅ Ready to build\n\nThis is small and clear enough for me to do on my own. I'm starting now and will open a pull request.\n\n**Plan**\n- **Gap:** There is no way to fetch one flight by id. Callers have to list `GET /flights` and search the result.\n- **Scope:** Add a `get_flight(db, flight_id)` service function that returns `FlightOut | ErrorResponse` (`FLIGHT_NOT_FOUND`), reusing `_flight_to_out`. Add a `GET /flights/{flight_id}` handler in `server.py`, above the `FastApiMCP(app)` call, that maps the error to a 404 the same way `GET /user` does. fastapi-mcp then exposes it as an MCP tool automatically. Out of scope: frontend changes, the flight detail page (#25), the Java hold service, and schema changes.\n- **Touches:** `booking_system_backend/services/flight.py`, `booking_system_backend/server.py`, `booking_system_backend/tests/test_rest.py` (and possibly `booking_system_backend/tests/test_services.py`)\n- **Size:** 3–4 files, about 60 lines.\n\n**Acceptance criteria**\n- [ ] `GET /flights/{flight_id}` returns 200 with the flight as `FlightOut`, identical to the matching item in `GET /flights`.\n- [ ] An unknown id returns 404 with the `ErrorResponse` body under `detail` and `error_code` `FLIGHT_NOT_FOUND`, like `GET /user`.\n- [ ] Backend tests cover both the found and not-found cases.\n- [ ] No frontend files change.\n\n---\n<sub>Galaxium Bob Agent · running on Bob Shell in GitHub Actions · [run](https://github.com/IBM/galaxium-travels/actions/runs/42786789685)</sub>\n"
+   },
+   {
+    "id": 6763285993,
+    "author": "galaxium-bob-agent",
+    "created_at": "2026-11-10T09:01:09Z",
+    "body": "🚀 Pull request is up: #150. A maintainer needs to review and merge it.\n\n<sub>Galaxium Bob Agent · running on Bob Shell in GitHub Actions · [run](https://github.com/IBM/galaxium-travels/actions/runs/42786789685)</sub>\n"
+   }
+  ]
+ },
+ {
+  "number": 151,
+  "title": "Unified Pricing & Quote-Booking Consistency",
+  "state": "open",
+  "state_reason": null,
+  "author": "Max-Jesch",
+  "created_at": "2026-11-10T14:59:49Z",
+  "updated_at": "2026-11-10T15:28:32Z",
+  "labels": [
+   "agent:needs-human",
+   "area/fullstack",
+   "bug",
+   "release:v1",
+   "roadmap",
+   "tier-1"
+  ],
+  "assignees": [
+   "Max-Jesch"
+  ],
+  "milestone": "Sprint 1",
+  "body": "## Problem\nFlight prices are currently inconsistent across the customer booking journey:\n- **Explore page:** Calculates seat class prices via Python `_flight_to_out()` (`base_price \\times [1.0, 2.5, 5.0]`).\n- **Quote modal:** Calculates prices via Java `PricingService.calculatePrice()` using hardcoded flat base tables (`{economy: 500k, business: 2.5M, first: 5M}`) and an arbitrary `flightId % 3` multiplier.\n- **Seat Class naming:** Java uses legacy `\"first\"` instead of `\"galaxium\"`, causing Galaxium quotes to default to economy base pricing.\n- **Booking price discrepancy:** `HoldService.confirmHold()` omits the quoted price when calling Python's `/internal/bookings/from-hold`. Python recalculates the price from scratch, writing a different value to the DB than what was quoted.\n\n## Specification & PRD\nSee full PRD in [`docs/requirements/price-quote-consistency.md`](docs/requirements/price-quote-consistency.md).\n\n## Core Requirements\n1. **Single Source of Truth:** Python backend serves as the authoritative pricing source. Java `PricingService` queries or synchronizes with Python rather than using disconnected hardcoded tables.\n2. **Domain Alignment:** Standardize seat classes across all services on `economy`, `business`, and `galaxium`.\n3. **Lock Quoted Price on Hold:** Java forwards `pricePaid` and `quoteId` when confirming a hold to `/internal/bookings/from-hold`.\n4. **Honor Quoted Price at Booking:** Python persists the locked quoted price in `Booking.price_paid`.\n\n## Acceptance Criteria\n- [ ] Catalog price on Explore page matches the quote modal price breakdown for all flights and seat classes.\n- [ ] Creating a quote for `\"galaxium\"` class applies the 5.0x multiplier and succeeds.\n- [ ] Confirmed booking `price_paid` strictly matches the quote's `total_price`.\n- [ ] Removed arbitrary `flightId % 3` modulo jitter from quote pricing.\n- [ ] E2E test suite passes.",
+  "comment_count": 1,
+  "comments": [
+   {
+    "id": 6770800513,
+    "author": "galaxium-bob-agent",
+    "created_at": "2026-11-10T15:03:16Z",
+    "body": "<!-- galaxium-bob-agent:status -->\n### 🧑‍🚀 This one needs a human\n\n**Why:** This fails several checklist items. It changes the Java hold service (`booking_system_inventory_hold_service/`: `PricingService`, `HoldService.confirmHold()`, `PythonBackendClient`). It changes the Python↔Java contract (`/internal/bookings/from-hold` now carries `pricePaid` and `quoteId`, and Java would query Python for prices). It also touches `e2e/`, since the criteria require the E2E suite to pass. The size is probably over my limit too. Separately, the PRD the issue links to (`docs/requirements/price-quote-consistency.md`) doesn't exist in the repo, so I can't check the details.\n\n**What it involves:**\n- Java: replace the hardcoded price tables and the `flightId % 3` jitter in `PricingService`, and rename the `first` seat class to `galaxium`. Also forward the quoted price when a hold is confirmed.\n- Python: `/internal/bookings/from-hold` in `server.py` must accept and store the locked price in `Booking.price_paid`. Python also needs to become the pricing source that Java reads from.\n- Tests: Java unit tests, backend pytest and the e2e hold flow all need updating.\n- Risk: changing both sides of the cross-service contract at once.\n\n**Possible split into smaller issues:**\n1. Python-only: make `/internal/bookings/from-hold` accept an optional quoted price and persist it. This one I could take on if the contract change is agreed first.\n2. Java: rename `first` to `galaxium`, drop the modulo jitter, and send `pricePaid` and `quoteId` on confirm.\n3. A design decision on how Java gets prices from Python (an endpoint, or shared constants).\n\nPlease also commit the PRD file so it can be referenced.\n\n---\n<sub>Galaxium Bob Agent · running on Bob Shell in GitHub Actions · [run](https://github.com/IBM/galaxium-travels/actions/runs/42839780178)</sub>\n"
+   }
+  ]
+ }
+]
